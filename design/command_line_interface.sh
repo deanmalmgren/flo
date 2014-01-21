@@ -52,7 +52,7 @@ workflow data/result.png data/download.tgz
 nano path/to/a/file
 nano path/to/another/file
 nano path/to/some/file
-workflow --test
+workflow --dry-run
 
 
 # This is something that drives me crazy about GNU make --- you should
