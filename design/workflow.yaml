@@ -50,7 +50,7 @@ command: python {{depends}} > {{creates}}
 # [unix]$ workflow data/per_file --time-limit=1s
 ---
 alias: data/per_file
-creates: data/per_file/%(filename_root)s.dat
+creates: data/per_file/{{filename_root}}.dat
 depends:
   - src/process_each_file.py
   - data/first/(?P<filename_root>\w+).dat
