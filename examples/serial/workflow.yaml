@@ -1,0 +1,36 @@
+# download a file
+---
+creates: data/reuters21578.tar.gz
+command: 
+  - mkdir -p $(dirname {{creates}})
+  - curl http://www.daviddlewis.com/resources/testcollections/reuters21578/reuters21578.tar.gz > {{creates}}
+
+# extract
+---
+creates: data/reuters21578
+depends: data/reuters21578.tar.gz
+command: tar xzf {{depends}}
+
+# parse relevant crap out of SGML format http://www.daviddlewis.com/resources/testcollections/reuters21578/readme.txt
+---
+creates: data/corpus.csv
+depends: 
+  - src/parse.py
+  - data/reuters21578
+command: python {{depends}} > {{creates}}
+
+# normalize and stem
+---
+creates: data/standardized_corpus.csv
+depends:
+  - src/normalize_and_stem.py
+  - data/corpus.csv
+command: python {{depends}} > {{creates}}
+
+# tfidf
+---
+creates: data/tfidf.dat
+depends:
+  - src/calculate_tfidf.py
+  - data/standardized_corpus.csv
+command: python {{depends}} > {{creates}}
