@@ -1,6 +1,7 @@
 import sys
 import os
 import subprocess
+import time
 
 import jinja2
 
@@ -44,7 +45,21 @@ class Task(object):
         needs to be executed
         """
         return False
+        # if the creates doesn't exist, its not in sync and the task
+        # must be executed
 
+
+        # if any of the dependencies are out of sync, then this task
+        # must be executed
+
+
+        # if the data about this task is out of sync, then this task
+        # must be executed
+
+
+        # otherwise, its in sync
+        return True
+        
     def execute(self, command=None):
         """Run the specified task from the root of the workflow"""
 
@@ -55,6 +70,10 @@ class Task(object):
             for cmd in command:
                 self.execute(cmd)
             return
+
+        # start a timer so we can keep track of how long this task
+        # executes. Its important that 
+        t = time.clock()
 
         # if its not a list or a tuple, then this string should be
         # executed. Update the user on our progress so far, be sure to
@@ -70,6 +89,21 @@ class Task(object):
         (stdout, stderr) = pipe.communicate()
         if pipe.returncode != 0:
             sys.exit(pipe.returncode)
+
+        # stop the clock and alert the user to the clock time spent
+        # exeucting the task
+        # http://docs.python.org/2/library/time.html#time.clock
+        self.deltat = time.clock() - t
+        if self.deltat < 10 * 60: # 10 minutes
+            deltat_str = str(self.deltat) + " s" 
+        elif self.deltat < 2 * 60 * 60: # 2 hours
+            deltat_str = str(self.deltat / 60) + " m"
+        elif self.deltat < 2 * 60 * 60 * 24: # 2 days
+            deltat_str = str(self.deltat / 60 / 60) + " h"
+        else:
+            deltat_str = str(self.deltat / 60 / 60 / 24) + " d"
+        print("%79s" % deltat_str)
+
 
     def render_command_template(self, command=None):
         """Uses jinja template syntax to render the command from the other
