@@ -7,7 +7,6 @@ import hashlib
 import jinja2
 
 from .exceptions import InvalidTaskDefinition, ElementNotFound
-from . import utils
 
 class Task(object):
 
@@ -38,15 +37,18 @@ class Task(object):
                 "every task must define a `command`"
             )
 
-        # get the root directory
-        # 
-        # TODO: this probably isn't the best place to put this as it
-        # computes the root directory for *every* task. While this
-        # calculation is very fast, its certainly unnecessary
-        self.root_directory = utils.get_root_directory()
+        # initially set the graph attribute as None. This is
+        # configured when the Task is added to the graph
+        self.graph = None
 
         # render the jinja template for the command
         self.command = self.render_command_template()
+
+    @property
+    def root_directory(self):
+        """Easy access to the graph's root_directory, which is stored once for
+        every task"""
+        return self.graph.root_directory
 
     def calculate_hash(self, stream, block_size=2**20):
         """Read in a stream in relatively small `block_size`s to make sure we
@@ -183,11 +185,14 @@ class Task(object):
 class TaskGraph(object):
     """Simple graph implementation of a list of task nodes"""
 
-    def __init__(self):
+    def __init__(self, config_path):
         self.tasks = []
+        self.config_path = config_path
+        self.root_directory = os.path.dirname(config_path)
 
     def add(self, task):
         self.tasks.append(task)
+        task.graph = self
 
     def __iter__(self):
         return iter(self.tasks)
