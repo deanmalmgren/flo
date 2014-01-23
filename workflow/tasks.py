@@ -1,6 +1,11 @@
+import sys
+import os
+import subprocess
+
 import jinja2
 
 from . import exceptions
+from . import utils
 
 class Task(object):
 
@@ -33,17 +38,38 @@ class Task(object):
 
         # render the jinja template for the command
         self.command = self.render_command_template()
-        print self.command
 
     def in_sync(self):
-        """test whether this task is in sync with the stored state and
+        """Test whether this task is in sync with the stored state and
         needs to be executed
         """
         return False
 
-    def execute(self):
-        """run the specified task"""
-        return None
+    def execute(self, command=None):
+        """Run the specified task from the root of the workflow"""
+
+        # execute a sequence of commands by recursively calling this
+        # method
+        command = command or self.command
+        if isinstance(command, (list, tuple)):
+            for cmd in command:
+                self.execute(cmd)
+            return
+
+        # if its not a list or a tuple, then this string should be
+        # executed. Update the user on our progress so far, be sure to
+        # change to the root directory of the workflow, and execute
+        # the command. This takes inspiration from how
+        # fabric.operations.local works http://bit.ly/1dQEgjl
+        print(command)
+        sys.stdout.flush()
+        wrapped_command = "cd %s && %s" % (utils.get_root_directory(), command)
+        pipe = subprocess.Popen(
+            wrapped_command, shell=True, stdout=sys.stdout, stderr=sys.stderr
+        )
+        (stdout, stderr) = pipe.communicate()
+        if pipe.returncode != 0:
+            sys.exit(pipe.returncode)
 
     def render_command_template(self, command=None):
         """Uses jinja template syntax to render the command from the other
