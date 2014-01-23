@@ -11,3 +11,10 @@ class ConfigurationNotFound(Exception):
 
 class InvalidTaskDefinition(Exception):
     pass
+
+class ElementNotFound(Exception):
+    def __init__(self, element):
+        self.element = element
+
+    def __str__(self):
+        return "\nElement '%s' not found" % self.element

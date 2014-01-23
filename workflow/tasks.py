@@ -2,10 +2,11 @@ import sys
 import os
 import subprocess
 import time
+import hashlib
 
 import jinja2
 
-from . import exceptions
+from .exceptions import InvalidTaskDefinition, ElementNotFound
 from . import utils
 
 class Task(object):
@@ -29,33 +30,92 @@ class Task(object):
         # quick type checking to make sure the tasks in the
         # configuration file are valid
         if self.creates is None:
-            raise exceptions.InvalidTaskDefinition(
+            raise InvalidTaskDefinition(
                 "every task must define a `creates`"
             )
         if self.command is None:
-            raise exceptions.InvalidTaskDefinition(
+            raise InvalidTaskDefinition(
                 "every task must define a `command`"
             )
 
+        # get the root directory
+        # 
+        # TODO: this probably isn't the best place to put this as it
+        # computes the root directory for *every* task. While this
+        # calculation is very fast, its certainly unnecessary
+        self.root_directory = utils.get_root_directory()
+
         # render the jinja template for the command
         self.command = self.render_command_template()
+
+    def calculate_hash(self, stream, block_size=2**20):
+        """Read in a stream in relatively small `block_size`s to make sure we
+        won't have memory problems on BIG DATA streams.
+        http://stackoverflow.com/a/1131255/564709
+        """
+        stream_hash = hashlib.sha1()
+        while True:
+            data = stream.read(block_size)
+            if not data:
+                break
+            stream_hash.update(data)
+        return stream_hash.hexdigest()
+
+    def hash_in_sync(self, element):
+        """Check the stored hash of this element compared with the current
+        hash of this element. If they are the same, then this element
+        is in_sync.
+        """
+
+        # if the element is None type (for example, when you only
+        # specify a `creates` and a `command`, but no `depends`),
+        # consider this in sync at this stage. 
+        if element is None:
+            return True
+
+        # Get the stored hash value if it exists. If it doesn't exist,
+        # then automatically consider this element out of sync
+        stored_hash = None
+
+        # Get the current hash of this element. If the element does
+        # not exist, throw an error.
+        # 
+        # TODO: This should be able to accomodate files stored on the
+        # filesystem AS WELL AS databases, database tables, cloud storage, etc.
+        current_hash = None
+        element_path = os.path.join(self.root_directory, element)
+        if os.path.exists(element_path):
+            with open(element_path) as stream:
+                current_hash = self.calculate_hash(stream)
+
+        if current_hash is None:
+            raise ElementNotFound(element)
+
+        # element is in_sync if the stored and current hashes are the same
+        return stored_hash == current_hash
 
     def in_sync(self):
         """Test whether this task is in sync with the stored state and
         needs to be executed
         """
-        return False
         # if the creates doesn't exist, its not in sync and the task
         # must be executed
-
+        if not os.path.exists(os.path.join(self.root_directory, self.creates)):
+            return False
 
         # if any of the dependencies are out of sync, then this task
         # must be executed
-
+        if isinstance(self.depends, (list, tuple)):
+            for dep in self.depends:
+                if not self.hash_in_sync(dep):
+                    return False
+        elif not self.hash_in_sync(self.depends):
+            return False
 
         # if the data about this task is out of sync, then this task
         # must be executed
-
+        #
+        # TODO: check the hash of this task
 
         # otherwise, its in sync
         return True
@@ -83,7 +143,7 @@ class Task(object):
         # fabric.operations.local works http://bit.ly/1dQEgjl
         print(command)
         sys.stdout.flush()
-        wrapped_command = "cd %s && %s" % (utils.get_root_directory(), command)
+        wrapped_command = "cd %s && %s" % (self.root_directory, command)
         pipe = subprocess.Popen(
             wrapped_command, shell=True, stdout=sys.stdout, stderr=sys.stderr
         )
