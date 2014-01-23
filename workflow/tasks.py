@@ -35,11 +35,11 @@ class Task(object):
         self.command = self.render_command_template()
         print self.command
 
-    def out_of_sync(self):
-        """test whether this task is out of sync with the stored state and
+    def in_sync(self):
+        """test whether this task is in sync with the stored state and
         needs to be executed
         """
-        return True
+        return False
 
     def execute(self):
         """run the specified task"""

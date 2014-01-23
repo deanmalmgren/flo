@@ -1,0 +1,7 @@
+<!-- -*- mode: markdown -*- -->
+
+## ANNOYING THINGS
+
+* The need to use {{depends|join(' ')}} for a list of
+  dependencies. Surely this can be avoided in an intelligent way
+  without disconnecting from jinja templating too much

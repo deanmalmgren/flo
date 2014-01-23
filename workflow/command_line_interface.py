@@ -12,5 +12,5 @@ def main():
     # iterate through every task in the task graph and execute every
     # task that is out of sync with our last stored state
     for task in task_graph:
-        if task.out_of_sync():
+        if not task.in_sync():
             task.execute()
