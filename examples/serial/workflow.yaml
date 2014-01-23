@@ -17,7 +17,7 @@ creates: data/corpus.csv
 depends: 
   - src/parse.py
   - data/reuters21578
-command: python {{depends}} > {{creates}}
+command: python {{depends|join(' ')}} > {{creates}}
 
 # normalize and stem
 ---
@@ -25,7 +25,7 @@ creates: data/standardized_corpus.csv
 depends:
   - src/normalize_and_stem.py
   - data/corpus.csv
-command: python {{depends}} > {{creates}}
+command: python {{depends|join(' ')}} > {{creates}}
 
 # tfidf
 ---
@@ -33,4 +33,4 @@ creates: data/tfidf.dat
 depends:
   - src/calculate_tfidf.py
   - data/standardized_corpus.csv
-command: python {{depends}} > {{creates}}
+command: python {{depends|join(' ')}} > {{creates}}
