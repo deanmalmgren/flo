@@ -1,0 +1,20 @@
+#!/usr/bin/env python
+# -*- mode: python -*-
+
+"""Execute data workflows defined in workflow.yaml files
+"""
+
+import argparse
+import sys
+import os
+import ConfigParser
+
+from workflow import cli
+
+# setup the option parser
+parser = argparse.ArgumentParser(
+    description=__doc__,
+)
+args = parser.parse_args()
+
+cli()
