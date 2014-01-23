@@ -72,8 +72,9 @@ class Task(object):
             return
 
         # start a timer so we can keep track of how long this task
-        # executes. Its important that 
-        t = time.clock()
+        # executes. Its important that we're timing watch time, not
+        # CPU time
+        t = time.time()
 
         # if its not a list or a tuple, then this string should be
         # executed. Update the user on our progress so far, be sure to
@@ -92,16 +93,15 @@ class Task(object):
 
         # stop the clock and alert the user to the clock time spent
         # exeucting the task
-        # http://docs.python.org/2/library/time.html#time.clock
-        self.deltat = time.clock() - t
+        self.deltat = time.time() - t
         if self.deltat < 10 * 60: # 10 minutes
-            deltat_str = str(self.deltat) + " s" 
+            deltat_str = "%.2f" % (self.deltat) + " s" 
         elif self.deltat < 2 * 60 * 60: # 2 hours
-            deltat_str = str(self.deltat / 60) + " m"
+            deltat_str = "%.2f" % (self.deltat / 60) + " m"
         elif self.deltat < 2 * 60 * 60 * 24: # 2 days
-            deltat_str = str(self.deltat / 60 / 60) + " h"
+            deltat_str = "%.2f" % (self.deltat / 60 / 60) + " h"
         else:
-            deltat_str = str(self.deltat / 60 / 60 / 24) + " d"
+            deltat_str = "%.2f" % (self.deltat / 60 / 60 / 24) + " d"
         print("%79s" % deltat_str)
 
 
