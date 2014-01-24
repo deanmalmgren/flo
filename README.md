@@ -37,12 +37,13 @@ mkvirtualenv data-workflow
 pip install -r REQUIREMENTS
 ```
 
-3. Adjust `PYTHONPATH` and `PATH` so you can use the development
-   version.
+3. Adjust `PYTHONPATH`, `PATH`, and python environment so you can use
+   the development version.
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:`pwd`
 export PATH=$PATH:`pwd`/bin
+workon data-workflow
 ```
 
 4. Execute workflows in `examples/*/workflow.yaml`

@@ -4,6 +4,7 @@ import subprocess
 import time
 import hashlib
 import csv
+import StringIO
 
 import jinja2
 
@@ -43,7 +44,10 @@ class Task(object):
         # configured when the Task is added to the graph
         self.graph = None
 
-        # render the jinja template for the command
+        # save the original command strings in _command for checking
+        # the state of this command and render the jinja template for
+        # the command
+        self._command = self.command
         self.command = self.render_command_template()
 
     @property
@@ -79,6 +83,23 @@ class Task(object):
         storage, etc. Can address this with protocols like
         mysql:dbname/table or mongo:db/collection
         """
+        # probably a better way to get the protocol in python, but
+        # this is fast and easy
+        parts = element.split(':', 1)
+        if len(parts) == 2:
+            protocol = parts[0]
+        else:
+            protocol = "filesystem"
+
+        method = getattr(self, "get_%s_state" % protocol, None)
+        if method is None:
+            raise NotImplementedError(
+                "protocol '%s' is not implemented yet. Add it to the list here: "
+                "https://github.com/deanmalmgren/data-workflow/issues/15"
+            )
+        return method(element)
+
+    def get_filesystem_state(self, element):
         state = None
 
         # for filesystem protocols, dereference any soft links that
@@ -97,7 +118,6 @@ class Task(object):
                         with open(os.path.join(root, filename)) as stream:
                             state_hash.update(self.get_stream_state(stream))
                 state = state_hash.hexdigest()
-                
             else:
                 raise NotImplementedError((
                     "file a feature request to support this type of "
@@ -105,6 +125,20 @@ class Task(object):
                     "https://github.com/deanmalmgren/data-workflow/issues"
                 ))
         return state
+
+    def get_config_state(self, element):
+        state = None
+
+        # write the data for this task to a stream so that we can use
+        # the machinery in self.get_stream_state to calculate the
+        # state
+        msg = self.creates + str(self.depends) + str(self._command) + \
+              str(self.alias)
+        keys = self.command_attrs.keys()
+        keys.sort()
+        for k in keys:
+            msg += k + str(self.command_attrs[k])
+        return self.get_stream_state(StringIO.StringIO(msg))
 
     def state_in_sync(self, element):
         """Check the stored state of this element compared with the current
@@ -150,12 +184,11 @@ class Task(object):
                 if not self.state_in_sync(dep):
                     in_sync = False # but still iterate
         elif not self.state_in_sync(self.depends):
-            return False
+            in_sync = False
 
         # if the data about this task is out of sync, then this task
         # must be executed
-        #
-        # TODO: check the state of this task
+        in_sync = self.state_in_sync("config:"+self.id) and in_sync
 
         # otherwise, its in sync
         return in_sync
@@ -405,10 +438,11 @@ class TaskGraph(object):
         dummy_task = Task(creates="creates", command="command")
         dummy_task.graph = self
         for element, state in self.after_element_states.iteritems():
-            state = dummy_task.get_element_state(element)
             if state is None:
-                raise ElementNotFound(element)
-            self.after_element_states[element] = state
+                state = dummy_task.get_element_state(element)
+                if state is None:
+                    raise ElementNotFound(element)
+                self.after_element_states[element] = state
 
         if not dry_run:
             self.write_to_storage(self.after_element_states, self.abs_state_path)
