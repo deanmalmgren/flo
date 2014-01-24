@@ -46,6 +46,7 @@ def load_task_graph(config_path=None):
     for task_data in config_yaml:
         task = tasks.Task(**task_data)
         task_graph.add(task)
+    task_graph.link_dependencies()
 
     # load the state of each task's `creates` and `depends` elements
     task_graph.load_state()

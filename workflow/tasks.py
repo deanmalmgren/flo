@@ -307,7 +307,8 @@ class TaskGraph(object):
     duration_path = os.path.join(".workflow", "duration.csv")
 
     def __init__(self, config_path):
-        self.tasks = []
+        self.task_list = []
+        self.task_dict = {}
 
         # store paths once for all tasks.
         self.config_path = config_path
@@ -327,19 +328,24 @@ class TaskGraph(object):
         # store the time that this task takes
         self.task_durations = {}
 
+    def __iter__(self):
+        # TODO: when we figure out dependency tree, probably should do
+        # something considerably different here
+        return iter(self.task_list)
+
     def add(self, task):
-        self.tasks.append(task)
+        self.task_list.append(task)
+        if task.alias is not None:
+            self.task_dict[task.alias] = task
+        self.task_dict[task.creates] = task
         task.graph = self
 
+    def link_dependencies(self):
+        pass
         # TODO: when tasks are added, make sure the creates/aliases
         # are unique so there aren't any problems deciphering
         # information. Can take care of this when we start to worry
         # about task dependencies
-
-    def __iter__(self):
-        # TODO: when we figure out dependency tree, probably should do
-        # something considerably different here
-        return iter(self.tasks)
 
     def duration_string(self, duration):
         if duration < 10 * 60: # 10 minutes
@@ -354,7 +360,7 @@ class TaskGraph(object):
     def clean(self):
         """Run clean on every task and remove the state cache file
         """
-        for task in self.tasks:
+        for task in self.task_list:
             task.clean()
         if os.path.exists(self.abs_state_path):
             os.remove(self.abs_state_path)
@@ -364,7 +370,7 @@ class TaskGraph(object):
         # give an upper bound on the duration time, which would also
         # be very helpful. by starting at the seed tasks, we can
         # assume all other downstream tasks will also need to be run.
-        tasks = tasks or self.tasks
+        tasks = tasks or self.task_list
         duration = 0.0
         n_unknown = 0
         for task in tasks:
