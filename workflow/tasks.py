@@ -313,19 +313,25 @@ class TaskGraph(object):
             return "%.2f" % (duration / 60 / 60 / 24) + " d"
 
     def duration_message(self, tasks=None, color=colors.blue):
+        # TODO: when we implement the dependency graph, this can also
+        # give an upper bound on the duration time, which would also
+        # be very helpful. by starting at the seed tasks, we can
+        # assume all other downstream tasks will also need to be run.
         tasks = tasks or self.tasks
         duration = 0.0
-        unknown_tasks = 0
+        n_unknown = 0
         for task in tasks:
             try:
                 duration += self.task_durations[task.id]
             except KeyError:
-                unknown_tasks += 1
+                n_unknown += 1
         msg = ''
-        if unknown_tasks:
-            msg += "There are %d tasks with unknown durations.\n" % unknown_tasks
-        msg += "Estimated time for %d tasks: %s" % (
-            len(tasks) - unknown_tasks,
+        if n_unknown:
+            msg += "%d new tasks with unknown durations.\n" % n_unknown
+        msg += "At least %d tasks need to be executed,\n" % (
+            len(tasks) - n_unknown, 
+        )
+        msg += "which will take at least %s" % (
             self.duration_string(duration),
         )
         return color(msg)
