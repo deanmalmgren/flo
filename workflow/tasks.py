@@ -47,6 +47,11 @@ class Task(object):
         self.command = self.render_command_template()
 
     @property
+    def id(self):
+        """Canonical way to identify this Task"""
+        return self.alias or self.creates
+
+    @property
     def root_directory(self):
         """Easy access to the graph's root_directory, which is stored once for
         every task"""
@@ -205,16 +210,19 @@ class Task(object):
         # stop the clock and alert the user to the clock time spent
         # exeucting the task
         if start_time:
-            self.deltat = time.time() - start_time
-            if self.deltat < 10 * 60: # 10 minutes
-                deltat_str = "%.2f" % (self.deltat) + " s" 
-            elif self.deltat < 2 * 60 * 60: # 2 hours
-                deltat_str = "%.2f" % (self.deltat / 60) + " m"
-            elif self.deltat < 2 * 60 * 60 * 24: # 2 days
-                deltat_str = "%.2f" % (self.deltat / 60 / 60) + " h"
+            self.duration = time.time() - start_time
+            if self.duration < 10 * 60: # 10 minutes
+                duration_str = "%.2f" % (self.duration) + " s" 
+            elif self.duration < 2 * 60 * 60: # 2 hours
+                duration_str = "%.2f" % (self.duration / 60) + " m"
+            elif self.duration < 2 * 60 * 60 * 24: # 2 days
+                duration_str = "%.2f" % (self.duration / 60 / 60) + " h"
             else:
-                deltat_str = "%.2f" % (self.deltat / 60 / 60 / 24) + " d"
-            print("%79s" % deltat_str)
+                duration_str = "%.2f" % (self.duration / 60 / 60 / 24) + " d"
+            print("%79s" % duration_str)
+
+            # store the duration on the graph object
+            self.graph.task_durations[self.id] = self.duration
 
     def render_command_template(self, command=None):
         """Uses jinja template syntax to render the command from the other
@@ -254,8 +262,9 @@ class Task(object):
 class TaskGraph(object):
     """Simple graph implementation of a list of task nodes"""
 
-    # location of element state storage
+    # relative location of various storage locations
     state_path = os.path.join(".workflow", "state.csv")
+    duration_path = os.path.join(".workflow", "duration.csv")
 
     def __init__(self, config_path):
         self.tasks = []
@@ -275,6 +284,9 @@ class TaskGraph(object):
         self.before_element_states = {}
         self.after_element_states = {}
 
+        # store the time that this task takes
+        self.task_durations = {}
+
     def add(self, task):
         self.tasks.append(task)
         task.graph = self
@@ -290,28 +302,46 @@ class TaskGraph(object):
 
     @property
     def abs_state_path(self):
-        """Convenience property for accessing storage location"""
+        """Convenience property for accessing state storage location"""
         return os.path.join(self.root_directory, self.state_path)
+
+    @property
+    def abs_duration_path(self):
+        """Convenience property for accessing duration storage location"""
+        return os.path.join(self.root_directory, self.duration_path)
+
+    def _read_from_storage(self, dictionary, storage_location):
+        if os.path.exists(storage_location):
+            with open(storage_location) as stream:
+                reader = csv.reader(stream)
+                for row in reader:
+                    dictionary[row[0]] = row[1]
+
+    def _write_to_storage(self, dictionary, storage_location):
+        directory = os.path.dirname(storage_location)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        with open(storage_location, 'w') as stream:
+            writer = csv.writer(stream)
+            for item in dictionary.iteritems():
+                writer.writerow(item)
 
     def load_state(self):
         """Load the states of all elements (files, databases, etc). If the
-        state file hasn't been stored yet, nothing happens.
+        state file hasn't been stored yet, nothing happens. This also
+        loads the duration statistics on this task.
+
         """
-        if os.path.exists(self.abs_state_path):
-            with open(self.abs_state_path) as stream:
-                reader = csv.reader(stream)
-                for row in reader:
-                    self.before_element_states[row[0]] = row[1]
+        self._read_from_storage(self.before_element_states, self.abs_state_path)
+        self._read_from_storage(self.task_durations, self.abs_duration_path)
+
+        # typecast the task_durations
+        for task_id, duration in self.task_durations.iteritems():
+            self.task_durations[task_id] = float(duration)
 
     def save_state(self):
         """Save the states of all elements (files, databases, etc). If the
         state file hasn't been stored yet, it creates a new one.
         """
-        directory = os.path.dirname(self.abs_state_path)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-
-        with open(self.abs_state_path, 'w') as stream:
-            writer = csv.writer(stream)
-            for item in self.after_element_states.iteritems():
-                writer.writerow(item)
+        self._write_to_storage(self.after_element_states, self.abs_state_path)
+        self._write_to_storage(self.task_durations, self.abs_duration_path)
