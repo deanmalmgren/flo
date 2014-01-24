@@ -9,7 +9,9 @@ command:
 ---
 creates: data/reuters21578
 depends: data/reuters21578.tar.gz
-command: cd $(dirname {{creates}}) && tar xzf $(basename {{depends}})
+command:
+  - mkdir -p {{creates}}
+  - tar xzf {{depends}} -C {{creates}}
 
 # parse relevant crap out of SGML format http://www.daviddlewis.com/resources/testcollections/reuters21578/readme.txt
 ---
