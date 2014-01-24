@@ -22,5 +22,32 @@ extremely important and if others have thoughts on how to make things
 easier to understand or facilitate development, I'm open to any and
 all suggestions at this point.
 
+### Developing
 
+1. Fork and clone the project.
 
+```bash
+git clone https://github.com/YOUR-USERNAME/data-workflow.git
+```
+
+2. Create a virtual environment and install the dependencies with [virtualenvwrapper](http://virtualenvwrapper.readthedocs.org/en/latest/)
+
+```bash
+mkvirtualenv data-workflow
+pip install -r REQUIREMENTS
+```
+
+3. Adjust `PYTHONPATH` and `PATH` so you can use the development
+   version.
+
+```bash
+export PYTHONPATH=$PYTHONPATH:`pwd`
+export PATH=$PATH:`pwd`/bin
+```
+
+4. Execute workflows in `examples/*/workflow.yaml`
+
+```
+cd examples/serial
+workflow
+```
