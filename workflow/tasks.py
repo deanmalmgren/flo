@@ -214,7 +214,7 @@ class Task(object):
         # exeucting the task
         if start_time:
             self.duration = time.time() - start_time
-            print("%79s" % self.graph.duration_string(self.duration))
+            print(self.duration_message())
 
             # store the duration on the graph object
             self.graph.task_durations[self.id] = self.duration
@@ -234,6 +234,12 @@ class Task(object):
         template = env.from_string(command)
         return template.render(self.command_attrs)
 
+    def duration_message(self, color=colors.blue):
+        msg = "%79s" % self.graph.duration_string(self.duration)
+        if color:
+            msg = color(msg)
+        return msg
+
     def creates_message(self, color=colors.green):
         msg = self.creates
         if self.alias:
@@ -242,14 +248,14 @@ class Task(object):
             msg = color(msg)
         return msg
 
-    def command_message(self, command=None, color=colors.cyan):
+    def command_message(self, command=None, color=colors.bold_white):
         command = command or self.command
         if isinstance(command, (list, tuple)):
             msg = []
             for subcommand in command:
                 msg.append(self.command_message(command=subcommand, color=color))
             return '\n'.join(msg)
-        msg = "  |-> " + command
+        msg = "|-> " + command
         if color:
             msg = color(msg)
         return msg
@@ -306,7 +312,7 @@ class TaskGraph(object):
         else:
             return "%.2f" % (duration / 60 / 60 / 24) + " d"
 
-    def duration_message(self, tasks=None):
+    def duration_message(self, tasks=None, color=colors.blue):
         tasks = tasks or self.tasks
         duration = 0.0
         unknown_tasks = 0
@@ -319,10 +325,10 @@ class TaskGraph(object):
         if unknown_tasks:
             msg += "There are %d tasks with unknown durations.\n" % unknown_tasks
         msg += "Estimated time for %d tasks: %s" % (
-            len(tasks),
+            len(tasks) - unknown_tasks,
             self.duration_string(duration),
         )
-        return msg
+        return color(msg)
 
     @property
     def abs_state_path(self):
