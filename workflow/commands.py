@@ -54,6 +54,9 @@ def execute(force=False):
     if out_of_sync_tasks:
         print(task_graph.duration_message(out_of_sync_tasks))
         for task in task_graph:
+            # TODO: try to find better way to do this when we
+            # implement the dependency chains. this reruns the in_sync
+            # method which can be relatively slow for BIG data
             if not task.in_sync() or force:
                 task.execute()
         
