@@ -8,6 +8,7 @@ import csv
 import jinja2
 
 from .exceptions import InvalidTaskDefinition, ElementNotFound
+from . import colors
 
 class Task(object):
 
@@ -150,9 +151,26 @@ class Task(object):
 
         # otherwise, its in sync
         return True
-        
+
     def execute(self, command=None):
         """Run the specified task from the root of the workflow"""
+
+        # start of task execution
+        start_time = None
+        if command is None:
+
+            # useful message about starting this task and what it is
+            # called so users know how to re-call this task if they
+            # notice something fishy during execution.
+            msg = self.creates
+            if self.alias:
+                msg += " (%s)" % self.alias
+            print(colors.green(msg))
+
+            # start a timer so we can keep track of how long this task
+            # executes. Its important that we're timing watch time, not
+            # CPU time
+            start_time = time.time()
 
         # execute a sequence of commands by recursively calling this
         # method
@@ -160,41 +178,37 @@ class Task(object):
         if isinstance(command, (list, tuple)):
             for cmd in command:
                 self.execute(cmd)
-            return
-
-        # start a timer so we can keep track of how long this task
-        # executes. Its important that we're timing watch time, not
-        # CPU time
-        t = time.time()
 
         # if its not a list or a tuple, then this string should be
         # executed. Update the user on our progress so far, be sure to
         # change to the root directory of the workflow, and execute
         # the command. This takes inspiration from how
         # fabric.operations.local works http://bit.ly/1dQEgjl
-        print(command)
-        sys.stdout.flush()
-        wrapped_command = "cd %s && %s" % (self.root_directory, command)
-        pipe = subprocess.Popen(
-            wrapped_command, shell=True, stdout=sys.stdout, stderr=sys.stderr
-        )
-        (stdout, stderr) = pipe.communicate()
-        if pipe.returncode != 0:
-            sys.exit(pipe.returncode)
+        else:
+            print(colors.cyan("|-> "+command))
+            sys.stdout.flush()
+            wrapped_command = "cd %s && %s" % (self.root_directory, command)
+            pipe = subprocess.Popen(
+                wrapped_command, shell=True, 
+                stdout=sys.stdout, stderr=sys.stderr
+            )
+            pipe.communicate()
+            if pipe.returncode != 0:
+                sys.exit(pipe.returncode)
 
         # stop the clock and alert the user to the clock time spent
         # exeucting the task
-        self.deltat = time.time() - t
-        if self.deltat < 10 * 60: # 10 minutes
-            deltat_str = "%.2f" % (self.deltat) + " s" 
-        elif self.deltat < 2 * 60 * 60: # 2 hours
-            deltat_str = "%.2f" % (self.deltat / 60) + " m"
-        elif self.deltat < 2 * 60 * 60 * 24: # 2 days
-            deltat_str = "%.2f" % (self.deltat / 60 / 60) + " h"
-        else:
-            deltat_str = "%.2f" % (self.deltat / 60 / 60 / 24) + " d"
-        print("%79s" % deltat_str)
-
+        if start_time:
+            self.deltat = time.time() - start_time
+            if self.deltat < 10 * 60: # 10 minutes
+                deltat_str = "%.2f" % (self.deltat) + " s" 
+            elif self.deltat < 2 * 60 * 60: # 2 hours
+                deltat_str = "%.2f" % (self.deltat / 60) + " m"
+            elif self.deltat < 2 * 60 * 60 * 24: # 2 days
+                deltat_str = "%.2f" % (self.deltat / 60 / 60) + " h"
+            else:
+                deltat_str = "%.2f" % (self.deltat / 60 / 60 / 24) + " d"
+            print("%79s" % deltat_str)
 
     def render_command_template(self, command=None):
         """Uses jinja template syntax to render the command from the other
