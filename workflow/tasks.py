@@ -5,6 +5,7 @@ import time
 import hashlib
 import csv
 import StringIO
+import collections
 
 import jinja2
 
@@ -342,9 +343,31 @@ class TaskGraph(object):
         self.task_durations = {}
 
     def __iter__(self):
-        # TODO: when we figure out dependency tree, probably should do
-        # something considerably different here
-        return iter(self.task_list)
+        """Depth-first search of task dependencies, starting from the tasks
+        that do not have anything depending on them.
+        http://en.wikipedia.org/wiki/Breadth-first_search
+        """
+        # implement this starting from sinks and working our way
+        # upstream to make sure it is easy to specify particular tasks
+        # on the command line (which should only re-run dependencies
+        # as necessary)
+        horizon = collections.deque(self.get_sink_tasks())
+        done = set()
+        backwards_task_order = []
+        while horizon:
+            task = horizon.pop()
+            done.add(task)
+            backwards_task_order.append(task)
+            horizon.extend(task.upstream_tasks.difference(done))
+
+        # quick sanity check. probably not necessary and
+        # @stringertheory will give me shit
+        if len(done) != len(self.task_list):
+            raise Exception("whoa shit. depth-first search problem")
+        if len(backwards_task_order) != len(self.task_list):
+            raise Exception("whoa shit. depth-first search problem")
+            
+        return reversed(backwards_task_order)
 
     def add(self, task):
         """Connect the task to this TaskGraph instance. This stores the task
@@ -366,8 +389,9 @@ class TaskGraph(object):
         """Iterate over all tasks and make connections between tasks based on
         their dependencies.
         """
+        # TODO: if dependent_task is None, make sure it exists on the
+        # filesystem otherwise this Task is not properly defined
         for task in self.task_list:
-
             if isinstance(task.depends, (list, tuple)):
                 for dependency in task.depends:
                     dependent_task = self.task_dict.get(dependency, None)
@@ -375,6 +399,15 @@ class TaskGraph(object):
             else:
                 dependent_task = self.task_dict.get(task.depends, None)
                 task.add_task_dependency(dependent_task)
+
+    def get_sink_tasks(self):
+        """Get the set of tasks that do not have any dependencies.
+        """
+        sink_tasks = set()
+        for task in self.task_list:
+            if not task.downstream_tasks:
+                sink_tasks.add(task)
+        return sink_tasks
 
     def duration_string(self, duration):
         if duration < 10 * 60: # 10 minutes
