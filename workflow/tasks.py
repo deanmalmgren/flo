@@ -128,19 +128,19 @@ class Task(object):
         """Test whether this task is in sync with the stored state and
         needs to be executed
         """
+        in_sync = True
+
         # if the creates doesn't exist, its not in sync and the task
         # must be executed
         if not os.path.exists(os.path.join(self.root_directory, self.creates)):
-            return False
+            in_sync = False
 
         # if any of the dependencies are out of sync, then this task
         # must be executed
         if isinstance(self.depends, (list, tuple)):
-            in_sync = True
             for dep in self.depends:
                 if not self.state_in_sync(dep):
                     in_sync = False # but still iterate
-            return in_sync
         elif not self.state_in_sync(self.depends):
             return False
 
@@ -150,7 +150,7 @@ class Task(object):
         # TODO: check the state of this task
 
         # otherwise, its in sync
-        return True
+        return in_sync
 
     def run(self, command):
         """Run the specified shell command using Fabric-like behavior"""
