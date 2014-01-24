@@ -1,16 +1,41 @@
-from .parser import find_config_path, load_task_graph
+import time
+from distutils.util import strtobool
+
+from .parser import load_task_graph
+from . import colors
+
+def clean(force=False):
+    """Remove all `creates` targets defined in workflow
+    """
+
+    # load the task graph
+    task_graph = load_task_graph()
+
+    # print a warning message before removing all tasks
+    if not force:
+        print(colors.red(
+            "Please confirm that you want to delete the following files."
+        ))
+        time.sleep(0.5)
+        for task in task_graph:
+            print(task.creates_message())
+        yesno = raw_input(colors.red("Delete aforementioned files? [Y/n] "))
+        if yesno == '':
+            yesno = 'y'
+        if not strtobool(yesno):
+            return
+
+    # for every task in the task graph, remove the corresponding
+    # `creates` targets
+    for task in task_graph:
+        task.clean()
 
 def execute():
     """Execute the task workflow.
     """
 
-    # look for workflow configuration file
-    config_path = find_config_path()
-    
-    # read in tasks from workflow configuration file
-    # and infer dependency graph of tasks
-    task_graph = load_task_graph(config_path)
-    task_graph.load_state()
+    # load the task graph
+    task_graph = load_task_graph()
 
     # iterate through every task in the task graph and execute every
     # task that is out of sync with our last stored state

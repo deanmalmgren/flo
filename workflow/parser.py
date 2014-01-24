@@ -28,10 +28,14 @@ def find_config_path(config_filename=CONFIG_FILENAME):
         )
     return config_path
 
-def load_task_graph(config_path):
+def load_task_graph(config_path=None):
     """Load the task graph from the configuration file located at
     config_path
     """
+
+    # look for workflow configuration file if it isn't already
+    # specified
+    config_path = config_path or find_config_path()
 
     # load the data
     with open(config_path) as stream:
@@ -42,5 +46,8 @@ def load_task_graph(config_path):
     for task_data in config_yaml:
         task = tasks.Task(**task_data)
         task_graph.add(task)
+
+    # load the state of each task's `creates` and `depends` elements
+    task_graph.load_state()
 
     return task_graph

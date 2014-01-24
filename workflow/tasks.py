@@ -152,6 +152,22 @@ class Task(object):
         # otherwise, its in sync
         return True
 
+    def run(self, command):
+        """Run the specified shell command using Fabric-like behavior"""
+        wrapped_command = "cd %s && %s" % (self.root_directory, command)
+        pipe = subprocess.Popen(
+            wrapped_command, shell=True, 
+            stdout=sys.stdout, stderr=sys.stderr
+        )
+        pipe.communicate()
+        if pipe.returncode != 0:
+            sys.exit(pipe.returncode)
+
+    def clean(self):
+        """Remove the specified target"""
+        self.run("rm -rf %s" % self.creates)
+        print("removed %s" % self.creates_message())
+
     def execute(self, command=None):
         """Run the specified task from the root of the workflow"""
 
@@ -162,10 +178,7 @@ class Task(object):
             # useful message about starting this task and what it is
             # called so users know how to re-call this task if they
             # notice something fishy during execution.
-            msg = self.creates
-            if self.alias:
-                msg += " (%s)" % self.alias
-            print(colors.green(msg))
+            print(self.creates_message())
 
             # start a timer so we can keep track of how long this task
             # executes. Its important that we're timing watch time, not
@@ -185,16 +198,9 @@ class Task(object):
         # the command. This takes inspiration from how
         # fabric.operations.local works http://bit.ly/1dQEgjl
         else:
-            print(colors.cyan("|-> "+command))
+            print(self.command_message(command=command))
             sys.stdout.flush()
-            wrapped_command = "cd %s && %s" % (self.root_directory, command)
-            pipe = subprocess.Popen(
-                wrapped_command, shell=True, 
-                stdout=sys.stdout, stderr=sys.stderr
-            )
-            pipe.communicate()
-            if pipe.returncode != 0:
-                sys.exit(pipe.returncode)
+            self.run(command)
 
         # stop the clock and alert the user to the clock time spent
         # exeucting the task
@@ -224,6 +230,26 @@ class Task(object):
         env = jinja2.Environment()
         template = env.from_string(command)
         return template.render(self.command_attrs)
+
+    def creates_message(self, color=colors.green):
+        msg = self.creates
+        if self.alias:
+            msg += " (%s)" % self.alias
+        if color:
+            msg = color(msg)
+        return msg
+
+    def command_message(self, command=None, color=colors.cyan):
+        command = command or self.command
+        if isinstance(command, (list, tuple)):
+            msg = []
+            for subcommand in command:
+                msg.append(self.command_message(command=subcommand, color=color))
+            return '\n'.join(msg)
+        msg = "  |-> " + command
+        if color:
+            msg = color(msg)
+        return msg
 
 class TaskGraph(object):
     """Simple graph implementation of a list of task nodes"""
