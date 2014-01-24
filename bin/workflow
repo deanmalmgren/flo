@@ -9,7 +9,7 @@ import sys
 import os
 import ConfigParser
 
-from workflow.command_line_interface import main
+from workflow.commands import execute
 
 # setup the option parser
 parser = argparse.ArgumentParser(
@@ -17,4 +17,4 @@ parser = argparse.ArgumentParser(
 )
 args = parser.parse_args()
 
-main()
+execute()

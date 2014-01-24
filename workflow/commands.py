@@ -1,6 +1,8 @@
 from .parser import find_config_path, load_task_graph
 
-def main():
+def execute():
+    """Execute the task workflow.
+    """
 
     # look for workflow configuration file
     config_path = find_config_path()
