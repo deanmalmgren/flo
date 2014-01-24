@@ -19,12 +19,15 @@ parser = argparse.ArgumentParser(
 # can only specify one of --force or --dry-run
 group = parser.add_argument_group(title="Workflow execution")
 group.add_argument(
-    '-f', '--force', 
+    '-f', '--force',
     action="store_true",
-    help="Rerun entire workflow, regardless of task state.",
+    help=(
+        "Rerun entire workflow, regardless of task state. With --clean, "
+        "remove all `creates` targets in workflow without confirmation."
+    ),
 )
 group.add_argument(
-    '-d', '--dry-run', 
+    '-d', '--dry-run',
     action="store_true",
     help="Rerun entire workflow, regardless of task state.",
 )
@@ -32,19 +35,14 @@ group.add_argument(
 # can only specify one of --clean or --force-clean
 group = parser.add_argument_group(title="Cleaning up")
 group.add_argument(
-    '-c', '--clean', 
+    '-c', '--clean',
     action="store_true",
     help="Confirm before removing all `creates` targets defined in workflow.",
-)
-group.add_argument(
-    '--force-clean', 
-    action="store_true",
-    help="Remove all `creates` targets defined in workflow without confirmation.",
 )
 
 # parse arguemnts and run it
 args = parser.parse_args()
-if args.clean or args.force_clean:
-    clean(force=args.force_clean)
+if args.clean:
+    clean(force=args.force)
 else:
     execute(force=args.force, dry_run=args.dry_run)

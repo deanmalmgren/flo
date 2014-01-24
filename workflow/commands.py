@@ -4,19 +4,20 @@ from distutils.util import strtobool
 from .parser import load_task_graph
 from . import colors
 
-def clean(force=False):
+def clean(force=False, pause=0.5):
     """Remove all `creates` targets defined in workflow
     """
 
     # load the task graph
     task_graph = load_task_graph()
 
-    # print a warning message before removing all tasks
+    # print a warning message before removing all tasks. Briefly
+    # pause to make sure user sees the message at the top.
     if not force:
         print(colors.red(
             "Please confirm that you want to delete the following files."
         ))
-        time.sleep(0.5)
+        time.sleep(pause)
         for task in task_graph:
             print(task.creates_message())
         yesno = raw_input(colors.red("Delete aforementioned files? [Y/n] "))
