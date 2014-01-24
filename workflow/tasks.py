@@ -211,15 +211,7 @@ class Task(object):
         # exeucting the task
         if start_time:
             self.duration = time.time() - start_time
-            if self.duration < 10 * 60: # 10 minutes
-                duration_str = "%.2f" % (self.duration) + " s" 
-            elif self.duration < 2 * 60 * 60: # 2 hours
-                duration_str = "%.2f" % (self.duration / 60) + " m"
-            elif self.duration < 2 * 60 * 60 * 24: # 2 days
-                duration_str = "%.2f" % (self.duration / 60 / 60) + " h"
-            else:
-                duration_str = "%.2f" % (self.duration / 60 / 60 / 24) + " d"
-            print("%79s" % duration_str)
+            print("%79s" % self.graph.duration_string(self.duration))
 
             # store the duration on the graph object
             self.graph.task_durations[self.id] = self.duration
@@ -296,9 +288,38 @@ class TaskGraph(object):
         # information. Can take care of this when we start to worry
         # about task dependencies
 
-
     def __iter__(self):
+        # TODO: when we figure out dependency tree, probably should do
+        # something considerably different here
         return iter(self.tasks)
+
+    def duration_string(self, duration):
+        if duration < 10 * 60: # 10 minutes
+            return "%.2f" % (duration) + " s" 
+        elif duration < 2 * 60 * 60: # 2 hours
+            return "%.2f" % (duration / 60) + " m"
+        elif duration < 2 * 60 * 60 * 24: # 2 days
+            return "%.2f" % (duration / 60 / 60) + " h"
+        else:
+            return "%.2f" % (duration / 60 / 60 / 24) + " d"
+
+    def duration_message(self, tasks=None):
+        tasks = tasks or self.tasks
+        duration = 0.0
+        unknown_tasks = 0
+        for task in tasks:
+            try:
+                duration += self.task_durations[task.id]
+            except KeyError:
+                unknown_tasks += 1
+        msg = ''
+        if unknown_tasks:
+            msg += "There are %d tasks with unknown durations.\n" % unknown_tasks
+        msg += "Estimated time for %d tasks: %s" % (
+            len(tasks),
+            self.duration_string(duration),
+        )
+        return msg
 
     @property
     def abs_state_path(self):
