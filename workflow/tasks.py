@@ -260,6 +260,12 @@ class Task(object):
             msg = color(msg)
         return msg
 
+    def __repr__(self):
+        return '\n'.join([
+            self.creates_message(),
+            self.command_message()
+        ])
+
 class TaskGraph(object):
     """Simple graph implementation of a list of task nodes"""
 
@@ -346,14 +352,14 @@ class TaskGraph(object):
         """Convenience property for accessing duration storage location"""
         return os.path.join(self.root_directory, self.duration_path)
 
-    def _read_from_storage(self, dictionary, storage_location):
+    def read_from_storage(self, dictionary, storage_location):
         if os.path.exists(storage_location):
             with open(storage_location) as stream:
                 reader = csv.reader(stream)
                 for row in reader:
                     dictionary[row[0]] = row[1]
 
-    def _write_to_storage(self, dictionary, storage_location):
+    def write_to_storage(self, dictionary, storage_location):
         directory = os.path.dirname(storage_location)
         if not os.path.exists(directory):
             os.makedirs(directory)
@@ -368,14 +374,14 @@ class TaskGraph(object):
         loads the duration statistics on this task.
 
         """
-        self._read_from_storage(self.before_element_states, self.abs_state_path)
-        self._read_from_storage(self.task_durations, self.abs_duration_path)
+        self.read_from_storage(self.before_element_states, self.abs_state_path)
+        self.read_from_storage(self.task_durations, self.abs_duration_path)
 
         # typecast the task_durations
         for task_id, duration in self.task_durations.iteritems():
             self.task_durations[task_id] = float(duration)
 
-    def save_state(self):
+    def save_state(self, dry_run=False):
         """Save the states of all elements (files, databases, etc). If the
         state file hasn't been stored yet, it creates a new one.
         """
@@ -396,5 +402,6 @@ class TaskGraph(object):
                 raise ElementNotFound(element)
             self.after_element_states[element] = state
 
-        self._write_to_storage(self.after_element_states, self.abs_state_path)
-        self._write_to_storage(self.task_durations, self.abs_duration_path)
+        if not dry_run:
+            self.write_to_storage(self.after_element_states, self.abs_state_path)
+        self.write_to_storage(self.task_durations, self.abs_duration_path)
