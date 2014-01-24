@@ -3,6 +3,7 @@ import os
 import subprocess
 import time
 import hashlib
+import csv
 
 import jinja2
 
@@ -50,22 +51,22 @@ class Task(object):
         every task"""
         return self.graph.root_directory
 
-    def calculate_hash(self, stream, block_size=2**20):
+    def get_stream_state(self, stream, block_size=2**20):
         """Read in a stream in relatively small `block_size`s to make sure we
         won't have memory problems on BIG DATA streams.
         http://stackoverflow.com/a/1131255/564709
         """
-        stream_hash = hashlib.sha1()
+        state = hashlib.sha1()
         while True:
             data = stream.read(block_size)
             if not data:
                 break
-            stream_hash.update(data)
-        return stream_hash.hexdigest()
+            state.update(data)
+        return state.hexdigest()
 
-    def hash_in_sync(self, element):
-        """Check the stored hash of this element compared with the current
-        hash of this element. If they are the same, then this element
+    def state_in_sync(self, element):
+        """Check the stored state of this element compared with the current
+        state of this element. If they are the same, then this element
         is in_sync.
         """
 
@@ -75,26 +76,52 @@ class Task(object):
         if element is None:
             return True
 
-        # Get the stored hash value if it exists. If it doesn't exist,
+        # Get the stored state value if it exists. If it doesn't exist,
         # then automatically consider this element out of sync
-        stored_hash = None
+        stored_state = self.graph.before_element_states.get(element, None)
 
-        # Get the current hash of this element. If the element does
+        # Get the current state of this element. If the element does
         # not exist, throw an error.
         # 
         # TODO: This should be able to accomodate files stored on the
-        # filesystem AS WELL AS databases, database tables, cloud storage, etc.
-        current_hash = None
-        element_path = os.path.join(self.root_directory, element)
+        # filesystem AS WELL AS databases, database tables, cloud
+        # storage, etc. Can address this with protocols like
+        # mysql:dbname/table or mongo:db/collection
+        current_state = None
+
+        # for filesystem protocols, dereference any soft links that
+        # the element may point to and calculate the state from
+        element_path = os.path.realpath(
+            os.path.join(self.root_directory, element)
+        )
         if os.path.exists(element_path):
-            with open(element_path) as stream:
-                current_hash = self.calculate_hash(stream)
+            if os.path.isfile(element_path):
+                with open(element_path) as stream:
+                    current_state = self.get_stream_state(stream)
+            elif os.path.isdir(element_path):
+                state = hashlib.sha1()
+                for root, directories, filenames in os.walk(element_path):
+                    for filename in filenames:
+                        with open(os.path.join(root, filename)) as stream:
+                            state.update(self.get_stream_state(stream))
+                current_state = state.hexdigest()
+                
+            else:
+                raise NotImplementedError((
+                    "file a feature request to support this type of "
+                    "element "
+                    "https://github.com/deanmalmgren/data-workflow/issues"
+                ))
 
-        if current_hash is None:
+        # At this point, the current state should be *something* or we
+        # should throw an error. Otherwise, store this in our after
+        # element states to be saved later
+        if current_state is None:
             raise ElementNotFound(element)
+        self.graph.after_element_states[element] = current_state
 
-        # element is in_sync if the stored and current hashes are the same
-        return stored_hash == current_hash
+        # element is in_sync if the stored and current states are the same
+        return stored_state == current_state
 
     def in_sync(self):
         """Test whether this task is in sync with the stored state and
@@ -108,16 +135,18 @@ class Task(object):
         # if any of the dependencies are out of sync, then this task
         # must be executed
         if isinstance(self.depends, (list, tuple)):
+            in_sync = True
             for dep in self.depends:
-                if not self.hash_in_sync(dep):
-                    return False
-        elif not self.hash_in_sync(self.depends):
+                if not self.state_in_sync(dep):
+                    in_sync = False # but still iterate
+            return in_sync
+        elif not self.state_in_sync(self.depends):
             return False
 
         # if the data about this task is out of sync, then this task
         # must be executed
         #
-        # TODO: check the hash of this task
+        # TODO: check the state of this task
 
         # otherwise, its in sync
         return True
@@ -185,14 +214,64 @@ class Task(object):
 class TaskGraph(object):
     """Simple graph implementation of a list of task nodes"""
 
+    # location of element state storage
+    state_path = os.path.join(".workflow", "state.csv")
+
     def __init__(self, config_path):
         self.tasks = []
+
+        # store paths once for all tasks.
         self.config_path = config_path
         self.root_directory = os.path.dirname(config_path)
+
+        # Store the local in_sync state which doesn't change during a
+        # run. These dictionaries store {element: state} pairs for
+        # every element that is in this workflow. The
+        # before_element_states read in the state stored locally in
+        # .workflow/storage.tsv and the after_element_states read the
+        # state calculated just before that element is run. At the end
+        # of the workflow, the after_element_states are dumped to
+        # storage as necessary. 
+        self.before_element_states = {}
+        self.after_element_states = {}
 
     def add(self, task):
         self.tasks.append(task)
         task.graph = self
 
+        # TODO: when tasks are added, make sure the creates/aliases
+        # are unique so there aren't any problems deciphering
+        # information. Can take care of this when we start to worry
+        # about task dependencies
+
+
     def __iter__(self):
         return iter(self.tasks)
+
+    @property
+    def abs_state_path(self):
+        """Convenience property for accessing storage location"""
+        return os.path.join(self.root_directory, self.state_path)
+
+    def load_state(self):
+        """Load the states of all elements (files, databases, etc). If the
+        state file hasn't been stored yet, nothing happens.
+        """
+        if os.path.exists(self.abs_state_path):
+            with open(self.abs_state_path) as stream:
+                reader = csv.reader(stream)
+                for row in reader:
+                    self.before_element_states[row[0]] = row[1]
+
+    def save_state(self):
+        """Save the states of all elements (files, databases, etc). If the
+        state file hasn't been stored yet, it creates a new one.
+        """
+        directory = os.path.dirname(self.abs_state_path)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        with open(self.abs_state_path, 'w') as stream:
+            writer = csv.writer(stream)
+            for item in self.after_element_states.iteritems():
+                writer.writerow(item)

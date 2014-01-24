@@ -8,6 +8,7 @@ def main():
     # read in tasks from workflow configuration file
     # and infer dependency graph of tasks
     task_graph = load_task_graph(config_path)
+    task_graph.load_state()
 
     # iterate through every task in the task graph and execute every
     # task that is out of sync with our last stored state
@@ -21,3 +22,7 @@ def main():
     # needed to be run
     if not did_task:
         print("No tasks were run in the workflow defined in '%s'" % config_path)
+        
+    # otherwise, we need to recalculate hashes for everything that is
+    # out of sync
+    task_graph.save_state()

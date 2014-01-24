@@ -5,7 +5,7 @@ command:
   - mkdir -p $(dirname {{creates}})
   - curl http://www.daviddlewis.com/resources/testcollections/reuters21578/reuters21578.tar.gz > {{creates}}
 
-# extract
+# extract the raw data
 ---
 creates: data/reuters21578
 depends: data/reuters21578.tar.gz
