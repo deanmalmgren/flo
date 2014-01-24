@@ -72,4 +72,4 @@ def execute(force=False, dry_run=False):
         
     # otherwise, we need to recalculate hashes for everything that is
     # out of sync
-    task_graph.save_state()
+    task_graph.save_state(dry_run=dry_run)
