@@ -9,12 +9,25 @@ import sys
 import os
 import ConfigParser
 
-from workflow.commands import execute
+from workflow.commands import execute, clean
 
 # setup the option parser
 parser = argparse.ArgumentParser(
     description=__doc__,
 )
+parser.add_argument(
+    '-c', '--clean', 
+    action="store_true",
+    help="Confirm before removing all `creates` targets defined in workflow.",
+)
+parser.add_argument(
+    '--force-clean', 
+    action="store_true",
+    help="Remove all `creates` targets defined in workflow without confirmation.",
+)
 args = parser.parse_args()
 
-execute()
+if args.clean or args.force_clean:
+    clean(force=args.force_clean)
+else:
+    execute()
