@@ -30,7 +30,7 @@ def clean(force=False):
     for task in task_graph:
         task.clean()
 
-def execute():
+def execute(force=False):
     """Execute the task workflow.
     """
 
@@ -41,14 +41,20 @@ def execute():
     # task that is out of sync with our last stored state
     did_task = False
     for task in task_graph:
-        if not task.in_sync():
+
+        # regardless of whether we force the execution of the command,
+        # run the in_sync method, which calculates the state of the
+        # task and all `creates` / `depends` elements
+        if not task.in_sync() or force:
             task.execute()
             did_task = True
 
     # if no tasks were executed, then alert the user that nothing
     # needed to be run
     if not did_task:
-        print("No tasks were run in the workflow defined in '%s'" % config_path)
+        print("No tasks were run in the workflow defined in '%s'" % (
+            task_graph.config_path,
+        ))
         
     # otherwise, we need to recalculate hashes for everything that is
     # out of sync

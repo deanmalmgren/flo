@@ -16,6 +16,11 @@ parser = argparse.ArgumentParser(
     description=__doc__,
 )
 parser.add_argument(
+    '--force', 
+    action="store_true",
+    help="Rerun entire workflow, regardless of task state.",
+)
+parser.add_argument(
     '-c', '--clean', 
     action="store_true",
     help="Confirm before removing all `creates` targets defined in workflow.",
@@ -30,4 +35,4 @@ args = parser.parse_args()
 if args.clean or args.force_clean:
     clean(force=args.force_clean)
 else:
-    execute()
+    execute(force=args.force)
