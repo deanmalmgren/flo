@@ -107,3 +107,7 @@ projects where a cloud solution is unnecessarily overkill.
 ### LONI Pipeline
 
 Meh. http://pipeline.bmap.ucla.edu/
+
+### Predictive Modeling Markup Language (PMML)
+
+PMML is a language to define workflows in data analysis. There appear to be many tools that will execute PMML workflows, for example [Augustus](https://code.google.com/p/augustus/) and [Zementis](http://aws.amazon.com/customerapps/1583?_encoding=UTF8&jiveRedirect=1) for executing on Amazon Web Services. It appears to be geared more toward developing robust, "enterprise" workflows as opposed to rapid development.
