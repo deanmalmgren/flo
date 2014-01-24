@@ -39,6 +39,16 @@
   makes analysis pipelines much easier to understand and, at least in
   my experience, usually makes intermediate results reusable and easy
   to spot-check.
+  * @stringertheory mentioned the ability to work on "one file at a
+    time". Perhaps this package could encourage patterns that make
+    that possible, just like how scrapy's pipeline processes one
+    document at a time
+  * perhaps have an opinion about development patterns to facilitate
+    rapid development? make it clear how to do this most effectively
+
+* @bo-peng: What about being able to deal with test/dev data vs
+  production data?
+
 
 ### nice to haves
 
