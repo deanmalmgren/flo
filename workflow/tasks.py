@@ -8,7 +8,7 @@ import StringIO
 
 import jinja2
 
-from .exceptions import InvalidTaskDefinition, ElementNotFound
+from .exceptions import InvalidTaskDefinition, ElementNotFound, NonUniqueTask
 from . import colors
 
 class Task(object):
@@ -44,6 +44,12 @@ class Task(object):
         # configured when the Task is added to the graph
         self.graph = None
 
+        # create some data structures for storing the set of tasks on
+        # which this task depends (upstream_tasks) on what depends on
+        # it (downstream_tasks)
+        self.downstream_tasks = set()
+        self.upstream_tasks = set()        
+
         # save the original command strings in _command for checking
         # the state of this command and render the jinja template for
         # the command
@@ -60,6 +66,13 @@ class Task(object):
         """Easy access to the graph's root_directory, which is stored once for
         every task"""
         return self.graph.root_directory
+
+    def add_task_dependency(self, depends_on):
+        if depends_on is None:
+            return
+        else:
+            self.upstream_tasks.add(depends_on)
+            depends_on.downstream_tasks.add(self)
 
     def get_stream_state(self, stream, block_size=2**20):
         """Read in a stream in relatively small `block_size`s to make sure we
@@ -334,18 +347,34 @@ class TaskGraph(object):
         return iter(self.task_list)
 
     def add(self, task):
+        """Connect the task to this TaskGraph instance. This stores the task
+        in the TaskGraph.task_list and puts it in the
+        TaskGraph.task_dict, keyed by task.creates and task.alias (if
+        it exists).
+        """
+        task.graph = self
         self.task_list.append(task)
         if task.alias is not None:
+            if self.task_dict.has_key(task.alias):
+                raise NonUniqueTask("task `alias` '%s' is not unique"%task.alias)
             self.task_dict[task.alias] = task
+        if self.task_dict.has_key(task.creates):
+            raise NonUniqueTask("task `creates` '%s' is not unique"%task.creates)
         self.task_dict[task.creates] = task
-        task.graph = self
 
     def link_dependencies(self):
-        pass
-        # TODO: when tasks are added, make sure the creates/aliases
-        # are unique so there aren't any problems deciphering
-        # information. Can take care of this when we start to worry
-        # about task dependencies
+        """Iterate over all tasks and make connections between tasks based on
+        their dependencies.
+        """
+        for task in self.task_list:
+
+            if isinstance(task.depends, (list, tuple)):
+                for dependency in task.depends:
+                    dependent_task = self.task_dict.get(dependency, None)
+                    task.add_task_dependency(dependent_task)
+            else:
+                dependent_task = self.task_dict.get(task.depends, None)
+                task.add_task_dependency(dependent_task)
 
     def duration_string(self, duration):
         if duration < 10 * 60: # 10 minutes
