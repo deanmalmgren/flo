@@ -37,21 +37,32 @@ def execute(force=False):
     # load the task graph
     task_graph = load_task_graph()
 
-    # iterate through every task in the task graph and execute every
-    # task that is out of sync with our last stored state
-    did_task = False
+    # iterate through every task in the task graph and find the set of
+    # tasks that have to be executed. we do this first so we can alert
+    # the user as to how long this workflow will take
+    out_of_sync_tasks = []
     for task in task_graph:
 
         # regardless of whether we force the execution of the command,
         # run the in_sync method, which calculates the state of the
         # task and all `creates` / `depends` elements
         if not task.in_sync() or force:
-            task.execute()
-            did_task = True
+            out_of_sync_tasks.append(task)
 
+    # report the minimum amount of time this will take to execute and
+    # execute all tasks
+    if out_of_sync_tasks:
+        print(task_graph.duration_message(out_of_sync_tasks))
+        for task in task_graph:
+            # TODO: try to find better way to do this when we
+            # implement the dependency chains. this reruns the in_sync
+            # method which can be relatively slow for BIG data
+            if not task.in_sync() or force:
+                task.execute()
+        
     # if no tasks were executed, then alert the user that nothing
     # needed to be run
-    if not did_task:
+    else:
         print("No tasks were run in the workflow defined in '%s'" % (
             task_graph.config_path,
         ))

@@ -47,6 +47,11 @@ class Task(object):
         self.command = self.render_command_template()
 
     @property
+    def id(self):
+        """Canonical way to identify this Task"""
+        return self.alias or self.creates
+
+    @property
     def root_directory(self):
         """Easy access to the graph's root_directory, which is stored once for
         every task"""
@@ -65,6 +70,42 @@ class Task(object):
             state.update(data)
         return state.hexdigest()
 
+    def get_element_state(self, element):
+        """Get the current state of this element. If the element does
+        not exist, throw an error.
+        
+        TODO: This should be able to accomodate files stored on the
+        filesystem AS WELL AS databases, database tables, cloud
+        storage, etc. Can address this with protocols like
+        mysql:dbname/table or mongo:db/collection
+        """
+        state = None
+
+        # for filesystem protocols, dereference any soft links that
+        # the element may point to and calculate the state from
+        element_path = os.path.realpath(
+            os.path.join(self.root_directory, element)
+        )
+        if os.path.exists(element_path):
+            if os.path.isfile(element_path):
+                with open(element_path) as stream:
+                    state = self.get_stream_state(stream)
+            elif os.path.isdir(element_path):
+                state_hash = hashlib.sha1()
+                for root, directories, filenames in os.walk(element_path):
+                    for filename in filenames:
+                        with open(os.path.join(root, filename)) as stream:
+                            state_hash.update(self.get_stream_state(stream))
+                state = state_hash.hexdigest()
+                
+            else:
+                raise NotImplementedError((
+                    "file a feature request to support this type of "
+                    "element "
+                    "https://github.com/deanmalmgren/data-workflow/issues"
+                ))
+        return state
+
     def state_in_sync(self, element):
         """Check the stored state of this element compared with the current
         state of this element. If they are the same, then this element
@@ -81,44 +122,11 @@ class Task(object):
         # then automatically consider this element out of sync
         stored_state = self.graph.before_element_states.get(element, None)
 
-        # Get the current state of this element. If the element does
-        # not exist, throw an error.
-        # 
-        # TODO: This should be able to accomodate files stored on the
-        # filesystem AS WELL AS databases, database tables, cloud
-        # storage, etc. Can address this with protocols like
-        # mysql:dbname/table or mongo:db/collection
-        current_state = None
+        # get the current state of the file just before runtime
+        current_state = self.get_element_state(element)
 
-        # for filesystem protocols, dereference any soft links that
-        # the element may point to and calculate the state from
-        element_path = os.path.realpath(
-            os.path.join(self.root_directory, element)
-        )
-        if os.path.exists(element_path):
-            if os.path.isfile(element_path):
-                with open(element_path) as stream:
-                    current_state = self.get_stream_state(stream)
-            elif os.path.isdir(element_path):
-                state = hashlib.sha1()
-                for root, directories, filenames in os.walk(element_path):
-                    for filename in filenames:
-                        with open(os.path.join(root, filename)) as stream:
-                            state.update(self.get_stream_state(stream))
-                current_state = state.hexdigest()
-                
-            else:
-                raise NotImplementedError((
-                    "file a feature request to support this type of "
-                    "element "
-                    "https://github.com/deanmalmgren/data-workflow/issues"
-                ))
-
-        # At this point, the current state should be *something* or we
-        # should throw an error. Otherwise, store this in our after
-        # element states to be saved later
-        if current_state is None:
-            raise ElementNotFound(element)
+        # store the after element state here. If its none, its updated
+        # at the very end
         self.graph.after_element_states[element] = current_state
 
         # element is in_sync if the stored and current states are the same
@@ -128,19 +136,19 @@ class Task(object):
         """Test whether this task is in sync with the stored state and
         needs to be executed
         """
+        in_sync = True
+
         # if the creates doesn't exist, its not in sync and the task
         # must be executed
         if not os.path.exists(os.path.join(self.root_directory, self.creates)):
-            return False
+            in_sync = False
 
         # if any of the dependencies are out of sync, then this task
         # must be executed
         if isinstance(self.depends, (list, tuple)):
-            in_sync = True
             for dep in self.depends:
                 if not self.state_in_sync(dep):
                     in_sync = False # but still iterate
-            return in_sync
         elif not self.state_in_sync(self.depends):
             return False
 
@@ -150,7 +158,7 @@ class Task(object):
         # TODO: check the state of this task
 
         # otherwise, its in sync
-        return True
+        return in_sync
 
     def run(self, command):
         """Run the specified shell command using Fabric-like behavior"""
@@ -205,16 +213,11 @@ class Task(object):
         # stop the clock and alert the user to the clock time spent
         # exeucting the task
         if start_time:
-            self.deltat = time.time() - start_time
-            if self.deltat < 10 * 60: # 10 minutes
-                deltat_str = "%.2f" % (self.deltat) + " s" 
-            elif self.deltat < 2 * 60 * 60: # 2 hours
-                deltat_str = "%.2f" % (self.deltat / 60) + " m"
-            elif self.deltat < 2 * 60 * 60 * 24: # 2 days
-                deltat_str = "%.2f" % (self.deltat / 60 / 60) + " h"
-            else:
-                deltat_str = "%.2f" % (self.deltat / 60 / 60 / 24) + " d"
-            print("%79s" % deltat_str)
+            self.duration = time.time() - start_time
+            print(self.duration_message())
+
+            # store the duration on the graph object
+            self.graph.task_durations[self.id] = self.duration
 
     def render_command_template(self, command=None):
         """Uses jinja template syntax to render the command from the other
@@ -231,6 +234,12 @@ class Task(object):
         template = env.from_string(command)
         return template.render(self.command_attrs)
 
+    def duration_message(self, color=colors.blue):
+        msg = "%79s" % self.graph.duration_string(self.duration)
+        if color:
+            msg = color(msg)
+        return msg
+
     def creates_message(self, color=colors.green):
         msg = self.creates
         if self.alias:
@@ -239,14 +248,14 @@ class Task(object):
             msg = color(msg)
         return msg
 
-    def command_message(self, command=None, color=colors.cyan):
+    def command_message(self, command=None, color=colors.bold_white):
         command = command or self.command
         if isinstance(command, (list, tuple)):
             msg = []
             for subcommand in command:
                 msg.append(self.command_message(command=subcommand, color=color))
             return '\n'.join(msg)
-        msg = "  |-> " + command
+        msg = "|-> " + command
         if color:
             msg = color(msg)
         return msg
@@ -254,8 +263,9 @@ class Task(object):
 class TaskGraph(object):
     """Simple graph implementation of a list of task nodes"""
 
-    # location of element state storage
+    # relative location of various storage locations
     state_path = os.path.join(".workflow", "state.csv")
+    duration_path = os.path.join(".workflow", "duration.csv")
 
     def __init__(self, config_path):
         self.tasks = []
@@ -275,6 +285,9 @@ class TaskGraph(object):
         self.before_element_states = {}
         self.after_element_states = {}
 
+        # store the time that this task takes
+        self.task_durations = {}
+
     def add(self, task):
         self.tasks.append(task)
         task.graph = self
@@ -284,34 +297,104 @@ class TaskGraph(object):
         # information. Can take care of this when we start to worry
         # about task dependencies
 
-
     def __iter__(self):
+        # TODO: when we figure out dependency tree, probably should do
+        # something considerably different here
         return iter(self.tasks)
+
+    def duration_string(self, duration):
+        if duration < 10 * 60: # 10 minutes
+            return "%.2f" % (duration) + " s" 
+        elif duration < 2 * 60 * 60: # 2 hours
+            return "%.2f" % (duration / 60) + " m"
+        elif duration < 2 * 60 * 60 * 24: # 2 days
+            return "%.2f" % (duration / 60 / 60) + " h"
+        else:
+            return "%.2f" % (duration / 60 / 60 / 24) + " d"
+
+    def duration_message(self, tasks=None, color=colors.blue):
+        # TODO: when we implement the dependency graph, this can also
+        # give an upper bound on the duration time, which would also
+        # be very helpful. by starting at the seed tasks, we can
+        # assume all other downstream tasks will also need to be run.
+        tasks = tasks or self.tasks
+        duration = 0.0
+        n_unknown = 0
+        for task in tasks:
+            try:
+                duration += self.task_durations[task.id]
+            except KeyError:
+                n_unknown += 1
+        msg = ''
+        if n_unknown:
+            msg += "%d new tasks with unknown durations.\n" % n_unknown
+        msg += "At least %d tasks need to be executed,\n" % (
+            len(tasks) - n_unknown, 
+        )
+        msg += "which will take at least %s" % (
+            self.duration_string(duration),
+        )
+        return color(msg)
 
     @property
     def abs_state_path(self):
-        """Convenience property for accessing storage location"""
+        """Convenience property for accessing state storage location"""
         return os.path.join(self.root_directory, self.state_path)
+
+    @property
+    def abs_duration_path(self):
+        """Convenience property for accessing duration storage location"""
+        return os.path.join(self.root_directory, self.duration_path)
+
+    def _read_from_storage(self, dictionary, storage_location):
+        if os.path.exists(storage_location):
+            with open(storage_location) as stream:
+                reader = csv.reader(stream)
+                for row in reader:
+                    dictionary[row[0]] = row[1]
+
+    def _write_to_storage(self, dictionary, storage_location):
+        directory = os.path.dirname(storage_location)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        with open(storage_location, 'w') as stream:
+            writer = csv.writer(stream)
+            for item in dictionary.iteritems():
+                writer.writerow(item)
 
     def load_state(self):
         """Load the states of all elements (files, databases, etc). If the
-        state file hasn't been stored yet, nothing happens.
+        state file hasn't been stored yet, nothing happens. This also
+        loads the duration statistics on this task.
+
         """
-        if os.path.exists(self.abs_state_path):
-            with open(self.abs_state_path) as stream:
-                reader = csv.reader(stream)
-                for row in reader:
-                    self.before_element_states[row[0]] = row[1]
+        self._read_from_storage(self.before_element_states, self.abs_state_path)
+        self._read_from_storage(self.task_durations, self.abs_duration_path)
+
+        # typecast the task_durations
+        for task_id, duration in self.task_durations.iteritems():
+            self.task_durations[task_id] = float(duration)
 
     def save_state(self):
         """Save the states of all elements (files, databases, etc). If the
         state file hasn't been stored yet, it creates a new one.
         """
-        directory = os.path.dirname(self.abs_state_path)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
 
-        with open(self.abs_state_path, 'w') as stream:
-            writer = csv.writer(stream)
-            for item in self.after_element_states.iteritems():
-                writer.writerow(item)
+        # before saving the after_element_states, replace any None
+        # values with a recalculated state. This happens, for example,
+        # when a `creates` target is made the first time it executes
+        # the task. At this point, every target should have a state!
+        # 
+        # TODO: this is a bit of a hack to be able to use Task's
+        # get_element_state method. Should probably find a better
+        # place to organize this code so we don't have to do that
+        dummy_task = Task(creates="creates", command="command")
+        dummy_task.graph = self
+        for element, state in self.after_element_states.iteritems():
+            state = dummy_task.get_element_state(element)
+            if state is None:
+                raise ElementNotFound(element)
+            self.after_element_states[element] = state
+
+        self._write_to_storage(self.after_element_states, self.abs_state_path)
+        self._write_to_storage(self.task_durations, self.abs_duration_path)
