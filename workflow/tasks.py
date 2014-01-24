@@ -70,6 +70,42 @@ class Task(object):
             state.update(data)
         return state.hexdigest()
 
+    def get_element_state(self, element):
+        """Get the current state of this element. If the element does
+        not exist, throw an error.
+        
+        TODO: This should be able to accomodate files stored on the
+        filesystem AS WELL AS databases, database tables, cloud
+        storage, etc. Can address this with protocols like
+        mysql:dbname/table or mongo:db/collection
+        """
+        state = None
+
+        # for filesystem protocols, dereference any soft links that
+        # the element may point to and calculate the state from
+        element_path = os.path.realpath(
+            os.path.join(self.root_directory, element)
+        )
+        if os.path.exists(element_path):
+            if os.path.isfile(element_path):
+                with open(element_path) as stream:
+                    state = self.get_stream_state(stream)
+            elif os.path.isdir(element_path):
+                state_hash = hashlib.sha1()
+                for root, directories, filenames in os.walk(element_path):
+                    for filename in filenames:
+                        with open(os.path.join(root, filename)) as stream:
+                            state_hash.update(self.get_stream_state(stream))
+                state = state_hash.hexdigest()
+                
+            else:
+                raise NotImplementedError((
+                    "file a feature request to support this type of "
+                    "element "
+                    "https://github.com/deanmalmgren/data-workflow/issues"
+                ))
+        return state
+
     def state_in_sync(self, element):
         """Check the stored state of this element compared with the current
         state of this element. If they are the same, then this element
@@ -86,44 +122,11 @@ class Task(object):
         # then automatically consider this element out of sync
         stored_state = self.graph.before_element_states.get(element, None)
 
-        # Get the current state of this element. If the element does
-        # not exist, throw an error.
-        # 
-        # TODO: This should be able to accomodate files stored on the
-        # filesystem AS WELL AS databases, database tables, cloud
-        # storage, etc. Can address this with protocols like
-        # mysql:dbname/table or mongo:db/collection
-        current_state = None
+        # get the current state of the file just before runtime
+        current_state = self.get_element_state(element)
 
-        # for filesystem protocols, dereference any soft links that
-        # the element may point to and calculate the state from
-        element_path = os.path.realpath(
-            os.path.join(self.root_directory, element)
-        )
-        if os.path.exists(element_path):
-            if os.path.isfile(element_path):
-                with open(element_path) as stream:
-                    current_state = self.get_stream_state(stream)
-            elif os.path.isdir(element_path):
-                state = hashlib.sha1()
-                for root, directories, filenames in os.walk(element_path):
-                    for filename in filenames:
-                        with open(os.path.join(root, filename)) as stream:
-                            state.update(self.get_stream_state(stream))
-                current_state = state.hexdigest()
-                
-            else:
-                raise NotImplementedError((
-                    "file a feature request to support this type of "
-                    "element "
-                    "https://github.com/deanmalmgren/data-workflow/issues"
-                ))
-
-        # At this point, the current state should be *something* or we
-        # should throw an error. Otherwise, store this in our after
-        # element states to be saved later
-        if current_state is None:
-            raise ElementNotFound(element)
+        # store the after element state here. If its none, its updated
+        # at the very end
         self.graph.after_element_states[element] = current_state
 
         # element is in_sync if the stored and current states are the same
@@ -364,5 +367,22 @@ class TaskGraph(object):
         """Save the states of all elements (files, databases, etc). If the
         state file hasn't been stored yet, it creates a new one.
         """
+
+        # before saving the after_element_states, replace any None
+        # values with a recalculated state. This happens, for example,
+        # when a `creates` target is made the first time it executes
+        # the task. At this point, every target should have a state!
+        # 
+        # TODO: this is a bit of a hack to be able to use Task's
+        # get_element_state method. Should probably find a better
+        # place to organize this code so we don't have to do that
+        dummy_task = Task(creates="creates", command="command")
+        dummy_task.graph = self
+        for element, state in self.after_element_states.iteritems():
+            state = dummy_task.get_element_state(element)
+            if state is None:
+                raise ElementNotFound(element)
+            self.after_element_states[element] = state
+
         self._write_to_storage(self.after_element_states, self.abs_state_path)
         self._write_to_storage(self.task_durations, self.abs_duration_path)
