@@ -48,7 +48,9 @@ def execute():
     # if no tasks were executed, then alert the user that nothing
     # needed to be run
     if not did_task:
-        print("No tasks were run in the workflow defined in '%s'" % config_path)
+        print("No tasks were run in the workflow defined in '%s'" % (
+            task_graph.config_path,
+        ))
         
     # otherwise, we need to recalculate hashes for everything that is
     # out of sync
