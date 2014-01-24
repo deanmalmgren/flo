@@ -25,8 +25,14 @@ workflow --force
 # Another common use case is to just delete the entire workflow
 # without rerunning anything. This should delete all targets that are
 # defined in the workflow; anything that matches a `creates` in
-# `workflow.yaml`
+# `workflow.yaml`. BEFORE deleting everything, this should verify that
+# a user actually wants to remove all these files.
 workflow --clean
+
+
+# Similar to above, but do not require a user to verify that they want
+# to delete everything
+workflow --force-clean
 
 
 # Another common use case during development is to run the workflow up
