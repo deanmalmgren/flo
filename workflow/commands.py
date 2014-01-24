@@ -30,7 +30,7 @@ def clean(force=False):
     for task in task_graph:
         task.clean()
 
-def execute(force=False):
+def execute(force=False, dry_run=False):
     """Execute the task workflow.
     """
 
@@ -58,7 +58,10 @@ def execute(force=False):
             # implement the dependency chains. this reruns the in_sync
             # method which can be relatively slow for BIG data
             if not task.in_sync() or force:
-                task.execute()
+                if not dry_run:
+                    task.execute()
+                else:
+                    print(task)
         
     # if no tasks were executed, then alert the user that nothing
     # needed to be run

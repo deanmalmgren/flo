@@ -260,6 +260,12 @@ class Task(object):
             msg = color(msg)
         return msg
 
+    def __repr__(self):
+        return '\n'.join([
+            self.creates_message(),
+            self.command_message()
+        ])
+
 class TaskGraph(object):
     """Simple graph implementation of a list of task nodes"""
 
