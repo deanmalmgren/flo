@@ -15,6 +15,16 @@ from workflow.commands import execute
 parser = argparse.ArgumentParser(
     description=__doc__,
 )
+parser.add_argument(
+    '-c', '--clean', 
+    action="store_true",
+    help="Confirm before removing all `creates` targets defined in workflow.",
+)
+parser.add_argument(
+    '--force-clean', 
+    action="store_true",
+    help="Remove all `creates` targets defined in workflow without confirmation.",
+)
 args = parser.parse_args()
 
 execute()
