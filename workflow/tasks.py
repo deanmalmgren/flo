@@ -318,6 +318,14 @@ class TaskGraph(object):
         else:
             return "%.2f" % (duration / 60 / 60 / 24) + " d"
 
+    def clean(self):
+        """Run clean on every task and remove the state cache file
+        """
+        for task in self.tasks:
+            task.clean()
+        if os.path.exists(self.abs_state_path):
+            os.remove(self.abs_state_path)
+
     def duration_message(self, tasks=None, color=colors.blue):
         # TODO: when we implement the dependency graph, this can also
         # give an upper bound on the duration time, which would also

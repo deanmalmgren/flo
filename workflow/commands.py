@@ -28,8 +28,7 @@ def clean(force=False, pause=0.5):
 
     # for every task in the task graph, remove the corresponding
     # `creates` targets
-    for task in task_graph:
-        task.clean()
+    task_graph.clean()
 
 def execute(force=False, dry_run=False):
     """Execute the task workflow.
