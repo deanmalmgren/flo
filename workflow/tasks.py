@@ -345,7 +345,6 @@ class TaskGraph(object):
         task_order = []
         popmethod = getattr(horizon, popmethod)
         while horizon:
-            print [t.id for t in horizon]
             task = popmethod()
             horizon_set.discard(task)
             done.add(task)
@@ -469,40 +468,37 @@ class TaskGraph(object):
 
     def duration_message(self, tasks=None, color=colors.blue):
         tasks = tasks or self.task_list
-        min_duration, min_unknown = 0.0, 0
+        min_duration = 0.0
         for task in tasks:
-            try:
-                min_duration += self.task_durations[task.id]
-            except KeyError:
-                min_unknown += 1
-        max_duration, max_unknown = 0.0, 0
+            min_duration += self.task_durations.get(task.id, 0.0)
+        max_duration, n_unknown, n_tasks = 0.0, 0, 0
         for task in self.iter_bfs(tasks):
+            n_tasks += 1
             try:
                 max_duration += self.task_durations[task.id]
             except KeyError:
-                max_unknown += 1
+                n_unknown += 1
 
         msg = ''
         if len(tasks) == len(self.task_list):
-            if min_unknown>0:
+            if n_unknown>0:
                 msg += "%d new tasks with unknown durations.\n" % (
-                    min_unknown, 
+                    n_unknown, 
                 )
             msg += "The remaining %d tasks need to be executed,\n" % (
-                len(tasks) - min_unknown, 
+                len(tasks) - n_unknown, 
             )
             msg += "which will take %s." % (
                 self.duration_string(min_duration),
             )
         else:
-            if min_unknown>0 or max_unknown>0:
-                msg += "%d-%d new tasks with unknown durations.\n" % (
-                    min_unknown, 
-                    max_unknown,
+            if n_unknown>0:
+                msg += "%d new tasks with unknown durations.\n" % (
+                    n_unknown, 
                 )
             msg += "The remaining %d-%d tasks need to be executed,\n" % (
-                len(tasks) - max_unknown, 
-                len(tasks) - min_unknown, 
+                len(tasks),
+                n_tasks,
             )
             msg += "which will take between %s and %s." % (
                 self.duration_string(min_duration),
