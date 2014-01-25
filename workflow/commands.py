@@ -1,3 +1,4 @@
+import os
 import time
 from distutils.util import strtobool
 
@@ -68,7 +69,7 @@ def execute(force=False, dry_run=False):
     # needed to be run
     else:
         print("No tasks were run in the workflow defined in '%s'" % (
-            task_graph.config_path,
+            os.path.relpath(task_graph.config_path, os.getcwd())
         ))
         
     # otherwise, we need to recalculate hashes for everything that is
