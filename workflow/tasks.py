@@ -478,32 +478,19 @@ class TaskGraph(object):
                 max_duration += self.task_durations[task.id]
             except KeyError:
                 n_unknown += 1
-
         msg = ''
-        if len(tasks) == len(self.task_list):
-            if n_unknown>0:
-                msg += "%d new tasks with unknown durations.\n" % (
-                    n_unknown, 
-                )
-            msg += "The remaining %d tasks need to be executed,\n" % (
-                len(tasks) - n_unknown, 
+        if n_unknown>0:
+            msg += "%d new tasks with unknown durations.\n" % (
+                n_unknown, 
             )
-            msg += "which will take %s." % (
-                self.duration_string(min_duration),
-            )
-        else:
-            if n_unknown>0:
-                msg += "%d new tasks with unknown durations.\n" % (
-                    n_unknown, 
-                )
-            msg += "The remaining %d-%d tasks need to be executed,\n" % (
-                len(tasks),
-                n_tasks,
-            )
-            msg += "which will take between %s and %s." % (
-                self.duration_string(min_duration),
-                self.duration_string(max_duration),
-            )
+        msg += "The remaining %d-%d tasks need to be executed,\n" % (
+            len(tasks),
+            n_tasks,
+        )
+        msg += "which will take between %s and %s." % (
+            self.duration_string(min_duration),
+            self.duration_string(max_duration),
+        )
         if color:
             msg = color(msg)
         return msg
