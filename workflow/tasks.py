@@ -441,7 +441,6 @@ class TaskGraph(object):
             # now add the task dependency
             task.add_task_dependency(dependent_task)
 
-
     def link_dependencies(self):
         """Iterate over all tasks and make connections between tasks based on
         their dependencies.

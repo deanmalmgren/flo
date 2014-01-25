@@ -29,6 +29,8 @@ def clean(force=False, export=False, pause=0.5):
 
     # for every task in the task graph, remove the corresponding
     # `creates` targets
+    if export:
+        print("cd %s" % task_graph.root_directory)
     task_graph.clean(export=export)
 
 def execute(force=False, dry_run=False, export=False):
@@ -53,7 +55,9 @@ def execute(force=False, dry_run=False, export=False):
     # report the minimum amount of time this will take to execute and
     # execute all tasks
     if out_of_sync_tasks:
-        if not export:
+        if export:
+            print("cd %s" % task_graph.root_directory)
+        else:
             print(task_graph.duration_message(out_of_sync_tasks))
         for task in task_graph.iter_bfs(out_of_sync_tasks):
             # We unfortunately need (?) to re-run in_sync here in case
