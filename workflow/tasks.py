@@ -215,9 +215,12 @@ class Task(object):
         if pipe.returncode != 0:
             sys.exit(pipe.returncode)
 
+    def clean_command(self):
+        return "rm -rf %s" % self.creates
+
     def clean(self):
         """Remove the specified target"""
-        self.run("rm -rf %s" % self.creates)
+        self.run(self.clean_command())
         print("removed %s" % self.creates_message())
 
     def execute(self, command=None):
@@ -460,13 +463,19 @@ class TaskGraph(object):
         else:
             return "%.2f" % (duration / 60 / 60 / 24) + " d"
 
-    def clean(self):
+    def clean(self, export=False):
         """Run clean on every task and remove the state cache file
         """
         for task in self.task_list:
-            task.clean()
+            if export:
+                print(task.clean_command())
+            else:
+                task.clean()
         if os.path.exists(self.abs_state_path):
-            os.remove(self.abs_state_path)
+            if export:
+                print("rm -f %s" % self.abs_state_path)
+            else:
+                os.remove(self.abs_state_path)
 
     def duration_message(self, tasks=None, color=colors.blue):
         tasks = tasks or self.task_list

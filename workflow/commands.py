@@ -5,7 +5,7 @@ from distutils.util import strtobool
 from .parser import load_task_graph
 from . import colors
 
-def clean(force=False, pause=0.5):
+def clean(force=False, export=False, pause=0.5):
     """Remove all `creates` targets defined in workflow
     """
 
@@ -29,7 +29,7 @@ def clean(force=False, pause=0.5):
 
     # for every task in the task graph, remove the corresponding
     # `creates` targets
-    task_graph.clean()
+    task_graph.clean(export=export)
 
 def execute(force=False, dry_run=False, export=False):
     """Execute the task workflow.

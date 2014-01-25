@@ -51,7 +51,7 @@ parser.add_argument(
 args = parser.parse_args()
 try:
     if args.clean:
-        clean(force=args.force)
+        clean(force=args.force, export=args.export)
     else:
         execute(force=args.force, dry_run=args.dry_run, export=args.export)
 except CommandLineException, e:
