@@ -14,12 +14,12 @@ def clean(force=False, pause=0.5):
 
     # print a warning message before removing all tasks. Briefly
     # pause to make sure user sees the message at the top.
-    if not force:
+    if not (force or export):
         print(colors.red(
             "Please confirm that you want to delete the following files."
         ))
         time.sleep(pause)
-        for task in task_graph:
+        for task in task_graph.task_list:
             print(task.creates_message())
         yesno = raw_input(colors.red("Delete aforementioned files? [Y/n] "))
         if yesno == '':
