@@ -54,9 +54,10 @@ def execute(force=False, dry_run=False):
     if out_of_sync_tasks:
         print(task_graph.duration_message(out_of_sync_tasks))
         for task in task_graph.iter_bfs(out_of_sync_tasks):
-            # TODO: try to find better way to do this when we
-            # implement the dependency chains. this reruns the in_sync
-            # method which can be relatively slow for BIG data
+            # We unfortunately need (?) to re-run in_sync here in case
+            # things change during the course of a run. This is not
+            # ideal but makes it possible to estimate the duration of
+            # a workflow run, which is pretty valuable
             if not task.in_sync() or force:
                 if not dry_run:
                     task.execute()
