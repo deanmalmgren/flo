@@ -1,3 +1,4 @@
+import os
 import time
 from distutils.util import strtobool
 
@@ -41,7 +42,7 @@ def execute(force=False, dry_run=False):
     # tasks that have to be executed. we do this first so we can alert
     # the user as to how long this workflow will take
     out_of_sync_tasks = []
-    for task in task_graph:
+    for task in task_graph.task_list:
 
         # regardless of whether we force the execution of the command,
         # run the in_sync method, which calculates the state of the
@@ -53,10 +54,11 @@ def execute(force=False, dry_run=False):
     # execute all tasks
     if out_of_sync_tasks:
         print(task_graph.duration_message(out_of_sync_tasks))
-        for task in task_graph:
-            # TODO: try to find better way to do this when we
-            # implement the dependency chains. this reruns the in_sync
-            # method which can be relatively slow for BIG data
+        for task in task_graph.iter_bfs(out_of_sync_tasks):
+            # We unfortunately need (?) to re-run in_sync here in case
+            # things change during the course of a run. This is not
+            # ideal but makes it possible to estimate the duration of
+            # a workflow run, which is pretty valuable
             if not task.in_sync() or force:
                 if not dry_run:
                     task.execute()
@@ -67,7 +69,7 @@ def execute(force=False, dry_run=False):
     # needed to be run
     else:
         print("No tasks were run in the workflow defined in '%s'" % (
-            task_graph.config_path,
+            os.path.relpath(task_graph.config_path, os.getcwd())
         ))
         
     # otherwise, we need to recalculate hashes for everything that is

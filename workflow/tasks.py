@@ -5,10 +5,11 @@ import time
 import hashlib
 import csv
 import StringIO
+import collections
 
 import jinja2
 
-from .exceptions import InvalidTaskDefinition, ElementNotFound
+from .exceptions import InvalidTaskDefinition, ElementNotFound, NonUniqueTask
 from . import colors
 
 class Task(object):
@@ -44,6 +45,12 @@ class Task(object):
         # configured when the Task is added to the graph
         self.graph = None
 
+        # create some data structures for storing the set of tasks on
+        # which this task depends (upstream_tasks) on what depends on
+        # it (downstream_tasks)
+        self.downstream_tasks = set()
+        self.upstream_tasks = set()        
+
         # save the original command strings in _command for checking
         # the state of this command and render the jinja template for
         # the command
@@ -60,6 +67,10 @@ class Task(object):
         """Easy access to the graph's root_directory, which is stored once for
         every task"""
         return self.graph.root_directory
+
+    def add_task_dependency(self, depends_on):
+        self.upstream_tasks.add(depends_on)
+        depends_on.downstream_tasks.add(self)
 
     def get_stream_state(self, stream, block_size=2**20):
         """Read in a stream in relatively small `block_size`s to make sure we
@@ -307,7 +318,8 @@ class TaskGraph(object):
     duration_path = os.path.join(".workflow", "duration.csv")
 
     def __init__(self, config_path):
-        self.tasks = []
+        self.task_list = []
+        self.task_dict = {}
 
         # store paths once for all tasks.
         self.config_path = config_path
@@ -327,19 +339,114 @@ class TaskGraph(object):
         # store the time that this task takes
         self.task_durations = {}
 
+    def _iter_helper(self, tasks, popmethod, updownstream):
+        horizon = collections.deque(tasks)
+        done, horizon_set = set(), set(tasks)
+        task_order = []
+        popmethod = getattr(horizon, popmethod)
+        while horizon:
+            task = popmethod()
+            horizon_set.discard(task)
+            done.add(task)
+            task_order.append(task)
+            updownset = getattr(task, updownstream)
+            for task in updownset.difference(done):
+                if task not in horizon_set:
+                    horizon.append(task)
+        return task_order
+
+    def iter_bfs(self, tasks=None):
+        """Breadth-first search of task dependencies, starting from the tasks
+        that do not depend on anything.
+        http://en.wikipedia.org/wiki/Breadth-first_search
+        """
+        # implement this starting from sources and working our way
+        # downstream to make sure it is easy to specify particular tasks
+        # on the command line (which should only re-run dependencies
+        # as necessary)
+        return self._iter_helper(
+            tasks or self.get_source_tasks(),
+            "popleft",
+            "downstream_tasks",
+        )
+
+    def iter_dfs(self, tasks=None):
+        """Depth-first search of task dependencies, starting from the tasks
+        that do not have anything depending on them.
+        http://en.wikipedia.org/wiki/Depth-first_search
+        """
+        # implement this starting from sinks and working our way
+        # upstream to make sure it is easy to specify particular tasks
+        # on the command line (which should only re-run dependencies
+        # as necessary)
+        return reversed(self._iter_helper(
+            tasks or self.get_sink_tasks(),
+            "pop",
+            "upstream_tasks",
+        ))
+
+    def get_source_tasks(self):
+        """Get the set of tasks that do not depend on anything else.
+        """
+        sink_tasks = set()
+        for task in self.task_list:
+            if not task.upstream_tasks:
+                sink_tasks.add(task)
+        return sink_tasks
+
+    def get_sink_tasks(self):
+        """Get the set of tasks that do not have any dependencies.
+        """
+        sink_tasks = set()
+        for task in self.task_list:
+            if not task.downstream_tasks:
+                sink_tasks.add(task)
+        return sink_tasks
+
     def add(self, task):
-        self.tasks.append(task)
+        """Connect the task to this TaskGraph instance. This stores the task
+        in the TaskGraph.task_list and puts it in the
+        TaskGraph.task_dict, keyed by task.creates and task.alias (if
+        it exists).
+        """
         task.graph = self
+        self.task_list.append(task)
+        if task.alias is not None:
+            if self.task_dict.has_key(task.alias):
+                raise NonUniqueTask("task `alias` '%s' is not unique"%task.alias)
+            self.task_dict[task.alias] = task
+        if self.task_dict.has_key(task.creates):
+            raise NonUniqueTask("task `creates` '%s' is not unique"%task.creates)
+        self.task_dict[task.creates] = task
 
-        # TODO: when tasks are added, make sure the creates/aliases
-        # are unique so there aren't any problems deciphering
-        # information. Can take care of this when we start to worry
-        # about task dependencies
+    def _link_dependency_helper(self, task, dependency):
+        if dependency is not None:
+            dependent_task = self.task_dict.get(dependency, None)
 
-    def __iter__(self):
-        # TODO: when we figure out dependency tree, probably should do
-        # something considerably different here
-        return iter(self.tasks)
+            # if dependent_task is None, make sure it exists on the
+            # filesystem otherwise this Task is not properly defined
+            if dependent_task is None:
+                filename = os.path.join(self.root_directory, dependency)
+                if not os.path.exists(filename):
+                    raise InvalidTaskDefinition(
+                        "Unknown `depends` declaration '%s'" % dependency
+                    )
+                return
+            
+            # now add the task dependency
+            task.add_task_dependency(dependent_task)
+
+
+    def link_dependencies(self):
+        """Iterate over all tasks and make connections between tasks based on
+        their dependencies.
+        """
+        for task in self.task_list:
+            if isinstance(task.depends, (list, tuple)):
+                for dependency in task.depends:
+                    self._link_dependency_helper(task, dependency)
+            else:
+                self._link_dependency_helper(task, task.depends)
 
     def duration_string(self, duration):
         if duration < 10 * 60: # 10 minutes
@@ -354,34 +461,39 @@ class TaskGraph(object):
     def clean(self):
         """Run clean on every task and remove the state cache file
         """
-        for task in self.tasks:
+        for task in self.task_list:
             task.clean()
         if os.path.exists(self.abs_state_path):
             os.remove(self.abs_state_path)
 
     def duration_message(self, tasks=None, color=colors.blue):
-        # TODO: when we implement the dependency graph, this can also
-        # give an upper bound on the duration time, which would also
-        # be very helpful. by starting at the seed tasks, we can
-        # assume all other downstream tasks will also need to be run.
-        tasks = tasks or self.tasks
-        duration = 0.0
-        n_unknown = 0
+        tasks = tasks or self.task_list
+        min_duration = 0.0
         for task in tasks:
+            min_duration += self.task_durations.get(task.id, 0.0)
+        max_duration, n_unknown, n_tasks = 0.0, 0, 0
+        for task in self.iter_bfs(tasks):
+            n_tasks += 1
             try:
-                duration += self.task_durations[task.id]
+                max_duration += self.task_durations[task.id]
             except KeyError:
                 n_unknown += 1
         msg = ''
-        if n_unknown:
-            msg += "%d new tasks with unknown durations.\n" % n_unknown
-        msg += "At least %d tasks need to be executed,\n" % (
-            len(tasks) - n_unknown, 
+        if n_unknown>0:
+            msg += "%d new tasks with unknown durations.\n" % (
+                n_unknown, 
+            )
+        msg += "The remaining %d-%d tasks need to be executed,\n" % (
+            len(tasks),
+            n_tasks,
         )
-        msg += "which will take at least %s" % (
-            self.duration_string(duration),
+        msg += "which will take between %s and %s." % (
+            self.duration_string(min_duration),
+            self.duration_string(max_duration),
         )
-        return color(msg)
+        if color:
+            msg = color(msg)
+        return msg
 
     @property
     def abs_state_path(self):
