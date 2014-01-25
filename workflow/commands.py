@@ -59,7 +59,6 @@ def execute(force=False, dry_run=False):
             # method which can be relatively slow for BIG data
             if not task.in_sync() or force:
                 if not dry_run:
-                    print "WTF", task.id
                     task.execute()
                 else:
                     print(task)

@@ -69,11 +69,8 @@ class Task(object):
         return self.graph.root_directory
 
     def add_task_dependency(self, depends_on):
-        if depends_on is None:
-            return
-        else:
-            self.upstream_tasks.add(depends_on)
-            depends_on.downstream_tasks.add(self)
+        self.upstream_tasks.add(depends_on)
+        depends_on.downstream_tasks.add(self)
 
     def get_stream_state(self, stream, block_size=2**20):
         """Read in a stream in relatively small `block_size`s to make sure we
@@ -348,14 +345,15 @@ class TaskGraph(object):
         task_order = []
         popmethod = getattr(horizon, popmethod)
         while horizon:
+            print [t.id for t in horizon]
             task = popmethod()
-            horizon_set.remove(task)
+            horizon_set.discard(task)
             done.add(task)
             task_order.append(task)
             updownset = getattr(task, updownstream)
             for task in updownset.difference(done):
                 if task not in horizon_set:
-                    horizon.add(task)
+                    horizon.append(task)
         return task_order
 
     def iter_bfs(self, tasks=None):
@@ -422,20 +420,34 @@ class TaskGraph(object):
             raise NonUniqueTask("task `creates` '%s' is not unique"%task.creates)
         self.task_dict[task.creates] = task
 
+    def _link_dependency_helper(self, task, dependency):
+        if dependency is not None:
+            dependent_task = self.task_dict.get(dependency, None)
+
+            # if dependent_task is None, make sure it exists on the
+            # filesystem otherwise this Task is not properly defined
+            if dependent_task is None:
+                filename = os.path.join(self.root_directory, dependency)
+                if not os.path.exists(filename):
+                    raise InvalidTaskDefinition(
+                        "Unknown `depends` declaration '%s'" % dependency
+                    )
+                return
+            
+            # now add the task dependency
+            task.add_task_dependency(dependent_task)
+
+
     def link_dependencies(self):
         """Iterate over all tasks and make connections between tasks based on
         their dependencies.
         """
-        # TODO: if dependent_task is None, make sure it exists on the
-        # filesystem otherwise this Task is not properly defined
         for task in self.task_list:
             if isinstance(task.depends, (list, tuple)):
                 for dependency in task.depends:
-                    dependent_task = self.task_dict.get(dependency, None)
-                    task.add_task_dependency(dependent_task)
+                    self._link_dependency_helper(task, dependency)
             else:
-                dependent_task = self.task_dict.get(task.depends, None)
-                task.add_task_dependency(dependent_task)
+                self._link_dependency_helper(task, task.depends)
 
     def duration_string(self, duration):
         if duration < 10 * 60: # 10 minutes
