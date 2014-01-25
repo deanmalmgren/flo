@@ -10,6 +10,7 @@ import os
 import ConfigParser
 
 from workflow.commands import execute, clean
+from workflow.exceptions import CommandLineException
 
 # setup the option parser
 parser = argparse.ArgumentParser(
@@ -48,7 +49,11 @@ parser.add_argument(
 
 # parse arguemnts and run it
 args = parser.parse_args()
-if args.clean:
-    clean(force=args.force)
-else:
-    execute(force=args.force, dry_run=args.dry_run, export=args.export)
+try:
+    if args.clean:
+        clean(force=args.force)
+    else:
+        execute(force=args.force, dry_run=args.dry_run, export=args.export)
+except CommandLineException, e:
+    print(e)
+    sys.exit(1)
