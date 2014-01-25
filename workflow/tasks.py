@@ -72,6 +72,10 @@ class Task(object):
         self.upstream_tasks.add(depends_on)
         depends_on.downstream_tasks.add(self)
 
+    def reset_task_dependencies(self):
+        self.upstream_tasks.clear()
+        self.downstream_tasks.clear()
+
     def get_stream_state(self, stream, block_size=2**20):
         """Read in a stream in relatively small `block_size`s to make sure we
         won't have memory problems on BIG DATA streams.
@@ -423,6 +427,29 @@ class TaskGraph(object):
         if self.task_dict.has_key(task.creates):
             raise NonUniqueTask("task `creates` '%s' is not unique"%task.creates)
         self.task_dict[task.creates] = task
+
+    def subgraph_needed_for(self, task_ids):
+        """Find the subgraph of all dependencies to run these tasks"""
+        if not task_ids:
+            return self
+
+        # cast strings to task objects
+        tasks = [self.task_dict[task_id] for task_id in task_ids]
+
+        # add these tasks to the subgraph by iterating depth-first
+        # search upstream
+        subgraph = TaskGraph(self.config_path)
+        for task in self.iter_dfs(tasks):
+            subgraph.add(task)
+
+        # reset the task connections to prevent the workflow from
+        # going past the specified `creates` targets on the command
+        # line
+        for task in subgraph.task_list:
+            task.reset_task_dependencies()
+        subgraph.link_dependencies()
+        subgraph.load_state()
+        return subgraph
 
     def _link_dependency_helper(self, task, dependency):
         if dependency is not None:

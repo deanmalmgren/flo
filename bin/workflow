@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(
 
 # positional arguments
 parser.add_argument(
-    'tasks',
+    'task_ids',
     metavar='task',
     type=str,
     choices=get_available_tasks(),
@@ -41,7 +41,7 @@ parser.add_argument(
     '-d', '--dry-run',
     action="store_true",
     help=(
-        "Do not run workflow, just report which tasks woulc be run and how "
+        "Do not run workflow, just report which tasks would be run and how "
         "long it would take."
     ),
 )
@@ -64,7 +64,8 @@ try:
     if args.clean:
         clean(force=args.force, export=args.export)
     else:
-        execute(force=args.force, dry_run=args.dry_run, export=args.export)
+        execute(task_ids=args.task_ids, force=args.force, dry_run=args.dry_run,
+                export=args.export)
 except CommandLineException, e:
     print(e)
     sys.exit(1)
