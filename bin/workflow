@@ -9,12 +9,23 @@ import sys
 import os
 import ConfigParser
 
+from workflow.parser import get_available_tasks
 from workflow.commands import execute, clean
 from workflow.exceptions import CommandLineException
 
 # setup the option parser
 parser = argparse.ArgumentParser(
     description=__doc__,
+)
+
+# positional arguments
+parser.add_argument(
+    'tasks',
+    metavar='task',
+    type=str,
+    choices=get_available_tasks(),
+    nargs='*',
+    help='Specify particular tasks to run.',
 )
 
 # can only specify one of --force or --dry-run
