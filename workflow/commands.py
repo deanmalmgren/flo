@@ -31,7 +31,7 @@ def clean(force=False, pause=0.5):
     # `creates` targets
     task_graph.clean()
 
-def execute(force=False, dry_run=False):
+def execute(force=False, dry_run=False, export=False):
     """Execute the task workflow.
     """
 
@@ -53,17 +53,20 @@ def execute(force=False, dry_run=False):
     # report the minimum amount of time this will take to execute and
     # execute all tasks
     if out_of_sync_tasks:
-        print(task_graph.duration_message(out_of_sync_tasks))
+        if not export:
+            print(task_graph.duration_message(out_of_sync_tasks))
         for task in task_graph.iter_bfs(out_of_sync_tasks):
             # We unfortunately need (?) to re-run in_sync here in case
             # things change during the course of a run. This is not
             # ideal but makes it possible to estimate the duration of
             # a workflow run, which is pretty valuable
             if not task.in_sync() or force:
-                if not dry_run:
+                if not (dry_run or export):
                     task.execute()
-                else:
+                elif dry_run:
                     print(task)
+                elif export:
+                    print(task.command_message(color=None, pre=""))
         
     # if no tasks were executed, then alert the user that nothing
     # needed to be run
@@ -74,4 +77,5 @@ def execute(force=False, dry_run=False):
         
     # otherwise, we need to recalculate hashes for everything that is
     # out of sync
-    task_graph.save_state(dry_run=dry_run)
+    if not (dry_run or export):
+        task_graph.save_state()

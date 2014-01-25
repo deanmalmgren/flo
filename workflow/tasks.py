@@ -292,14 +292,16 @@ class Task(object):
             msg = color(msg)
         return msg
 
-    def command_message(self, command=None, color=colors.bold_white):
+    def command_message(self, command=None, color=colors.bold_white,
+                        pre="|-> "):
         command = command or self.command
         if isinstance(command, (list, tuple)):
             msg = []
             for subcommand in command:
-                msg.append(self.command_message(command=subcommand, color=color))
+                msg.append(self.command_message(command=subcommand, 
+                                                color=color, pre=pre))
             return '\n'.join(msg)
-        msg = "|-> " + command
+        msg = pre + command
         if color:
             msg = color(msg)
         return msg
@@ -534,7 +536,7 @@ class TaskGraph(object):
         for task_id, duration in self.task_durations.iteritems():
             self.task_durations[task_id] = float(duration)
 
-    def save_state(self, dry_run=False):
+    def save_state(self):
         """Save the states of all elements (files, databases, etc). If the
         state file hasn't been stored yet, it creates a new one.
         """
@@ -556,6 +558,5 @@ class TaskGraph(object):
                     raise ElementNotFound(element)
                 self.after_element_states[element] = state
 
-        if not dry_run:
-            self.write_to_storage(self.after_element_states, self.abs_state_path)
+        self.write_to_storage(self.after_element_states, self.abs_state_path)
         self.write_to_storage(self.task_durations, self.abs_duration_path)
