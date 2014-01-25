@@ -23,8 +23,9 @@ parser.add_argument(
     'task_ids',
     metavar='task',
     type=str,
+    action='append',
     choices=get_available_tasks(),
-    nargs='*',
+    nargs='?', # '*', this isn't working for some reason
     help='Specify particular tasks to run.',
 )
 
@@ -60,11 +61,18 @@ parser.add_argument(
 
 # parse arguemnts and run it
 args = parser.parse_args()
+
+# cast the task_ids 
+task_ids = args.task_ids
+if None in task_ids:
+    task_ids = None
+
+# execute the command
 try:
     if args.clean:
         clean(force=args.force, export=args.export)
     else:
-        execute(task_ids=args.task_ids, force=args.force, dry_run=args.dry_run,
+        execute(task_ids=task_ids, force=args.force, dry_run=args.dry_run,
                 export=args.export)
 except CommandLineException, e:
     print(e)
