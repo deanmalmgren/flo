@@ -18,12 +18,15 @@ parser = argparse.ArgumentParser(
     description=__doc__,
 )
 
-# positional arguments
+# make it possible for users to specify task_ids on the command line. 
+#
+# NOTE: for some reason, nargs='*' is not working when you don't
+# specify any tasks. Not sure if this is a pythong 2.7 problem or
+# what, but nothing seemed to work with this.
 parser.add_argument(
     'task_ids',
     metavar='task',
     type=str,
-    action='append',
     choices=get_available_tasks(),
     nargs='?', # '*', this isn't working for some reason
     help='Specify particular tasks to run.',
@@ -61,18 +64,11 @@ parser.add_argument(
 
 # parse arguemnts and run it
 args = parser.parse_args()
-
-# cast the task_ids 
-task_ids = args.task_ids
-if None in task_ids:
-    task_ids = None
-
-# execute the command
 try:
     if args.clean:
         clean(force=args.force, export=args.export)
     else:
-        execute(task_ids=task_ids, force=args.force, dry_run=args.dry_run,
+        execute(task_ids=args.task_ids, force=args.force, dry_run=args.dry_run,
                 export=args.export)
 except CommandLineException, e:
     print(e)
