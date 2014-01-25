@@ -215,9 +215,12 @@ class Task(object):
         if pipe.returncode != 0:
             sys.exit(pipe.returncode)
 
+    def clean_command(self):
+        return "rm -rf %s" % self.creates
+
     def clean(self):
         """Remove the specified target"""
-        self.run("rm -rf %s" % self.creates)
+        self.run(self.clean_command())
         print("removed %s" % self.creates_message())
 
     def execute(self, command=None):
@@ -292,14 +295,16 @@ class Task(object):
             msg = color(msg)
         return msg
 
-    def command_message(self, command=None, color=colors.bold_white):
+    def command_message(self, command=None, color=colors.bold_white,
+                        pre="|-> "):
         command = command or self.command
         if isinstance(command, (list, tuple)):
             msg = []
             for subcommand in command:
-                msg.append(self.command_message(command=subcommand, color=color))
+                msg.append(self.command_message(command=subcommand, 
+                                                color=color, pre=pre))
             return '\n'.join(msg)
-        msg = "|-> " + command
+        msg = pre + command
         if color:
             msg = color(msg)
         return msg
@@ -436,7 +441,6 @@ class TaskGraph(object):
             # now add the task dependency
             task.add_task_dependency(dependent_task)
 
-
     def link_dependencies(self):
         """Iterate over all tasks and make connections between tasks based on
         their dependencies.
@@ -458,13 +462,19 @@ class TaskGraph(object):
         else:
             return "%.2f" % (duration / 60 / 60 / 24) + " d"
 
-    def clean(self):
+    def clean(self, export=False):
         """Run clean on every task and remove the state cache file
         """
         for task in self.task_list:
-            task.clean()
+            if export:
+                print(task.clean_command())
+            else:
+                task.clean()
         if os.path.exists(self.abs_state_path):
-            os.remove(self.abs_state_path)
+            if export:
+                print("rm -f %s" % self.abs_state_path)
+            else:
+                os.remove(self.abs_state_path)
 
     def duration_message(self, tasks=None, color=colors.blue):
         tasks = tasks or self.task_list
@@ -534,7 +544,7 @@ class TaskGraph(object):
         for task_id, duration in self.task_durations.iteritems():
             self.task_durations[task_id] = float(duration)
 
-    def save_state(self, dry_run=False):
+    def save_state(self):
         """Save the states of all elements (files, databases, etc). If the
         state file hasn't been stored yet, it creates a new one.
         """
@@ -556,6 +566,5 @@ class TaskGraph(object):
                     raise ElementNotFound(element)
                 self.after_element_states[element] = state
 
-        if not dry_run:
-            self.write_to_storage(self.after_element_states, self.abs_state_path)
+        self.write_to_storage(self.after_element_states, self.abs_state_path)
         self.write_to_storage(self.task_durations, self.abs_duration_path)
