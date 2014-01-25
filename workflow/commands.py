@@ -41,7 +41,7 @@ def execute(force=False, dry_run=False):
     # tasks that have to be executed. we do this first so we can alert
     # the user as to how long this workflow will take
     out_of_sync_tasks = []
-    for task in task_graph:
+    for task in task_graph.task_list:
 
         # regardless of whether we force the execution of the command,
         # run the in_sync method, which calculates the state of the
@@ -53,12 +53,13 @@ def execute(force=False, dry_run=False):
     # execute all tasks
     if out_of_sync_tasks:
         print(task_graph.duration_message(out_of_sync_tasks))
-        for task in task_graph:
+        for task in task_graph.iter_bfs(out_of_sync_tasks):
             # TODO: try to find better way to do this when we
             # implement the dependency chains. this reruns the in_sync
             # method which can be relatively slow for BIG data
             if not task.in_sync() or force:
                 if not dry_run:
+                    print "WTF", task.id
                     task.execute()
                 else:
                     print(task)

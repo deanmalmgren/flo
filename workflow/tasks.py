@@ -342,32 +342,69 @@ class TaskGraph(object):
         # store the time that this task takes
         self.task_durations = {}
 
-    def __iter__(self):
+    def _iter_helper(self, tasks, popmethod, updownstream):
+        horizon = collections.deque(tasks)
+        done, horizon_set = set(), set(tasks)
+        task_order = []
+        popmethod = getattr(horizon, popmethod)
+        while horizon:
+            task = popmethod()
+            horizon_set.remove(task)
+            done.add(task)
+            task_order.append(task)
+            updownset = getattr(task, updownstream)
+            for task in updownset.difference(done):
+                if task not in horizon_set:
+                    horizon.add(task)
+        return task_order
+
+    def iter_bfs(self, tasks=None):
+        """Breadth-first search of task dependencies, starting from the tasks
+        that do not depend on anything.
+        http://en.wikipedia.org/wiki/Breadth-first_search
+        """
+        # implement this starting from sources and working our way
+        # downstream to make sure it is easy to specify particular tasks
+        # on the command line (which should only re-run dependencies
+        # as necessary)
+        return self._iter_helper(
+            tasks or self.get_source_tasks(),
+            "popleft",
+            "downstream_tasks",
+        )
+
+    def iter_dfs(self, tasks=None):
         """Depth-first search of task dependencies, starting from the tasks
         that do not have anything depending on them.
-        http://en.wikipedia.org/wiki/Breadth-first_search
+        http://en.wikipedia.org/wiki/Depth-first_search
         """
         # implement this starting from sinks and working our way
         # upstream to make sure it is easy to specify particular tasks
         # on the command line (which should only re-run dependencies
         # as necessary)
-        horizon = collections.deque(self.get_sink_tasks())
-        done = set()
-        backwards_task_order = []
-        while horizon:
-            task = horizon.pop()
-            done.add(task)
-            backwards_task_order.append(task)
-            horizon.extend(task.upstream_tasks.difference(done))
+        return reversed(self._iter_helper(
+            tasks or self.get_sink_tasks(),
+            "pop",
+            "upstream_tasks",
+        ))
 
-        # quick sanity check. probably not necessary and
-        # @stringertheory will give me shit
-        if len(done) != len(self.task_list):
-            raise Exception("whoa shit. depth-first search problem")
-        if len(backwards_task_order) != len(self.task_list):
-            raise Exception("whoa shit. depth-first search problem")
-            
-        return reversed(backwards_task_order)
+    def get_source_tasks(self):
+        """Get the set of tasks that do not depend on anything else.
+        """
+        sink_tasks = set()
+        for task in self.task_list:
+            if not task.upstream_tasks:
+                sink_tasks.add(task)
+        return sink_tasks
+
+    def get_sink_tasks(self):
+        """Get the set of tasks that do not have any dependencies.
+        """
+        sink_tasks = set()
+        for task in self.task_list:
+            if not task.downstream_tasks:
+                sink_tasks.add(task)
+        return sink_tasks
 
     def add(self, task):
         """Connect the task to this TaskGraph instance. This stores the task
@@ -400,15 +437,6 @@ class TaskGraph(object):
                 dependent_task = self.task_dict.get(task.depends, None)
                 task.add_task_dependency(dependent_task)
 
-    def get_sink_tasks(self):
-        """Get the set of tasks that do not have any dependencies.
-        """
-        sink_tasks = set()
-        for task in self.task_list:
-            if not task.downstream_tasks:
-                sink_tasks.add(task)
-        return sink_tasks
-
     def duration_string(self, duration):
         if duration < 10 * 60: # 10 minutes
             return "%.2f" % (duration) + " s" 
@@ -428,28 +456,49 @@ class TaskGraph(object):
             os.remove(self.abs_state_path)
 
     def duration_message(self, tasks=None, color=colors.blue):
-        # TODO: when we implement the dependency graph, this can also
-        # give an upper bound on the duration time, which would also
-        # be very helpful. by starting at the seed tasks, we can
-        # assume all other downstream tasks will also need to be run.
         tasks = tasks or self.task_list
-        duration = 0.0
-        n_unknown = 0
+        min_duration, min_unknown = 0.0, 0
         for task in tasks:
             try:
-                duration += self.task_durations[task.id]
+                min_duration += self.task_durations[task.id]
             except KeyError:
-                n_unknown += 1
+                min_unknown += 1
+        max_duration, max_unknown = 0.0, 0
+        for task in self.iter_bfs(tasks):
+            try:
+                max_duration += self.task_durations[task.id]
+            except KeyError:
+                max_unknown += 1
+
         msg = ''
-        if n_unknown:
-            msg += "%d new tasks with unknown durations.\n" % n_unknown
-        msg += "At least %d tasks need to be executed,\n" % (
-            len(tasks) - n_unknown, 
-        )
-        msg += "which will take at least %s" % (
-            self.duration_string(duration),
-        )
-        return color(msg)
+        if len(tasks) == len(self.task_list):
+            if min_unknown>0:
+                msg += "%d new tasks with unknown durations.\n" % (
+                    min_unknown, 
+                )
+            msg += "The remaining %d tasks need to be executed,\n" % (
+                len(tasks) - min_unknown, 
+            )
+            msg += "which will take %s." % (
+                self.duration_string(min_duration),
+            )
+        else:
+            if min_unknown>0 or max_unknown>0:
+                msg += "%d-%d new tasks with unknown durations.\n" % (
+                    min_unknown, 
+                    max_unknown,
+                )
+            msg += "The remaining %d-%d tasks need to be executed,\n" % (
+                len(tasks) - max_unknown, 
+                len(tasks) - min_unknown, 
+            )
+            msg += "which will take between %s and %s." % (
+                self.duration_string(min_duration),
+                self.duration_string(max_duration),
+            )
+        if color:
+            msg = color(msg)
+        return msg
 
     @property
     def abs_state_path(self):
