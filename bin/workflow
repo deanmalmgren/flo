@@ -10,7 +10,7 @@ import os
 import ConfigParser
 
 from workflow.parser import get_available_tasks
-from workflow.commands import execute, clean
+from workflow.commands import execute, clean, archive
 from workflow.exceptions import CommandLineException
 
 # setup the option parser
@@ -62,11 +62,28 @@ parser.add_argument(
     help="Confirm before removing all `creates` targets defined in workflow.",
 )
 
+# Here are a few handy commands for backing up a workflow and
+# restoring it. This will hopefully make debugging a lot easier! Can
+# only specify one of these options
+group = parser.add_mutually_exclusive_group()
+group.add_argument(
+    '--backup',
+    action="store_true",
+    help="Backup the current state of the workflow."
+)
+group.add_argument(
+    '--restore',
+    action="store_true",
+    help="Restore the state of the workflow."
+)
+
 # parse arguemnts and run it
 args = parser.parse_args()
 try:
     if args.clean:
         clean(force=args.force, export=args.export)
+    elif args.backup or args.restore:
+        archive(backup=args.backup, restore=args.restore)
     else:
         execute(task_id=args.task_id, force=args.force, dry_run=args.dry_run,
                 export=args.export)

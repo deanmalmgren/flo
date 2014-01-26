@@ -89,3 +89,10 @@ def execute(task_id=None, force=False, dry_run=False, export=False):
     # out of sync
     if not (dry_run or export):
         task_graph.save_state()
+
+def archive(backup=False, restore=False):
+    """Interact with archives of the workflow, by either backing it up or
+    restoring it from a previous backup.
+    """
+    pass
+
