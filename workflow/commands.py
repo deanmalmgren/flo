@@ -33,12 +33,18 @@ def clean(force=False, export=False, pause=0.5):
         print("cd %s" % task_graph.root_directory)
     task_graph.clean(export=export)
 
-def execute(force=False, dry_run=False, export=False):
+def execute(task_id=None, force=False, dry_run=False, export=False):
     """Execute the task workflow.
     """
 
     # load the task graph
     task_graph = load_task_graph()
+
+    # if any tasks are specified, limit the task graph to only those
+    # tasks that are required to create the specified tasks
+    if task_id is not None:
+        task_graph = task_graph.subgraph_needed_for([task_id])
+        print len(task_graph.task_list)
 
     # iterate through every task in the task graph and find the set of
     # tasks that have to be executed. we do this first so we can alert

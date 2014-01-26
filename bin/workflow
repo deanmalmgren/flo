@@ -9,12 +9,27 @@ import sys
 import os
 import ConfigParser
 
+from workflow.parser import get_available_tasks
 from workflow.commands import execute, clean
 from workflow.exceptions import CommandLineException
 
 # setup the option parser
 parser = argparse.ArgumentParser(
     description=__doc__,
+)
+
+# make it possible for users to specify task_ids on the command line. 
+#
+# NOTE: for some reason, nargs='*' is not working when you don't
+# specify any tasks. Not sure if this is a pythong 2.7 problem or
+# what, but nothing seemed to work with this.
+parser.add_argument(
+    'task_id',
+    metavar='task',
+    type=str,
+    choices=get_available_tasks(),
+    nargs='?', # '*', this isn't working for some reason
+    help='Specify a particular task to run.',
 )
 
 # can only specify one of --force or --dry-run
@@ -30,7 +45,7 @@ parser.add_argument(
     '-d', '--dry-run',
     action="store_true",
     help=(
-        "Do not run workflow, just report which tasks woulc be run and how "
+        "Do not run workflow, just report which tasks would be run and how "
         "long it would take."
     ),
 )
@@ -53,7 +68,8 @@ try:
     if args.clean:
         clean(force=args.force, export=args.export)
     else:
-        execute(force=args.force, dry_run=args.dry_run, export=args.export)
+        execute(task_id=args.task_id, force=args.force, dry_run=args.dry_run,
+                export=args.export)
 except CommandLineException, e:
     print(e)
     sys.exit(1)
