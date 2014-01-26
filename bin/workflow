@@ -24,12 +24,12 @@ parser = argparse.ArgumentParser(
 # specify any tasks. Not sure if this is a pythong 2.7 problem or
 # what, but nothing seemed to work with this.
 parser.add_argument(
-    'task_ids',
+    'task_id',
     metavar='task',
     type=str,
     choices=get_available_tasks(),
     nargs='?', # '*', this isn't working for some reason
-    help='Specify particular tasks to run.',
+    help='Specify a particular task to run.',
 )
 
 # can only specify one of --force or --dry-run
@@ -68,7 +68,7 @@ try:
     if args.clean:
         clean(force=args.force, export=args.export)
     else:
-        execute(task_ids=args.task_ids, force=args.force, dry_run=args.dry_run,
+        execute(task_id=args.task_id, force=args.force, dry_run=args.dry_run,
                 export=args.export)
 except CommandLineException, e:
     print(e)

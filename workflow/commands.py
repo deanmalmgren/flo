@@ -33,7 +33,7 @@ def clean(force=False, export=False, pause=0.5):
         print("cd %s" % task_graph.root_directory)
     task_graph.clean(export=export)
 
-def execute(task_ids=None, force=False, dry_run=False, export=False):
+def execute(task_id=None, force=False, dry_run=False, export=False):
     """Execute the task workflow.
     """
 
@@ -42,8 +42,8 @@ def execute(task_ids=None, force=False, dry_run=False, export=False):
 
     # if any tasks are specified, limit the task graph to only those
     # tasks that are required to create the specified tasks
-    if task_ids is not None:
-        task_graph = task_graph.subgraph_needed_for(task_ids)
+    if task_id is not None:
+        task_graph = task_graph.subgraph_needed_for([task_id])
         print len(task_graph.task_list)
 
     # iterate through every task in the task graph and find the set of
