@@ -94,5 +94,19 @@ def archive(backup=False, restore=False):
     """Interact with archives of the workflow, by either backing it up or
     restoring it from a previous backup.
     """
-    pass
+    
+    # TODO: how should this behave if a task is specified on the
+    # command line? 
 
+    # load in the task_graph
+    task_graph = load_task_graph()
+
+    # create an ensemble of filenames that need to be archived
+    if backup:
+        task_graph.write_archive()
+
+    # find an archive to restore and restore it. This should probably
+    # ask the user to confirm which archive to restore before doing
+    # anything.
+    if restore:
+        task_graph.restore_archive()

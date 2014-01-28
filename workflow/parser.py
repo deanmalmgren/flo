@@ -1,3 +1,7 @@
+"""This set of modules is intended to parse and process the
+CONFIG_FILENAME, workflow.yaml
+"""
+
 import os
 
 import yaml
