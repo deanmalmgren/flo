@@ -111,3 +111,14 @@ Meh. http://pipeline.bmap.ucla.edu/
 ### Predictive Modeling Markup Language (PMML)
 
 PMML is a language to define workflows in data analysis. There appear to be many tools that will execute PMML workflows, for example [Augustus](https://code.google.com/p/augustus/) and [Zementis](http://aws.amazon.com/customerapps/1583?_encoding=UTF8&jiveRedirect=1) for executing on Amazon Web Services. It appears to be geared more toward developing robust, "enterprise" workflows as opposed to rapid development.
+
+### KNIME
+
+(KNIME)[http://www.knime.org/] is a graphical interface for defining
+data *and* analysis steps in a data workflow. I'm sure its possible to
+write custom analysis steps in KNIME to make it more practical in real
+world situations, but the tight coupling between the pipeline
+definition and actually running an analysis and doing some
+visualization is highly unappealing for the use cases I have in
+mind. Nonetheless, its worth mentioning. The GUI is admittedly kinda
+nice and certainly easier to understand for n00bs.
