@@ -34,7 +34,7 @@ git clone https://github.com/YOUR-USERNAME/data-workflow.git
 
 ```bash
 mkvirtualenv data-workflow
-pip install -r REQUIREMENTS
+pip install -r REQUIREMENTS -r examples/REQUIREMENTS
 ```
 
 3. Adjust `PYTHONPATH`, `PATH`, and python environment so you can use
