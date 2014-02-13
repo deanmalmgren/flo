@@ -39,8 +39,8 @@ command: python {{depends|join(' ')}} 1 {{creates}}
 # create a figure for the autocorrelation between consecutive x,y
 # pairs
 ---
-creates: data/x_y_autocorrelation.png
+creates: data/x_autocorrelation.png
 depends: 
   - src/autocorrelation.py
   - data/x_y.dat
-command: python {{depends|join(' ')}} > {{creates}}
+command: python {{depends|join(' ')}} 0 {{creates}}
