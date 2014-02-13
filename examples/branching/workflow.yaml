@@ -13,6 +13,7 @@ depends: data/results.tsv
 command: cut -f1,2 {{depends}} > {{creates}}
 
 # create a figure for the correlation between x and y
+# QUESTION: SHOULD THIS DEPEND ON src/loaders.py?
 ---
 creates: data/x_y_correlation.png
 depends: 
@@ -21,6 +22,7 @@ depends:
 command: python {{depends|join(' ')}} {{creates}}
 
 # create a figure to display the distribution of x
+# QUESTION: SHOULD THIS DEPEND ON src/loaders.py?
 ---
 creates: data/x_pdf.png
 depends: 
@@ -29,6 +31,7 @@ depends:
 command: python {{depends|join(' ')}} 0 {{creates}}
 
 # create a figure to display the distribution of y
+# QUESTION: SHOULD THIS DEPEND ON src/loaders.py?
 ---
 creates: data/y_pdf.png
 depends: 
@@ -38,6 +41,7 @@ command: python {{depends|join(' ')}} 1 {{creates}}
 
 # create a figure for the autocorrelation between consecutive x,y
 # pairs
+# QUESTION: SHOULD THIS DEPEND ON src/loaders.py?
 ---
 creates: data/x_autocorrelation.png
 depends: 
