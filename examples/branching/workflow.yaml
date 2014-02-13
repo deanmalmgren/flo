@@ -18,7 +18,7 @@ creates: data/x_y_correlation.png
 depends: 
   - src/scatterplot.py
   - data/x_y.dat
-command: python {{depends|join(' ')}} > {{creates}}
+command: python {{depends|join(' ')}} {{creates}}
 
 # create a figure to display the distribution of x
 ---
