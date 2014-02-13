@@ -26,7 +26,7 @@ creates: data/x_pdf.png
 depends: 
   - src/pdf.py
   - data/x_y.dat
-command: python {{depends|join(' ')}} > {{creates}}
+command: python {{depends|join(' ')}} 0 {{creates}}
 
 # create a figure to display the distribution of y
 ---
@@ -34,7 +34,7 @@ creates: data/y_pdf.png
 depends: 
   - src/pdf.py
   - data/x_y.dat
-command: python {{depends|join(' ')}} > {{creates}}
+command: python {{depends|join(' ')}} 1 {{creates}}
 
 # create a figure for the autocorrelation between consecutive x,y
 # pairs
