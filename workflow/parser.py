@@ -1,4 +1,5 @@
 import os
+import copy
 
 import yaml
 
@@ -8,6 +9,7 @@ from . import tasks
 # TODO: probably this should be configurable (and even specified on
 # the command line somehow)
 CONFIG_FILENAME = "workflow.yaml"
+TASKS_KEY = 'tasks'
 
 def find_config_path():
     """Recursively decend into parent directories looking for the 
@@ -41,9 +43,28 @@ def load_task_graph():
     with open(config_path) as stream:
         config_yaml = yaml.load_all(stream.read())
 
+    # convert the config_yaml iterator into python dictionaries as
+    # necessary. this makes it possible to have global variables and
+    # tasks embedded in the YAML under a something with the key
+    # TASKS_KEY
+    task_list = []
+    uses_global_config = False
+    for i, yaml_obj in enumerate(config_yaml):
+        if i==0 and yaml_obj.has_key(TASKS_KEY):
+            uses_global_config = True
+
+            global_config = copy.deepcopy(yaml_obj)
+            del global_config[TASKS_KEY]
+
+            for task_data in yaml_obj[TASKS_KEY]:
+                task_data.update(global_config)
+                task_list.append(task_data)
+        elif not uses_global_config:
+            task_list.append(yaml_obj)
+
     # convert each yaml to a task and add it to the graph
     task_graph = tasks.TaskGraph(config_path)
-    for task_data in config_yaml:
+    for task_data in task_list:
         task = tasks.Task(**task_data)
         task_graph.add(task)
     task_graph.link_dependencies()
