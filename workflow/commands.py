@@ -81,7 +81,7 @@ def execute(task_id=None, force=False, dry_run=False, export=False):
     # if no tasks were executed, then alert the user that nothing
     # needed to be run
     else:
-        print("No tasks were run in the workflow defined in '%s'" % (
+        print("No tasks are out of sync in the workflow defined in '%s'" % (
             os.path.relpath(task_graph.config_path, os.getcwd())
         ))
         
