@@ -1,46 +1,62 @@
-# run a simulation
+# this is an example of how to use global variables throughout the
+# workflow.yaml to make it easy to switch between columns of
+# analysis. 
 ---
-creates: data/results.tsv
-depends: src/run_simulation.py
-command: 
-  - mkdir -p $(dirname {{creates}})
-  - python {{depends}} > {{creates}}
+# Global variables that can be used across several different
+# tasks. See how these are used below
+x_col: 0
+y_col: 1
 
-# process the results
----
-creates: data/x_y.dat
-depends: data/results.tsv
-command: cut -f1,2 {{depends}} > {{creates}}
+# this evokes global variable mode
+tasks: 
 
-# create a figure for the correlation between x and y
----
-creates: data/x_y_correlation.png
-depends: 
-  - src/scatterplot.py
-  - data/x_y.dat
-command: python {{depends|join(' ')}} > {{creates}}
-
-# create a figure to display the distribution of x
----
-creates: data/x_pdf.png
-depends: 
-  - src/pdf.py
-  - data/x_y.dat
-command: python {{depends|join(' ')}} > {{creates}}
-
-# create a figure to display the distribution of y
----
-creates: data/y_pdf.png
-depends: 
-  - src/pdf.py
-  - data/x_y.dat
-command: python {{depends|join(' ')}} > {{creates}}
-
-# create a figure for the autocorrelation between consecutive x,y
-# pairs
----
-creates: data/x_y_autocorrelation.png
-depends: 
-  - src/autocorrelation.py
-  - data/x_y.dat
-command: python {{depends|join(' ')}} > {{creates}}
+  # run a simulation
+  - 
+    creates: data/results.tsv
+    depends: src/run_simulation.py
+    command: 
+      - mkdir -p $(dirname {{creates}})
+      - python {{depends}} > {{creates}}
+  
+  # process the results
+  -
+    creates: data/x_y.dat
+    depends: data/results.tsv
+    command: cut -f{{x_col+1}},{{y_col+1}} {{depends}} > {{creates}}
+  
+  # create a figure for the correlation between x and y
+  # QUESTION: SHOULD THIS DEPEND ON src/loaders.py?
+  -
+    creates: data/x_y_correlation.png
+    depends: 
+      - src/scatterplot.py
+      - data/x_y.dat
+    command: python {{depends|join(' ')}} {{creates}}
+  
+  # create a figure to display the distribution of x
+  # QUESTION: SHOULD THIS DEPEND ON src/loaders.py?
+  -
+    creates: data/x_pdf.png
+    depends: 
+      - src/pdf.py
+      - data/x_y.dat
+    command: python {{depends|join(' ')}} {{x_col}} {{creates}}
+  
+  # create a figure to display the distribution of y
+  # QUESTION: SHOULD THIS DEPEND ON src/loaders.py?
+  -
+    creates: data/y_pdf.png
+    depends: 
+      - src/pdf.py
+      - data/x_y.dat
+    command: python {{depends|join(' ')}} {{y_col}} {{creates}}
+  
+  # create a figure for the autocorrelation between consecutive x,y
+  # pairs
+  # QUESTION: SHOULD THIS DEPEND ON src/loaders.py?
+  -
+    creates: data/x_autocorrelation.png
+    depends: 
+      - src/autocorrelation.py
+      - data/x_y.dat
+    command: python {{depends|join(' ')}} {{x_col}} {{creates}}
