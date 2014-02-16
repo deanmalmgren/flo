@@ -627,7 +627,11 @@ class TaskGraph(object):
 
         # get the set of all filenames that should be archived based
         # on the current workflow specification
-        all_filenames = set([os.path.basename(self.config_path)])
+        all_filenames = set([
+            os.path.basename(self.config_path),
+            self.state_path,
+            self.duration_path,
+        ])
         for task in self.task_list:
             all_filenames.update(task.get_all_filenames())
 
