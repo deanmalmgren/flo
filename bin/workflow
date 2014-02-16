@@ -11,7 +11,7 @@ import ConfigParser
 
 from workflow.parser import get_available_tasks
 from workflow.commands import execute, clean, archive
-from workflow.exceptions import CommandLineException
+from workflow.exceptions import CommandLineException, ConfigurationNotFound
 
 # setup the option parser
 parser = argparse.ArgumentParser(
@@ -23,11 +23,15 @@ parser = argparse.ArgumentParser(
 # NOTE: for some reason, nargs='*' is not working when you don't
 # specify any tasks. Not sure if this is a pythong 2.7 problem or
 # what, but nothing seemed to work with this.
+try:
+    available_tasks = get_available_tasks()
+except ConfigurationNotFound:
+    available_tasks = []
 parser.add_argument(
     'task_id',
     metavar='task',
     type=str,
-    choices=get_available_tasks(),
+    choices=available_tasks,
     nargs='?', # '*', this isn't working for some reason
     help='Specify a particular task to run.',
 )
