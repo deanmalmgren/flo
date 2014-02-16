@@ -615,8 +615,9 @@ class TaskGraph(object):
         
         # for now, create archives based on the date. 
         # 
-        # TODO: it would probably be better to specify by hg/git hash
-        # id but this will do for now
+        # TODO: would it be better to specify by hg/git hash id? Doing
+        # dates for now to make it easy to identify a good default
+        # archive to restore in self.restore_archive (the last one)
         now = datetime.datetime.now()
         if not os.path.exists(self.abs_archive_dir):
             os.makedirs(self.abs_archive_dir)
