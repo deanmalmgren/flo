@@ -1,16 +1,18 @@
 import sys
 import os
-import subprocess
 import time
 import hashlib
 import csv
 import StringIO
 import collections
+import datetime
+import glob
 
 import jinja2
 
 from .exceptions import InvalidTaskDefinition, ElementNotFound, NonUniqueTask
 from . import colors
+from . import shell
 
 class Task(object):
 
@@ -75,6 +77,18 @@ class Task(object):
     def reset_task_dependencies(self):
         self.upstream_tasks.clear()
         self.downstream_tasks.clear()
+
+    def get_all_filenames(self):
+        """Identify the set of all filenames that pertain to this task
+        """
+        # TODO: when we allow for non-filesystem targets, this will
+        # have to change to accomodate
+        all_filenames = [self.creates]
+        if isinstance(self.depends, (list, tuple)):
+            all_filenames.extend(self.depends)
+        elif self.depends is not None:
+            all_filenames.append(self.depends)
+        return all_filenames
 
     def get_stream_state(self, stream, block_size=2**20):
         """Read in a stream in relatively small `block_size`s to make sure we
@@ -210,14 +224,7 @@ class Task(object):
 
     def run(self, command):
         """Run the specified shell command using Fabric-like behavior"""
-        wrapped_command = "cd %s && %s" % (self.root_directory, command)
-        pipe = subprocess.Popen(
-            wrapped_command, shell=True, 
-            stdout=sys.stdout, stderr=sys.stderr
-        )
-        pipe.communicate()
-        if pipe.returncode != 0:
-            sys.exit(pipe.returncode)
+        return shell.run(self.root_directory, command)
 
     def clean_command(self):
         return "rm -rf %s" % self.creates
@@ -325,6 +332,7 @@ class TaskGraph(object):
     # relative location of various storage locations
     state_path = os.path.join(".workflow", "state.csv")
     duration_path = os.path.join(".workflow", "duration.csv")
+    archive_dir = os.path.join(".workflow", "archive")
 
     def __init__(self, config_path):
         self.task_list = []
@@ -542,6 +550,11 @@ class TaskGraph(object):
         """Convenience property for accessing duration storage location"""
         return os.path.join(self.root_directory, self.duration_path)
 
+    @property
+    def abs_archive_dir(self):
+        """Convenience property for accessing the archive location"""
+        return os.path.join(self.root_directory, self.archive_dir)
+
     def read_from_storage(self, dictionary, storage_location):
         if os.path.exists(storage_location):
             with open(storage_location) as stream:
@@ -584,7 +597,7 @@ class TaskGraph(object):
         # TODO: this is a bit of a hack to be able to use Task's
         # get_element_state method. Should probably find a better
         # place to organize this code so we don't have to do that
-        dummy_task = Task(creates="creates", command="command")
+        dummy_task = Task(creates="dummy", command="dummy")
         dummy_task.graph = self
         for element, state in self.after_element_states.iteritems():
             if state is None:
@@ -595,3 +608,59 @@ class TaskGraph(object):
 
         self.write_to_storage(self.after_element_states, self.abs_state_path)
         self.write_to_storage(self.task_durations, self.abs_duration_path)
+
+    def write_archive(self):
+        """Method to backup the current workflow
+        """
+        
+        # for now, create archives based on the date. 
+        # 
+        # TODO: would it be better to specify by hg/git hash id? Doing
+        # dates for now to make it easy to identify a good default
+        # archive to restore in self.restore_archive (the last one)
+        now = datetime.datetime.now()
+        if not os.path.exists(self.abs_archive_dir):
+            os.makedirs(self.abs_archive_dir)
+        archive_name = os.path.join(
+            self.abs_archive_dir,
+            "%s.tar.bz2" % now.strftime("%Y%m%d%H%M%S"),
+        )
+
+        # get the set of all filenames that should be archived based
+        # on the current workflow specification
+        all_filenames = set([
+            os.path.basename(self.config_path),
+            self.state_path,
+            self.duration_path,
+        ])
+        for task in self.task_list:
+            all_filenames.update(task.get_all_filenames())
+
+        # create the archive
+        command = "tar cjf %s %s" % (archive_name, ' '.join(all_filenames))
+        print(colors.bold_white(command))
+        sys.stdout.flush()
+        shell.run(self.root_directory, command)
+
+    def restore_archive(self, archive):
+        """Method to restore a previous archived workflow specified in
+        `archive`. The archive path should be relative to the root of
+        the project.
+        """
+        archive_name = os.path.join(self.root_directory, archive)
+        command = "tar xjf %s" % archive_name
+        print(colors.bold_white(command))
+        sys.stdout.flush()
+        shell.run(self.root_directory, command)
+
+    def get_available_archives(self):
+        """Method to list all of the available archives"""
+        available_archives = self.get_abs_available_archives()
+        return [os.path.relpath(a, self.root_directory) 
+                for a in available_archives]
+
+    def get_abs_available_archives(self):
+        """Method to list all of the available archives"""
+        available_archives = glob.glob(os.path.join(self.abs_archive_dir, '*'))
+        available_archives.sort()
+        return available_archives
