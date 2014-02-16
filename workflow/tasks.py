@@ -641,20 +641,25 @@ class TaskGraph(object):
         sys.stdout.flush()
         shell.run(self.root_directory, command)
 
-        # TODO: what happens if equivalent archive already exists?
-
-    def restore_archive(self):
-        """Method to restore a previous archived workflow
+    def restore_archive(self, archive):
+        """Method to restore a previous archived workflow specified in
+        `archive`. The archive path should be relative to the root of
+        the project.
         """
-
-        # for now, restore the last archive in our archive directory. 
-        #
-        # TODO: it would probably be better to interact with the user
-        # to determine which archive should be used
-        available_archives = glob.glob(os.path.join(self.abs_archive_dir, '*'))
-        available_archives.sort()
-        archive_name = available_archives[-1]
+        archive_name = os.path.join(self.root_directory, archive)
         command = "tar xjf %s" % archive_name
         print(colors.bold_white(command))
         sys.stdout.flush()
         shell.run(self.root_directory, command)
+
+    def get_available_archives(self):
+        """Method to list all of the available archives"""
+        available_archives = self.get_abs_available_archives()
+        return [os.path.relpath(a, self.root_directory) 
+                for a in available_archives]
+
+    def get_abs_available_archives(self):
+        """Method to list all of the available archives"""
+        available_archives = glob.glob(os.path.join(self.abs_archive_dir, '*'))
+        available_archives.sort()
+        return available_archives

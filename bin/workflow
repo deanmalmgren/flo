@@ -8,8 +8,9 @@ import argparse
 import sys
 import os
 import ConfigParser
+import types
 
-from workflow.parser import get_available_tasks
+from workflow.parser import get_available_tasks, get_available_archives
 from workflow.commands import execute, clean, archive
 from workflow.exceptions import CommandLineException, ConfigurationNotFound
 
@@ -69,6 +70,10 @@ parser.add_argument(
 # Here are a few handy commands for backing up a workflow and
 # restoring it. This will hopefully make debugging a lot easier! Can
 # only specify one of these options
+try:
+    available_archives = get_available_archives()
+except ConfigurationNotFound:
+    available_archives = []
 group = parser.add_mutually_exclusive_group()
 group.add_argument(
     '--backup',
@@ -77,7 +82,9 @@ group.add_argument(
 )
 group.add_argument(
     '--restore',
-    action="store_true",
+    choices=available_archives,
+    default=False,
+    nargs='?',
     help="Restore the state of the workflow."
 )
 
@@ -86,7 +93,9 @@ args = parser.parse_args()
 try:
     if args.clean:
         clean(force=args.force, export=args.export)
-    elif args.backup or args.restore:
+    elif args.backup or isinstance(args.restore, (str, types.NoneType)):
+        if args.restore is None:
+            args.restore = available_archives[-1]
         archive(backup=args.backup, restore=args.restore)
     else:
         execute(task_id=args.task_id, force=args.force, dry_run=args.dry_run,

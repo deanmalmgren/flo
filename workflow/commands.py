@@ -95,9 +95,6 @@ def archive(backup=False, restore=False):
     restoring it from a previous backup.
     """
     
-    # TODO: how should this behave if a task is specified on the
-    # command line? 
-
     # load in the task_graph
     task_graph = load_task_graph()
 
@@ -109,4 +106,4 @@ def archive(backup=False, restore=False):
     # ask the user to confirm which archive to restore before doing
     # anything.
     if restore:
-        task_graph.restore_archive()
+        task_graph.restore_archive(restore)
