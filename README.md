@@ -134,21 +134,85 @@ you could use this. If you have suggestions for other ideas, please
 
 ### command line interface
 
-See `workflow --help` for a full list of options, but here are some
-highlights:
+This package ships with the `workflow` command, which embodies the
+entire command line interface for this package. This command can be
+run from the directory that contains `workflow.yaml` or any of its
+child directories.
 
-option
+By default, running `workflow` will execute the entire workflow, or at
+least the portion of it that is "out of sync" since the last time it
+ran. Running `workflow` twice in a row without editing any files in
+the interim will not rerun any steps. If you edit a particular file in
+the workflow and rerun `workflow`, this will only re-execute the parts
+that have been affected by the change. This makes it very easy to
+iterate quickly on data analysis problems without having to worry
+about re-running an arsenal commands --- you only have to remember
+one, `workflow`.
 
+```bash
+workflow                    # runs everything for the first time
+workflow                    # nothing changed; runs nothing
+edit path/to/some/script.py
+workflow                    # only runs the parts that are affected by change
+```
 
-If any of the resources specified in the `depends` have changed since
-the last time the workflow was run, XXXX
+Importantly, if you edit a particular task in the `workflow.yaml`
+itself, this will cause that particular task to be re-run as well:
 
+```bash
+workflow
+edit workflow.yaml          # change a particular task's command
+workflow                    # rerun's that command and any dependent task
+```
 
-The original design specification highlights many features that are on
-the roadmap for [workflow.yaml](design/workflow.yaml) and the
-[command line interface](design/command_line_interface.sh). If you
-have any suggestions for other ideas, please [add them](issues)!
+The `workflow` command is able to do this by tracking the status of
+all `creates`, `depends`, and task definitions by hashing the contents
+of these resources. If the contents in any `depends` or the task
+itself has changed since the last time that task was run, `workflow`
+will run that task.
 
+Oftentimes we do not want to run the entire workflow, but only a
+particular component of it. Like GNU make, you can specify a
+particular task (either by its `alias` or its `creates`) on the
+command line like this:
+
+```bash
+workflow path/to/some/output/file.txt
+```
+
+This limits `workflow` to only executing the task defined in
+`path/to/some/output/file.txt` and all of its recursive upstream
+dependencies.
+
+Sometimes you want to start with a clean slate. Perhaps the data you
+originally started with is dated or you want to be confident a
+workflow properly runs from start to finish before inviting
+collaborators. Whatever the case, the `--clean` option can be useful
+for removing all `creates` targets that are defined in `workflow.yaml`
+and the `--force` option can be useful for just rerunning all steps,
+regardless of whether they are out of date.
+
+```bash
+workflow --clean            # asks user if they want to remove `creates` results
+workflow --force            # rerun entire workflow
+```
+
+While [we don't recommend it](#op-ed), its not uncommon to get "in the
+zone" and make several edits to analysis scripts before re-running
+your workflow. Because we're human, its easy to incorrectly remember
+the files you edited and how they may affect re-running the
+workflow. To help, the `--dry-run` option lets you see which commands
+will be run and approximately how much time it should take (!!!).
+
+```bash
+workflow
+edit path/to/some/script.py
+edit path/to/another/script.py
+workflow --dry-run         # don't run anything, just report what would be done
+```
+
+There are many other options available with `workflow`; see `workflow
+--help` for a full listing.
 
 ### op-ed
 
@@ -186,6 +250,14 @@ the design goals for this project are to:
 - *Encourage good development practices, but allow for flexibility.*
   There's a tradeoff here, but we have [an opinion](#op-ed) on how to
   do this in a good way.
+
+Many of these concepts have been captured in the original the roadmap
+for [workflow.yaml](design/workflow.yaml) and the
+[command line interface](design/command_line_interface.sh) design
+specification. Most of these concepts have been implmented or are on
+the roadmap, but if you have any suggestions for other ideas, please
+[add them](issues)!
+
 
 ### developing
 
