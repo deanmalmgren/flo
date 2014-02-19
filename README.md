@@ -1,30 +1,32 @@
-The goal of this project is to make it easy to quickly *develop* data
-workflows. This does not provide any opinion on the individual tools
-that you might use to conduct an analysis, but it does provide a
-framework for quickly conducting an analysis in a reproducible manner.
-
 ### op-ed
+
+> "It should be easy to swap in production data for development
+> data." -@bo-peng
+
+> "It should be easy to work on one file at a time." -@stringertheory
+
+> "It should be easy to avoid making costly mistakes." -@deanmalmgren
 
 There are many ways one could conceivably write a data analysis
 workflow from scratch, from writing single programs that ingest,
 analyze and visualize data to simple scripts that each handle one part
-of the puzzle. We have the strong opinion that writing small scripts
-with intermediate outputs is a much more effecitve way to develop a
-prototype data workflow. For one thing, it makes it far easier to spot
-check results using a litany of available command line tools. For
-another, it makes it easy to identify weak links in the analysis and
-improve them.
+of the puzzle. Particularly when developing workflows from scrach, we
+have the strong opinion that writing small scripts with intermediate
+outputs is a much more effecitve way to develop a prototype data
+workflow. For one thing, it makes it far easier to spot check results
+using a litany of available command line tools. For another, it makes
+it easy to identify weak links (*e.g.* incorrect results, poor
+performance, etc.) in the analysis and improve them piece by piece.
 
 This packages is deliberately intended to help users write small, but
 compact workflow prototypes using whatever tools they prefer (R,
 pandas, scipy, hadoop) but with the explicit goal of encouraging users
 to write small scripts that produce intermediate output.
 
-"It should be easy to swap in production data for development data." - @bo-peng
-
-"It should be easy to work on one file at a time." - @stringertheory
-
-"It should be easy to avoid making costly mistakes." - @deanmalmgren
+The goal of this project is to make it easy to quickly *develop* data
+workflows with any tool set you want --- pandas, R, matlab, scipy,
+hadoop, etc. The goal here is not to provide a substitute for these
+tools, but rather to be the glue that sticks them together.
 
 ### quick start
 
