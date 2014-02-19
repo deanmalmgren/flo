@@ -1,11 +1,11 @@
 ### op-ed
 
 > "It should be easy to swap in production data for development
-> data." -@bo-peng
+> data." - @bo-peng
 
-> "It should be easy to work on one file at a time." -@stringertheory
+> "It should be easy to work on one file at a time." - @stringertheory
 
-> "It should be easy to avoid making costly mistakes." -@deanmalmgren
+> "It should be easy to avoid making costly mistakes." - @deanmalmgren
 
 There are many ways one could conceivably write a data analysis
 workflow from scratch, from writing single programs that ingest,
@@ -34,7 +34,11 @@ tools, but rather to be the glue that sticks them together.
 
 ### quick start
 
-1. *Install this pacakge.* `pip install data-workflow` XXXX NEED TO GET THIS TO WORK
+1. *Install this pacakge.*
+
+   ```bash
+   pip install -e git+ssh://github.com/deanmalmgren/data-workflow#egg=workflow
+   ```
 
 2. *Write a workflow.yaml.* Create a `workflow.yaml` file in the root
    of your project. `workflow.yaml` can
