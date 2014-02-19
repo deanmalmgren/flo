@@ -14,6 +14,12 @@ from .exceptions import InvalidTaskDefinition, ElementNotFound, NonUniqueTask
 from . import colors
 from . import shell
 
+# TODO: switch to calling things resources instead of 'elements'
+
+# TODO: refactor to put resources as separate classes. Probably makes
+# sense to address this when we deal with mysql or other file
+# protocols
+
 class Task(object):
 
     def __init__(self, creates=None, depends=None, alias=None, command=None, 

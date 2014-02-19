@@ -42,59 +42,121 @@ framework for quickly conducting an analysis in a reproducible manner.
 
 ### workflow.yaml specification
 
-TODO
+Individual analysis tasks are defined as
+[YAML objects](http://en.wikipedia.org/wiki/YAML#Associative_arrays)
+in `workflow.yaml` with something like this:
 
-are The basic idea is that you can quickly write dependency chains
-by concisely writing commands with
-[jinja templating](http://jinja.pocoo.org/)
+```yaml
+---
+creates: path/to/some/output/file.txt
+depends: path/to/some/script.py
+alias: awesome
+command: python {{depends}} > {{creates}}
+```
+
+Every task YAML object must have a `creates` key and a `command` key
+and can optionally contain `alias` and `depends` keys. The order of
+these keys does not matter; the above order is chosen for explanatory
+purposes only.
+
+The `creates` key defines the resource that is created. By default, it
+is interpretted as a path to a file (relative paths are interpretted
+as relative to the `workflow.yaml` file). You can also specify a
+protocol, such as `mysql:database/table` (see yet-to-be-implemented #15),
+for non-file based resources.
+
+The `depends` key defines the resource(s) on which this task
+depends. It is common for `depends` to specify many things, including
+data analysis scripts or other tasks from within the
+`workflow.yaml`. Multiple dependencies can be defined in a
+[YAML list](http://en.wikipedia.org/wiki/YAML#Lists) like this:
+
+```yaml
+depends:
+  - path/to/some/script.py
+  - another/task/creates/target.txt
+```
+
+The `alias` key specifies an alternative name that can be used to
+specify this task as a `depends` in other parts of the workflow or on
+the command line.
+
+The `command` key defines the command(s) that should be executed to
+produce the resource specified by the `creates` key.
+Like the `depends` key, multiple steps can be defined in a
+[YAML list](http://en.wikipedia.org/wiki/YAML#Lists) like this:
+
+```yaml
+command:
+  - mkdir -p $(dirname {{creates}})
+  - python {{depends}} > {{creates}}
+```
+
+Importantly, the `command` is rendered as a
+[jinja template](http://jinja.pocoo.org/) to avoid duplication of
+information that is already defined in that task. Its quite common to
+use `{{depends}}` and `{{creates}}` in the `command` specification,
+but you can also use other variables like this:
+
+```yaml
+---
+creates: path/to/some/output/file.txt
+sigma: 2.137
+depends: path/to/some/script.py
+command python {{depends}} {{sigma} > {{creates}}
+```
+
+In the aforementioned example, `sigma` is only available when rendering
+the jinja template for that task. If you'd like to use `sigma` in
+several other tasks, you can alternatively put it in a global
+namespace in a workflow.yaml like this
+([similar example here]("examples/model-correlations")):
+
+```yaml
+---
+sigma: 2.137
+tasks: 
+  - 
+    creates: path/to/some/output/file.txt
+    depends: path/to/some/script.py
+    command python {{depends}} {{sigma} > {{creates}}
+  -
+    creates: path/to/another/output/file.txt
+    depends:
+	  - path/to/another/script.py
+      - path/to/some/output/file.txt
+    command: python {{depends[0]}} {{sigma}} < {{depends[1]}} > {{creates}}
+```
+
+There are several [examples](examples/) for more inspiration on how
+you could use this. If you have suggestions for other ideas, please
+[add them](issues)!
 
 ### command line interface
 
-TODO
+See `workflow --help` for a full list of options, but here are some
+highlights:
 
-### features
+option
 
-This package takes inspiration from a number of
-[existing tools](design/prior_art.md) that have similar aims,
-particularly [GNU make](http://www.gnu.org/software/make/) that has
-[many desirable properties of working with data workflows](http://bost.ocks.org/mike/make/).
+
+If any of the resources specified in the `depends` have changed since
+the last time the workflow was run, XXXX
+
+
 The original design specification highlights many features that are on
 the roadmap for [workflow.yaml](design/workflow.yaml) and the
 [command line interface](design/command_line_interface.sh). If you
-have any suggestions for other ideas, please [add them](issues), but
-here are some high-level things that we have either implemented or
-have in the back of our minds:
+have any suggestions for other ideas, please [add them](issues)!
 
-[x] compact notation
-  - no repeating of information
-  - minimal syntactical bloat
-  - minimal required structure to get started
-[ ] easy for n00bs to learn how it works without too much effort
-  [ ] good examples and documentation
-  [x] use language that is easy to read/write for data people (YAML, or
-    maybe python is better?)
-  [x] ability to use variables in commands in a readable way. no obscure
-    shortcuts
-  [x] provides a single place to manipulate filenames
-  [ ] gives guidance on how to write workflow tasks to enable rapid
-    prototyping
-[ ] ability to run sub-analysis easily (e.g., per file w/o entire
-  directory). this is kinda the equivalent of writing GNU make 'rules'
-[ ] creates/depends on things that are created that are *not* files,
-  like database tables, or a result on hdfs or placed in S3
-[ ] run in parallel whenever possible. its 2014
-[x] *not* timestamp based --- hash based. store some archive of hashes
-  in the root of the project
-[x] make it possible to run the equivalent of `make` from a subdirectory
-  of a project
-[ ] make it possible to split workflow into several files or keep it in
-  one single file to organize the workflow in an intuitive way
-[ ] alert users when job is complete
-  [ ] system notifications
-  [ ] email
-  [ ] twitter
-  [ ] SMS
-[ ] encourage users to write small scripts that accomplish very simple
+
+### op-ed
+
+TODO give opinion of how users can most effectively take advantage of
+this tool
+
+
+- [ ] encourage users to write small scripts that accomplish very simple
   analysis tasks, not onerous beasts that have many moving parts. This
   makes analysis pipelines much easier to understand and, at least in
   my experience, usually makes intermediate results reusable and easy
@@ -105,16 +167,25 @@ have in the back of our minds:
     document at a time
   - perhaps have an opinion about development patterns to facilitate
     rapid development? make it clear how to do this most effectively
-[ ] @bo-peng: What about being able to deal with test/dev data vs
+- [ ] @bo-peng: What about being able to deal with test/dev data vs
   production data?
 
-It would also be nice to have things like:
+### design goals
 
-[ ] enable continuous iteration through analysis? should this tool deal
-  with cyclical workflows? maybe with a `--{loop,cycle}` command line
-  argument or something? maybe make it possible to trigger parts of
-  the analysis somehow?
-[ ] ability to enable multi-machine workflows?
+This package takes inspiration from a number of
+[existing tools](design/prior_art.md) that have similar aims,
+particularly [GNU make](http://www.gnu.org/software/make/) that has
+[many desirable properties of working with data workflows](http://bost.ocks.org/mike/make/). Specifically,
+the design goals for this project are to:
+
+- *Provide an easy-to-use framework.* This applies for n00bs and pros
+  alike. Use human-readable syntax.
+- *Prevent, as much as reasonably possible, costly mistakes.* Avoid
+  inadvertantly rerunning commands that overwrite results or executing
+  commands that take a long time.
+- *Encourage good development practices, but allow for flexibility.*
+  There's a tradeoff here, but we have [an opinion](#op-ed) on how to
+  do this in a good way.
 
 ### developing
 
@@ -149,5 +220,4 @@ workflow
 ```
 
 5. Contribute! There are several [open issues](issues) that provide
-   good places to dig in and several [other ideas](#features) that
-   haven't been translated into issues yet.
+   good places to dig in.
