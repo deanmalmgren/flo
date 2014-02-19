@@ -63,7 +63,11 @@ tools, but rather to be the glue that sticks them together.
    are out of sync since the last time you ran it. The `workflow`
    command has
    [several other convenience options](#command-line-interface) to
-   facilitate quickly writing data workflows.
+   facilitate quickly writing data workflows. Running the
+   [hello-world example](examples/hello-world) for the first time
+   yields something like this:
+
+   ![hello world screenshot](http://i.imgur.com/8Jdijen.png)
 
 4. *Repeat steps 2-3 until your data workflow is complete.* When
    developing a data workflow, it is common to write an entire
