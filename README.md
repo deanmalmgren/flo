@@ -88,13 +88,13 @@ and can optionally contain `alias` and `depends` keys. The order of
 these keys does not matter; the above order is chosen for explanatory
 purposes only.
 
-The `creates` key defines the resource that is created. By default, it
-is interpretted as a path to a file (relative paths are interpretted
-as relative to the `workflow.yaml` file). You can also specify a
-protocol, such as `mysql:database/table` (see yet-to-be-implemented #15),
-for non-file based resources.
+**`creates`.** The `creates` key defines the resource that is
+created. By default, it is interpretted as a path to a file (relative
+paths are interpretted as relative to the `workflow.yaml` file). You
+can also specify a protocol, such as `mysql:database/table` (see
+yet-to-be-implemented #15), for non-file based resources.
 
-The `depends` key defines the resource(s) on which this task
+**`depends`.** The `depends` key defines the resource(s) on which this task
 depends. It is common for `depends` to specify many things, including
 data analysis scripts or other tasks from within the
 `workflow.yaml`. Multiple dependencies can be defined in a
@@ -106,13 +106,13 @@ depends:
   - another/task/creates/target.txt
 ```
 
-The `alias` key specifies an alternative name that can be used to
+**`alias`.** The `alias` key specifies an alternative name that can be used to
 specify this task as a `depends` in other parts of the workflow or on
 the command line.
 
-The `command` key defines the command(s) that should be executed to
-produce the resource specified by the `creates` key.
-Like the `depends` key, multiple steps can be defined in a
+**`command`.** The `command` key defines the command(s) that should be
+executed to produce the resource specified by the `creates` key.  Like
+the `depends` key, multiple steps can be defined in a
 [YAML list](http://en.wikipedia.org/wiki/YAML#Lists) like this:
 
 ```yaml
@@ -121,7 +121,7 @@ command:
   - python {{depends}} > {{creates}}
 ```
 
-Importantly, the `command` is rendered as a
+**templating variables.** Importantly, the `command` is rendered as a
 [jinja template](http://jinja.pocoo.org/) to avoid duplication of
 information that is already defined in that task. Its quite common to
 use `{{depends}}` and `{{creates}}` in the `command` specification,
@@ -198,12 +198,13 @@ The `workflow` command is able to do this by tracking the status of
 all `creates`, `depends`, and task definitions by hashing the contents
 of these resources. If the contents in any `depends` or the task
 itself has changed since the last time that task was run, `workflow`
-will run that task.
+will run that task. For reference, the hashes of all of the `creates`,
+`depends`, and workflow task definitions are in `.workflow/state.csv`.
 
-Oftentimes we do not want to run the entire workflow, but only a
-particular component of it. Like GNU make, you can specify a
-particular task (either by its `alias` or its `creates`) on the
-command line like this:
+**specify a particular task.** Oftentimes we do not want to run the
+entire workflow, but only a particular component of it. Like GNU make,
+you can specify a particular task (either by its `alias` or its
+`creates`) on the command line like this:
 
 ```bash
 workflow path/to/some/output/file.txt
@@ -213,25 +214,25 @@ This limits `workflow` to only executing the task defined in
 `path/to/some/output/file.txt` and all of its recursive upstream
 dependencies.
 
-Sometimes you want to start with a clean slate. Perhaps the data you
-originally started with is dated or you want to be confident a
-workflow properly runs from start to finish before inviting
-collaborators. Whatever the case, the `--clean` option can be useful
-for removing all `creates` targets that are defined in `workflow.yaml`
-and the `--force` option can be useful for just rerunning all steps,
-regardless of whether they are out of date.
+**`--clean` and `--force`.** Sometimes you want to start with a clean
+slate. Perhaps the data you originally started with is dated or you
+want to be confident a workflow properly runs from start to finish
+before inviting collaborators. Whatever the case, the `--clean` option
+can be useful for removing all `creates` targets that are defined in
+`workflow.yaml` and the `--force` option can be useful for just
+rerunning all steps, regardless of whether they are out of date.
 
 ```bash
 workflow --clean            # asks user if they want to remove `creates` results
 workflow --force            # rerun entire workflow
 ```
 
-Before removing or totally redoing an analysis, I've often found it
-useful to backup my results and compare the differences later. The
-`--backup` and `--restore` command line options make it easy to
-quickly backup an entire workflow (including generated `creates`
-targets, source code specified in `depends`, and the underlying
-`workflow.yaml`) and compare it to previous versions.
+**`--backup` and `--restore`.** Before removing or totally redoing an
+analysis, I've often found it useful to backup my results and compare
+the differences later. The `--backup` and `--restore` command line
+options make it easy to quickly backup an entire workflow (including
+generated `creates` targets, source code specified in `depends`, and
+the underlying `workflow.yaml`) and compare it to previous versions.
 
 ```bash
 workflow --backup           # store archive in .workflow/archives/*.tar.bz2
@@ -243,12 +244,13 @@ echo 'oh crap, this sequence of changes was a mistake'
 workflow --restore          # uncompresses archive
 ```
 
-While [we don't recommend it](#op-ed), its not uncommon to get "in the
-zone" and make several edits to analysis scripts before re-running
-your workflow. Because we're human, its easy to incorrectly remember
-the files you edited and how they may affect re-running the
-workflow. To help, the `--dry-run` option lets you see which commands
-will be run and approximately how much time it should take (!!!).
+**`--dry-run`.** While [we don't recommend it](#op-ed), its not
+uncommon to get "in the zone" and make several edits to analysis
+scripts before re-running your workflow. Because we're human, its easy
+to incorrectly remember the files you edited and how they may affect
+re-running the workflow. To help, the `--dry-run` option lets you see
+which commands will be run and approximately how much time it should
+take (!!!).
 
 ```bash
 workflow
@@ -257,16 +259,20 @@ edit path/to/another/script.py
 workflow --dry-run         # don't run anything, just report what would be done
 ```
 
-Sometimes you just want a shell script, plain and simple. The
-`--export` option makes it easy to quickly export the sequence of
-steps that are specified in your workflow without running into
-conflicts.
+For reference, `workflow` stores the duration of each task in
+`.workflow/duration.csv`.
+
+**`--export`.** Sometimes you just want a shell script, plain and
+simple. The `--export` option makes it easy to quickly export the
+sequence of steps that are specified in your workflow without running
+into conflicts.
 
 ```bash
 workflow --export          # prints out sequence of shell commands
 ```
 
-For more details about these and other options, see `workflow --help`.
+**more info.** For more details about these and other options, see
+  `workflow --help`.
 
 ### design goals
 
