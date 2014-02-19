@@ -1,0 +1,20 @@
+# This is the most basic workflow.yaml specification. every task YAML
+# object (separated by `---`) contains a `creates` target, which
+# specifies the file that should be created after the `command`s are
+# run. `command` can either be a sequence of steps or a standalone
+# command. Each `command` is treated as a jinja template that uses the
+# other key/value pairs in the task's YAML object to fill in the
+# blanks.
+
+# create some data to analyze.
+---
+creates: data/hello_world.txt
+command:
+  - mkdir -p $(dirname {{creates}})
+  - for i in $(seq 1 100); do echo $i hello world; done > {{creates}}
+
+# do a word count 
+---
+creates: data/word_count.dat
+depends: data/hello_world.txt
+command: tr ' ' '\n' < {{depends}} | sort | uniq -c > {{creates}}
