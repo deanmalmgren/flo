@@ -10,6 +10,8 @@ import os
 import ConfigParser
 import types
 
+import argcomplete
+
 from workflow.parser import get_available_tasks, get_available_archives
 from workflow.commands import execute, clean, archive
 from workflow.exceptions import CommandLineException, ConfigurationNotFound
@@ -88,7 +90,8 @@ group.add_argument(
     help="Restore the state of the workflow."
 )
 
-# parse arguemnts and run it
+# use argcomplete to autocomplete options, the parse arguments and run
+argcomplete.autocomplete(parser)
 args = parser.parse_args()
 try:
     if args.clean:

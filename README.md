@@ -275,6 +275,13 @@ into conflicts.
 workflow --export          # prints out sequence of shell commands
 ```
 
+**autocomplete.** Autocompletion of available options with workflow is
+enabled by @kislyuk's amazing
+[autocomplete](https://github.com/kislyuk/argcomplete) package. Follow
+instructions to
+[enable global autocomplete](https://github.com/kislyuk/argcomplete#activating-global-completion)
+and you should be all set.
+
 **more info.** For more details about these and other options, see
   `workflow --help`.
 
