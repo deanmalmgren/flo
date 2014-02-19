@@ -37,7 +37,7 @@ tools, but rather to be the glue that sticks them together.
 1. *Install this pacakge.*
 
    ```bash
-   pip install -e git+ssh://github.com/deanmalmgren/data-workflow#egg=workflow
+   pip install -e git+https://github.com/deanmalmgren/data-workflow#egg=workflow
    ```
 
 2. *Write a workflow.yaml.* Create a `workflow.yaml` file in the root
@@ -283,7 +283,7 @@ instructions to
 and you should be all set.
 
 **more info.** For more details about these and other options, see
-  `workflow --help`.
+`workflow --help`.
 
 ### design goals
 
