@@ -23,8 +23,8 @@ with open(filename, 'r') as stream:
             dependencies.append(package)
 
 setup(
-    name=datascope_tools.__name__,
-    version=datascope_tools.VERSION,
+    name=workflow.__name__,
+    version=workflow.VERSION,
     description="enable rapid iteration and development of data workflows",
     long_description=long_description,
     url=github_url,
