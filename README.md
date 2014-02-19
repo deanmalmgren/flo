@@ -297,33 +297,33 @@ the roadmap, but if you have any suggestions for other ideas, please
 
 1. Fork and clone the project.
 
-```bash
-git clone https://github.com/YOUR-USERNAME/data-workflow.git
-```
+   ```bash
+   git clone https://github.com/YOUR-USERNAME/data-workflow.git
+   ```
 
 2. Create a virtual environment and install the dependencies with [virtualenvwrapper](http://virtualenvwrapper.readthedocs.org/en/latest/)
 
-```bash
-mkvirtualenv data-workflow
-pip install -r REQUIREMENTS -r examples/REQUIREMENTS
-```
+   ```bash
+   mkvirtualenv data-workflow
+   pip install -r REQUIREMENTS -r examples/REQUIREMENTS
+   ```
 
 3. Adjust `PYTHONPATH`, `PATH`, and python environment so you can use
    the development version.
 
-```bash
-export PYTHONPATH=$PYTHONPATH:`pwd`
-export PATH=$PATH:`pwd`/bin
-workon data-workflow
-```
+   ```bash
+   export PYTHONPATH=$PYTHONPATH:`pwd`
+   export PATH=$PATH:`pwd`/bin
+   workon data-workflow
+   ```
 
 4. Make sure everything is working by executing workflows in
    `examples/*/workflow.yaml`
 
-```bash
-cd examples/reuters-tfidf
-workflow
-```
+   ```bash
+   cd examples/reuters-tfidf
+   workflow
+   ```
 
 5. Contribute! There are several [open issues](issues) that provide
    good places to dig in.
