@@ -236,6 +236,15 @@ edit path/to/another/script.py
 workflow --dry-run         # don't run anything, just report what would be done
 ```
 
+Sometimes you just want a shell script, plain and simple. The
+`--export` option makes it easy to quickly export the sequence of
+steps that are specified in your workflow without running into
+conflicts.
+
+```bash
+workflow --export          # prints out sequence of shell commands
+```
+
 There are many other options available with `workflow`; see `workflow
 --help` for a full listing.
 
