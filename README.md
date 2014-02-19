@@ -13,10 +13,14 @@ analyze and visualize data to simple scripts that each handle one part
 of the puzzle. Particularly when developing workflows from scrach, we
 have the strong opinion that writing small scripts with intermediate
 outputs is a much more effecitve way to develop a prototype data
-workflow. For one thing, it makes it far easier to spot check results
-using a litany of available command line tools. For another, it makes
-it easy to identify weak links (*e.g.* incorrect results, poor
-performance, etc.) in the analysis and improve them piece by piece.
+workflow. In our experience, we find it to be very convenient to edit
+a script, run it, and repeat several times to make sure it is behaving
+the way we intend. For one thing, this pattern makes it far easier to
+spot check results using a litany of available command line tools. For
+another, this pattern makes it easy to identify weak links (*e.g.*
+incorrect results, poor performance, etc.) in the analysis and improve
+them piece by piece after the entire workflow has been written the
+first time.
 
 This packages is deliberately intended to help users write small, but
 compact workflow prototypes using whatever tools they prefer (R,
@@ -222,6 +226,23 @@ workflow --clean            # asks user if they want to remove `creates` results
 workflow --force            # rerun entire workflow
 ```
 
+Before removing or totally redoing an analysis, I've often found it
+useful to backup my results and compare the differences later. The
+`--backup` and `--restore` command line options make it easy to
+quickly backup an entire workflow (including generated `creates`
+targets, source code specified in `depends`, and the underlying
+`workflow.yaml`) and compare it to previous versions.
+
+```bash
+workflow --backup           # store archive in .workflow/archives/*.tar.bz2
+for i in `seq 20`; do
+	edit path/to/some/script.py
+	workflow
+done
+echo 'oh crap, this sequence of changes was a mistake'
+workflow --restore          # uncompresses archive
+```
+
 While [we don't recommend it](#op-ed), its not uncommon to get "in the
 zone" and make several edits to analysis scripts before re-running
 your workflow. Because we're human, its easy to incorrectly remember
@@ -245,8 +266,7 @@ conflicts.
 workflow --export          # prints out sequence of shell commands
 ```
 
-There are many other options available with `workflow`; see `workflow
---help` for a full listing.
+For more details about these and other options, see `workflow --help`.
 
 ### design goals
 
