@@ -3,6 +3,29 @@ workflows. This does not provide any opinion on the individual tools
 that you might use to conduct an analysis, but it does provide a
 framework for quickly conducting an analysis in a reproducible manner.
 
+### op-ed
+
+There are many ways one could conceivably write a data analysis
+workflow from scratch, from writing single programs that ingest,
+analyze and visualize data to simple scripts that each handle one part
+of the puzzle. We have the strong opinion that writing small scripts
+with intermediate outputs is a much more effecitve way to develop a
+prototype data workflow. For one thing, it makes it far easier to spot
+check results using a litany of available command line tools. For
+another, it makes it easy to identify weak links in the analysis and
+improve them.
+
+This packages is deliberately intended to help users write small, but
+compact workflow prototypes using whatever tools they prefer (R,
+pandas, scipy, hadoop) but with the explicit goal of encouraging users
+to write small scripts that produce intermediate output.
+
+"It should be easy to swap in production data for development data." - @bo-peng
+
+"It should be easy to work on one file at a time." - @stringertheory
+
+"It should be easy to avoid making costly mistakes." - @deanmalmgren
+
 ### quick start
 
 1. *Install this pacakge.* `pip install data-workflow` XXXX NEED TO GET THIS TO WORK
@@ -213,26 +236,6 @@ workflow --dry-run         # don't run anything, just report what would be done
 
 There are many other options available with `workflow`; see `workflow
 --help` for a full listing.
-
-### op-ed
-
-TODO give opinion of how users can most effectively take advantage of
-this tool
-
-
-- [ ] encourage users to write small scripts that accomplish very simple
-  analysis tasks, not onerous beasts that have many moving parts. This
-  makes analysis pipelines much easier to understand and, at least in
-  my experience, usually makes intermediate results reusable and easy
-  to spot-check.
-  - @stringertheory mentioned the ability to work on "one file at a
-    time". Perhaps this package could encourage patterns that make
-    that possible, just like how scrapy's pipeline processes one
-    document at a time
-  - perhaps have an opinion about development patterns to facilitate
-    rapid development? make it clear how to do this most effectively
-- [ ] @bo-peng: What about being able to deal with test/dev data vs
-  production data?
 
 ### design goals
 
