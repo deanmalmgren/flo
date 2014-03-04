@@ -18,8 +18,9 @@ from . import elements
 
 class Task(elements.base.BaseElement):
 
-    def __init__(self, creates=None, depends=None, alias=None, command=None, 
-                 **kwargs):
+    def __init__(self, graph, 
+                 creates=None, depends=None, alias=None, command=None, **kwargs):
+        self.graph = graph
         self.creates = creates
         self.depends = depends
         self.command = command
@@ -45,13 +46,12 @@ class Task(elements.base.BaseElement):
             'alias': self.alias,
         })
 
-        # initially set the graph attribute as None. This is
-        # configured when the Task is added to the graph
-        self.graph = None
+        # add this task to the task graph
+        self.graph.add(self)
 
         # convert the creates/depends/self into elements
-        self.depends_elements = elements.create(self.graph, self.depends)
-        self.creates_elements = elements.create(self.graph, self.creates)
+        self.depends_elements = elements.get_or_create(self.graph, self.depends)
+        self.creates_elements = elements.get_or_create(self.graph, self.creates)
 
         # create some data structures for storing the set of tasks on
         # which this task depends (upstream_tasks) on what depends on
@@ -64,8 +64,6 @@ class Task(elements.base.BaseElement):
         # the command
         self._command = self.command
         self.command = self.render_command_template()
-
-        print 'hello world'
 
     @property
     def id(self):
@@ -272,6 +270,7 @@ class TaskGraph(object):
         # storage as necessary. 
         self.before_element_states = {}
         self.after_element_states = {}
+        self.element_dict = {}
 
         # store the time that this task takes
         self.task_durations = {}
@@ -346,7 +345,6 @@ class TaskGraph(object):
         TaskGraph.task_dict, keyed by task.creates and task.alias (if
         it exists).
         """
-        task.graph = self
         self.task_list.append(task)
         if task.alias is not None:
             if self.task_dict.has_key(task.alias):
@@ -528,6 +526,8 @@ class TaskGraph(object):
 
         self.write_to_storage(self.after_element_states, self.abs_state_path)
         self.write_to_storage(self.task_durations, self.abs_duration_path)
+
+        # XXXX THIS NEEDS TO BE FIXED NEXT
 
     def write_archive(self):
         """Method to backup the current workflow

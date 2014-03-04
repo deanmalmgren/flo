@@ -16,6 +16,15 @@ class BaseElement(object):
     def __init__(self, graph, name):
         self.graph = graph
         self.name = name
+        
+        # add this element to the graph's element_dict, which globally
+        # stores all of the elements associated with this workflow
+        if self.graph.element_dict.has_key(name):
+            raise ValueError("Element '%s' already exists in this graph" % name)
+        self.graph.element_dict[name] = self
+
+    def __repr__(self):
+        return self.name + ':' + str(id(self))
 
     def add_depends(self, task):
         raise NotImplementedError

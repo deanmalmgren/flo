@@ -69,8 +69,7 @@ def load_task_graph():
     # convert each yaml to a task and add it to the graph
     task_graph = tasks.TaskGraph(config_path)
     for task_data in task_list:
-        task = tasks.Task(**task_data)
-        task_graph.add(task)
+        task = tasks.Task(task_graph, **task_data)
     task_graph.link_dependencies()
 
     # load the state of each task's `creates` and `depends` elements
