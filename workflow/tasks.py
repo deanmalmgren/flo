@@ -1,7 +1,6 @@
 import sys
 import os
 import time
-import hashlib
 import csv
 import StringIO
 import collections
@@ -13,14 +12,11 @@ import jinja2
 from .exceptions import InvalidTaskDefinition, ElementNotFound, NonUniqueTask
 from . import colors
 from . import shell
+from . import elements
 
 # TODO: switch to calling things resources instead of 'elements'
 
-# TODO: refactor to put resources as separate classes. Probably makes
-# sense to address this when we deal with mysql or other file
-# protocols
-
-class Task(object):
+class Task(elements.base.BaseElement):
 
     def __init__(self, creates=None, depends=None, alias=None, command=None, 
                  **kwargs):
@@ -28,15 +24,6 @@ class Task(object):
         self.depends = depends
         self.command = command
         self.alias = alias
-
-        # remember other attributes of this Task for rendering
-        # purposes below
-        self.command_attrs = kwargs
-        self.command_attrs.update({
-            'creates': self.creates,
-            'depends': self.depends,
-            'alias': self.alias,
-        })
 
         # quick type checking to make sure the tasks in the
         # configuration file are valid
@@ -49,9 +36,22 @@ class Task(object):
                 "every task must define a `command`"
             )
 
+        # remember other attributes of this Task for rendering
+        # purposes below
+        self.command_attrs = kwargs
+        self.command_attrs.update({
+            'creates': self.creates,
+            'depends': self.depends,
+            'alias': self.alias,
+        })
+
         # initially set the graph attribute as None. This is
         # configured when the Task is added to the graph
         self.graph = None
+
+        # convert the creates/depends/self into elements
+        self.depends_elements = elements.create(self.graph, self.depends)
+        self.creates_elements = elements.create(self.graph, self.creates)
 
         # create some data structures for storing the set of tasks on
         # which this task depends (upstream_tasks) on what depends on
@@ -64,6 +64,8 @@ class Task(object):
         # the command
         self._command = self.command
         self.command = self.render_command_template()
+
+        print 'hello world'
 
     @property
     def id(self):
@@ -89,6 +91,8 @@ class Task(object):
         """
         # TODO: when we allow for non-filesystem targets, this will
         # have to change to accomodate
+        #
+        # XXXX TODO: use the elements to get at this...
         all_filenames = [self.creates]
         if isinstance(self.depends, (list, tuple)):
             all_filenames.extend(self.depends)
@@ -96,76 +100,10 @@ class Task(object):
             all_filenames.append(self.depends)
         return all_filenames
 
-    def get_stream_state(self, stream, block_size=2**20):
-        """Read in a stream in relatively small `block_size`s to make sure we
-        won't have memory problems on BIG DATA streams.
-        http://stackoverflow.com/a/1131255/564709
-        """
-        state = hashlib.sha1()
-        while True:
-            data = stream.read(block_size)
-            if not data:
-                break
-            state.update(data)
-        return state.hexdigest()
-
-    def get_element_state(self, element):
-        """Get the current state of this element. If the element does
-        not exist, throw an error.
-        
-        TODO: This should be able to accomodate files stored on the
-        filesystem AS WELL AS databases, database tables, cloud
-        storage, etc. Can address this with protocols like
-        mysql:dbname/table or mongo:db/collection
-        """
-        # probably a better way to get the protocol in python, but
-        # this is fast and easy
-        parts = element.split(':', 1)
-        if len(parts) == 2:
-            protocol = parts[0]
-        else:
-            protocol = "filesystem"
-
-        method = getattr(self, "get_%s_state" % protocol, None)
-        if method is None:
-            raise NotImplementedError(
-                "protocol '%s' is not implemented yet. Add it to the list here: "
-                "https://github.com/deanmalmgren/data-workflow/issues/15"
-            )
-        return method(element)
-
-    def get_filesystem_state(self, element):
-        state = None
-
-        # for filesystem protocols, dereference any soft links that
-        # the element may point to and calculate the state from
-        element_path = os.path.realpath(
-            os.path.join(self.root_directory, element)
-        )
-        if os.path.exists(element_path):
-            if os.path.isfile(element_path):
-                with open(element_path) as stream:
-                    state = self.get_stream_state(stream)
-            elif os.path.isdir(element_path):
-                state_hash = hashlib.sha1()
-                for root, directories, filenames in os.walk(element_path):
-                    for filename in filenames:
-                        with open(os.path.join(root, filename)) as stream:
-                            state_hash.update(self.get_stream_state(stream))
-                state = state_hash.hexdigest()
-            else:
-                raise NotImplementedError((
-                    "file a feature request to support this type of "
-                    "element "
-                    "https://github.com/deanmalmgren/data-workflow/issues"
-                ))
-        return state
-
-    def get_config_state(self, element):
-        state = None
-
+    def get_state(self):
+        """Get the state of this task"""
         # write the data for this task to a stream so that we can use
-        # the machinery in self.get_stream_state to calculate the
+        # the machinery in self._get_stream_state to calculate the
         # state
         msg = self.creates + str(self.depends) + str(self._command) + \
               str(self.alias)
@@ -173,39 +111,15 @@ class Task(object):
         keys.sort()
         for k in keys:
             msg += k + str(self.command_attrs[k])
-        return self.get_stream_state(StringIO.StringIO(msg))
-
-    def state_in_sync(self, element):
-        """Check the stored state of this element compared with the current
-        state of this element. If they are the same, then this element
-        is in_sync.
-        """
-
-        # if the element is None type (for example, when you only
-        # specify a `creates` and a `command`, but no `depends`),
-        # consider this in sync at this stage. 
-        if element is None:
-            return True
-
-        # Get the stored state value if it exists. If it doesn't exist,
-        # then automatically consider this element out of sync
-        stored_state = self.graph.before_element_states.get(element, None)
-
-        # get the current state of the file just before runtime
-        current_state = self.get_element_state(element)
-
-        # store the after element state here. If its none, its updated
-        # at the very end
-        self.graph.after_element_states[element] = current_state
-
-        # element is in_sync if the stored and current states are the same
-        return stored_state == current_state
+        return self._get_stream_state(StringIO.StringIO(msg))
 
     def in_sync(self):
         """Test whether this task is in sync with the stored state and
         needs to be executed
         """
         in_sync = True
+
+        #XXXX SOMETHING HERE
 
         # if the creates doesn't exist, its not in sync and the task
         # must be executed
@@ -352,7 +266,7 @@ class TaskGraph(object):
         # run. These dictionaries store {element: state} pairs for
         # every element that is in this workflow. The
         # before_element_states read in the state stored locally in
-        # .workflow/storage.tsv and the after_element_states read the
+        # .workflow/state.csv and the after_element_states read the
         # state calculated just before that element is run. At the end
         # of the workflow, the after_element_states are dumped to
         # storage as necessary. 
