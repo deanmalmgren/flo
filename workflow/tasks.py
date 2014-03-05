@@ -547,9 +547,12 @@ class TaskGraph(object):
         state file hasn't been stored yet, it creates a new one.
         """
 
-        # store all of the resource states in a dictionary to save it
-        # to csv
+        # read all of the old storage states first, then over write
+        # the old states with the current states before writing to a
+        # CSV. this is important for situations where a subgraph is
+        # selected to run
         after_resource_states = {}
+        self.read_from_storage(after_resource_states, self.abs_state_path)
         for name, resource in self.resource_dict.iteritems():
             after_resource_states[name] = resource.current_state
 
