@@ -20,7 +20,8 @@ def clean(force=False, export=False, pause=0.5):
         ))
         time.sleep(pause)
         for task in task_graph.task_list:
-            print(task.creates_message())
+            if not task.is_pseudotask():
+                print(task.creates_message())
         yesno = raw_input(colors.red("Delete aforementioned files? [Y/n] "))
         if yesno == '':
             yesno = 'y'
@@ -44,18 +45,20 @@ def execute(task_id=None, force=False, dry_run=False, export=False):
     # tasks that are required to create the specified tasks
     if task_id is not None:
         task_graph = task_graph.subgraph_needed_for([task_id])
-        print len(task_graph.task_list)
 
     # iterate through every task in the task graph and find the set of
     # tasks that have to be executed. we do this first so we can alert
-    # the user as to how long this workflow will take
+    # the user as to how long this workflow will take. use breadth
+    # first search on entire task graph to make sure the
+    # out_of_sync_tasks are created in the appropriate order for
+    # subsequent steps.
     out_of_sync_tasks = []
-    for task in task_graph.task_list:
+    for task in task_graph.iter_bfs():
 
         # regardless of whether we force the execution of the command,
         # run the in_sync method, which calculates the state of the
         # task and all `creates` / `depends` elements
-        if not task.in_sync() or force:
+        if (not task.in_sync() or force) and not task.is_pseudotask():
             out_of_sync_tasks.append(task)
 
     # report the minimum amount of time this will take to execute and
@@ -70,7 +73,7 @@ def execute(task_id=None, force=False, dry_run=False, export=False):
             # things change during the course of a run. This is not
             # ideal but makes it possible to estimate the duration of
             # a workflow run, which is pretty valuable
-            if not task.in_sync() or force:
+            if (not task.in_sync() or force) and not task.is_pseudotask():
                 if not (dry_run or export):
                     task.execute()
                 elif dry_run:

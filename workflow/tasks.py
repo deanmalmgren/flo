@@ -30,10 +30,6 @@ class Task(resources.base.BaseResource):
             raise InvalidTaskDefinition(
                 "every task must define a `creates`"
             )
-        if self.command is None:
-            raise InvalidTaskDefinition(
-                "every task must define a `command`"
-            )
 
         # remember other attributes of this Task for rendering
         # purposes below
@@ -95,6 +91,8 @@ class Task(resources.base.BaseResource):
         #
         # XXXX TODO: use the resources to get at this...
         all_filenames = [self.creates]
+        if self.is_pseudotask():
+            all_filenames = []
         if isinstance(self.depends, (list, tuple)):
             all_filenames.extend(self.depends)
         elif self.depends is not None:
@@ -114,6 +112,11 @@ class Task(resources.base.BaseResource):
         for k in keys:
             msg += k + str(self.command_attrs[k])
         return self._get_stream_state(StringIO.StringIO(msg))
+
+    def is_pseudotask(self):
+        """Check to see if this task is a pseudotask.
+        """
+        return self.command is None
 
     def in_sync(self):
         """Test whether this task is in sync with the stored state and
@@ -135,15 +138,17 @@ class Task(resources.base.BaseResource):
 
     def run(self, command):
         """Run the specified shell command using Fabric-like behavior"""
-        return shell.run(self.root_directory, command)
+        if command is not None:
+            return shell.run(self.root_directory, command)
 
     def clean_command(self):
         return "rm -rf %s" % self.creates
 
     def clean(self):
         """Remove the specified target"""
-        self.run(self.clean_command())
-        print("removed %s" % self.creates_message())
+        if not self.is_pseudotask():
+            self.run(self.clean_command())
+            print("removed %s" % self.creates_message())
 
     def execute(self, command=None):
         """Run the specified task from the root of the workflow"""
@@ -198,6 +203,11 @@ class Task(resources.base.BaseResource):
         if isinstance(command, (list, tuple)):
             return [self.render_command_template(cmd) for cmd in command]
 
+        # if this is a pseudotask, return None to enable downstream
+        # functionality
+        if self.is_pseudotask():
+            return None
+
         # otherwise, need to render the template with Jinja2
         env = jinja2.Environment()
         template = env.from_string(command)
@@ -226,6 +236,8 @@ class Task(resources.base.BaseResource):
                 msg.append(self.command_message(command=subcommand, 
                                                 color=color, pre=pre))
             return '\n'.join(msg)
+        if command is None:
+            return '' # no command message for pseudotasks
         msg = pre + command
         if color:
             msg = color(msg)
@@ -274,6 +286,7 @@ class TaskGraph(object):
             for task in updownset.difference(done):
                 if task not in horizon_set:
                     horizon.append(task)
+                    horizon_set.add(task)
         return task_order
 
     def iter_bfs(self, tasks=None):
@@ -414,6 +427,12 @@ class TaskGraph(object):
             task.creates_resources = resources.get_or_create(
                 self, task.creates
             )
+            
+            # omit creates resources from pseudotasks. this is
+            # getting sloppy. should probably do this within a task?
+            if task.is_pseudotask():
+                task.creates_resources = []
+                del self.resource_dict[task.creates]
 
             # link up the dependencies
             if isinstance(task.depends, (list, tuple)):
@@ -453,11 +472,12 @@ class TaskGraph(object):
             min_duration += self.task_durations.get(task.id, 0.0)
         max_duration, n_unknown, n_tasks = 0.0, 0, 0
         for task in self.iter_bfs(tasks):
-            n_tasks += 1
-            try:
-                max_duration += self.task_durations[task.id]
-            except KeyError:
-                n_unknown += 1
+            if not task.is_pseudotask():
+                n_tasks += 1
+                try:
+                    max_duration += self.task_durations[task.id]
+                except KeyError:
+                    n_unknown += 1
         msg = ''
         if n_unknown>0:
             msg += "%d new tasks with unknown durations.\n" % (
@@ -530,9 +550,12 @@ class TaskGraph(object):
         state file hasn't been stored yet, it creates a new one.
         """
 
-        # store all of the resource states in a dictionary to save it
-        # to csv
+        # read all of the old storage states first, then over write
+        # the old states with the current states before writing to a
+        # CSV. this is important for situations where a subgraph is
+        # selected to run
         after_resource_states = {}
+        self.read_from_storage(after_resource_states, self.abs_state_path)
         for name, resource in self.resource_dict.iteritems():
             after_resource_states[name] = resource.current_state
 
