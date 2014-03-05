@@ -111,6 +111,11 @@ class Task(resources.base.BaseResource):
             msg += k + str(self.command_attrs[k])
         return self._get_stream_state(StringIO.StringIO(msg))
 
+    def is_pseudotask(self):
+        """Check to see if this task is a pseudotask.
+        """
+        return self.command is None
+
     def in_sync(self):
         """Test whether this task is in sync with the stored state and
         needs to be executed
@@ -195,10 +200,10 @@ class Task(resources.base.BaseResource):
         if isinstance(command, (list, tuple)):
             return [self.render_command_template(cmd) for cmd in command]
 
-        # if this is a pseudotarget, return None to enable downstream
+        # if this is a pseudotask, return None to enable downstream
         # functionality
-        if command is None:
-            return command
+        if self.is_pseudotask():
+            return None
 
         # otherwise, need to render the template with Jinja2
         env = jinja2.Environment()
@@ -229,7 +234,7 @@ class Task(resources.base.BaseResource):
                                                 color=color, pre=pre))
             return '\n'.join(msg)
         if command is None:
-            return '' # no command message for pseudotargets
+            return '' # no command message for pseudotasks
         msg = pre + command
         if color:
             msg = color(msg)
@@ -419,9 +424,9 @@ class TaskGraph(object):
                 self, task.creates
             )
             
-            # omit creates resources from pseudotargets. this is
+            # omit creates resources from pseudotasks. this is
             # getting sloppy. should probably do this within a task?
-            if task.command is None:
+            if task.is_pseudotask():
                 task.creates_resources = []
                 del self.resource_dict[task.creates]
 

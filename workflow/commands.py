@@ -44,7 +44,6 @@ def execute(task_id=None, force=False, dry_run=False, export=False):
     # tasks that are required to create the specified tasks
     if task_id is not None:
         task_graph = task_graph.subgraph_needed_for([task_id])
-        print len(task_graph.task_list)
 
     # iterate through every task in the task graph and find the set of
     # tasks that have to be executed. we do this first so we can alert
@@ -55,7 +54,7 @@ def execute(task_id=None, force=False, dry_run=False, export=False):
         # regardless of whether we force the execution of the command,
         # run the in_sync method, which calculates the state of the
         # task and all `creates` / `depends` elements
-        if not task.in_sync() or force:
+        if (not task.in_sync() or force) and not task.is_pseudotask():
             out_of_sync_tasks.append(task)
 
     # report the minimum amount of time this will take to execute and
