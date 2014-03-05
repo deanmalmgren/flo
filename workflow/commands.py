@@ -69,7 +69,7 @@ def execute(task_id=None, force=False, dry_run=False, export=False):
             # things change during the course of a run. This is not
             # ideal but makes it possible to estimate the duration of
             # a workflow run, which is pretty valuable
-            if not task.in_sync() or force:
+            if (not task.in_sync() or force) and not task.is_pseudotask():
                 if not (dry_run or export):
                     task.execute()
                 elif dry_run:

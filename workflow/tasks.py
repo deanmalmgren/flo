@@ -283,6 +283,7 @@ class TaskGraph(object):
             for task in updownset.difference(done):
                 if task not in horizon_set:
                     horizon.append(task)
+                    horizon_set.add(task)
         return task_order
 
     def iter_bfs(self, tasks=None):
