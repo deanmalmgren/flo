@@ -1,7 +1,6 @@
 import sys
 import os
 import time
-import hashlib
 import csv
 import StringIO
 import collections
@@ -10,33 +9,20 @@ import glob
 
 import jinja2
 
-from .exceptions import InvalidTaskDefinition, ElementNotFound, NonUniqueTask
+from .exceptions import InvalidTaskDefinition, ResourceNotFound, NonUniqueTask
 from . import colors
 from . import shell
+from . import resources
 
-# TODO: switch to calling things resources instead of 'elements'
+class Task(resources.base.BaseResource):
 
-# TODO: refactor to put resources as separate classes. Probably makes
-# sense to address this when we deal with mysql or other file
-# protocols
-
-class Task(object):
-
-    def __init__(self, creates=None, depends=None, alias=None, command=None, 
-                 **kwargs):
+    def __init__(self, graph, creates=None, depends=None, alias=None, 
+                 command=None, **kwargs):
+        self.graph = graph
         self.creates = creates
         self.depends = depends
         self.command = command
         self.alias = alias
-
-        # remember other attributes of this Task for rendering
-        # purposes below
-        self.command_attrs = kwargs
-        self.command_attrs.update({
-            'creates': self.creates,
-            'depends': self.depends,
-            'alias': self.alias,
-        })
 
         # quick type checking to make sure the tasks in the
         # configuration file are valid
@@ -49,9 +35,22 @@ class Task(object):
                 "every task must define a `command`"
             )
 
-        # initially set the graph attribute as None. This is
-        # configured when the Task is added to the graph
-        self.graph = None
+        # remember other attributes of this Task for rendering
+        # purposes below
+        self.command_attrs = kwargs
+        self.command_attrs.update({
+            'creates': self.creates,
+            'depends': self.depends,
+            'alias': self.alias,
+        })
+
+        # add this task to the task graph
+        self.graph.add(self)
+
+        # this is used to store resources that are associated with
+        # this task. This is set up in TaskGraph.link_dependencies
+        self.depends_resources = []
+        self.creates_resources = []
 
         # create some data structures for storing the set of tasks on
         # which this task depends (upstream_tasks) on what depends on
@@ -64,6 +63,10 @@ class Task(object):
         # the command
         self._command = self.command
         self.command = self.render_command_template()
+
+        # call the BaseResource.__init__ to get this to behave like an
+        # resource here, too
+        super(Task, self).__init__(self.graph, 'config:'+self.id)
 
     @property
     def id(self):
@@ -89,6 +92,8 @@ class Task(object):
         """
         # TODO: when we allow for non-filesystem targets, this will
         # have to change to accomodate
+        #
+        # XXXX TODO: use the resources to get at this...
         all_filenames = [self.creates]
         if isinstance(self.depends, (list, tuple)):
             all_filenames.extend(self.depends)
@@ -96,76 +101,11 @@ class Task(object):
             all_filenames.append(self.depends)
         return all_filenames
 
-    def get_stream_state(self, stream, block_size=2**20):
-        """Read in a stream in relatively small `block_size`s to make sure we
-        won't have memory problems on BIG DATA streams.
-        http://stackoverflow.com/a/1131255/564709
-        """
-        state = hashlib.sha1()
-        while True:
-            data = stream.read(block_size)
-            if not data:
-                break
-            state.update(data)
-        return state.hexdigest()
-
-    def get_element_state(self, element):
-        """Get the current state of this element. If the element does
-        not exist, throw an error.
-        
-        TODO: This should be able to accomodate files stored on the
-        filesystem AS WELL AS databases, database tables, cloud
-        storage, etc. Can address this with protocols like
-        mysql:dbname/table or mongo:db/collection
-        """
-        # probably a better way to get the protocol in python, but
-        # this is fast and easy
-        parts = element.split(':', 1)
-        if len(parts) == 2:
-            protocol = parts[0]
-        else:
-            protocol = "filesystem"
-
-        method = getattr(self, "get_%s_state" % protocol, None)
-        if method is None:
-            raise NotImplementedError(
-                "protocol '%s' is not implemented yet. Add it to the list here: "
-                "https://github.com/deanmalmgren/data-workflow/issues/15"
-            )
-        return method(element)
-
-    def get_filesystem_state(self, element):
-        state = None
-
-        # for filesystem protocols, dereference any soft links that
-        # the element may point to and calculate the state from
-        element_path = os.path.realpath(
-            os.path.join(self.root_directory, element)
-        )
-        if os.path.exists(element_path):
-            if os.path.isfile(element_path):
-                with open(element_path) as stream:
-                    state = self.get_stream_state(stream)
-            elif os.path.isdir(element_path):
-                state_hash = hashlib.sha1()
-                for root, directories, filenames in os.walk(element_path):
-                    for filename in filenames:
-                        with open(os.path.join(root, filename)) as stream:
-                            state_hash.update(self.get_stream_state(stream))
-                state = state_hash.hexdigest()
-            else:
-                raise NotImplementedError((
-                    "file a feature request to support this type of "
-                    "element "
-                    "https://github.com/deanmalmgren/data-workflow/issues"
-                ))
-        return state
-
-    def get_config_state(self, element):
-        state = None
-
+    @property
+    def current_state(self):
+        """Get the state of this task"""
         # write the data for this task to a stream so that we can use
-        # the machinery in self.get_stream_state to calculate the
+        # the machinery in self._get_stream_state to calculate the
         # state
         msg = self.creates + str(self.depends) + str(self._command) + \
               str(self.alias)
@@ -173,39 +113,13 @@ class Task(object):
         keys.sort()
         for k in keys:
             msg += k + str(self.command_attrs[k])
-        return self.get_stream_state(StringIO.StringIO(msg))
-
-    def state_in_sync(self, element):
-        """Check the stored state of this element compared with the current
-        state of this element. If they are the same, then this element
-        is in_sync.
-        """
-
-        # if the element is None type (for example, when you only
-        # specify a `creates` and a `command`, but no `depends`),
-        # consider this in sync at this stage. 
-        if element is None:
-            return True
-
-        # Get the stored state value if it exists. If it doesn't exist,
-        # then automatically consider this element out of sync
-        stored_state = self.graph.before_element_states.get(element, None)
-
-        # get the current state of the file just before runtime
-        current_state = self.get_element_state(element)
-
-        # store the after element state here. If its none, its updated
-        # at the very end
-        self.graph.after_element_states[element] = current_state
-
-        # element is in_sync if the stored and current states are the same
-        return stored_state == current_state
+        return self._get_stream_state(StringIO.StringIO(msg))
 
     def in_sync(self):
         """Test whether this task is in sync with the stored state and
         needs to be executed
         """
-        in_sync = True
+        in_sync = self.state_in_sync()
 
         # if the creates doesn't exist, its not in sync and the task
         # must be executed
@@ -214,18 +128,9 @@ class Task(object):
 
         # if any of the dependencies are out of sync, then this task
         # must be executed
-        if isinstance(self.depends, (list, tuple)):
-            for dep in self.depends:
-                if not self.state_in_sync(dep):
-                    in_sync = False # but still iterate
-        elif not self.state_in_sync(self.depends):
-            in_sync = False
+        for resource in self.depends_resources:
+            in_sync = in_sync and resource.state_in_sync()
 
-        # if the data about this task is out of sync, then this task
-        # must be executed
-        in_sync = self.state_in_sync("config:"+self.id) and in_sync
-
-        # otherwise, its in sync
         return in_sync
 
     def run(self, command):
@@ -348,16 +253,9 @@ class TaskGraph(object):
         self.config_path = config_path
         self.root_directory = os.path.dirname(config_path)
 
-        # Store the local in_sync state which doesn't change during a
-        # run. These dictionaries store {element: state} pairs for
-        # every element that is in this workflow. The
-        # before_element_states read in the state stored locally in
-        # .workflow/storage.tsv and the after_element_states read the
-        # state calculated just before that element is run. At the end
-        # of the workflow, the after_element_states are dumped to
-        # storage as necessary. 
-        self.before_element_states = {}
-        self.after_element_states = {}
+        # Store the resources in a dictionary, keyed by name where the
+        # values are resource instances
+        self.resource_dict = {}
 
         # store the time that this task takes
         self.task_durations = {}
@@ -432,7 +330,6 @@ class TaskGraph(object):
         TaskGraph.task_dict, keyed by task.creates and task.alias (if
         it exists).
         """
-        task.graph = self
         self.task_list.append(task)
         if task.alias is not None:
             if self.task_dict.has_key(task.alias):
@@ -461,9 +358,30 @@ class TaskGraph(object):
         # line
         for task in subgraph.task_list:
             task.reset_task_dependencies()
+        subgraph.dereference_depends_aliases()
         subgraph.link_dependencies()
         subgraph.load_state()
         return subgraph
+
+    def _dereference_alias_helper(self, name):
+        for task in self.task_list:
+            if task.alias == name:
+                return task.creates
+
+    def dereference_depends_aliases(self):
+        """This converts every alias used in a depends statement into the
+        corresponding `creates` element in that task declaration. 
+        """
+        for task in self.task_list:
+            if isinstance(task.depends, (list, tuple)):
+                for i, d in enumerate(task.depends):
+                    dd = self._dereference_alias_helper(d)
+                    if dd is not None:
+                        task.depends[i] = dd
+            else:
+                dd = self._dereference_alias_helper(task.depends)
+                if dd is not None:
+                    task.depends = dd
 
     def _link_dependency_helper(self, task, dependency):
         if dependency is not None:
@@ -487,6 +405,17 @@ class TaskGraph(object):
         their dependencies.
         """
         for task in self.task_list:
+
+            # instantiate the resources associated with this task here
+            # to make sure we can resolve aliases if they exist.
+            task.depends_resources = resources.get_or_create(
+                self, task.depends
+            )
+            task.creates_resources = resources.get_or_create(
+                self, task.creates
+            )
+
+            # link up the dependencies
             if isinstance(task.depends, (list, tuple)):
                 for dependency in task.depends:
                     self._link_dependency_helper(task, dependency)
@@ -577,13 +506,19 @@ class TaskGraph(object):
             for item in dictionary.iteritems():
                 writer.writerow(item)
 
+    def get_state_from_storage(self, resource):
+        if os.path.exists(self.abs_state_path):
+            with open(self.abs_state_path) as stream:
+                reader = csv.reader(stream)
+                for row in reader:
+                    if row[0]==resource:
+                        return row[1]
+
     def load_state(self):
-        """Load the states of all elements (files, databases, etc). If the
+        """Load the states of all resources (files, databases, etc). If the
         state file hasn't been stored yet, nothing happens. This also
         loads the duration statistics on this task.
-
         """
-        self.read_from_storage(self.before_element_states, self.abs_state_path)
         self.read_from_storage(self.task_durations, self.abs_duration_path)
 
         # typecast the task_durations
@@ -591,28 +526,17 @@ class TaskGraph(object):
             self.task_durations[task_id] = float(duration)
 
     def save_state(self):
-        """Save the states of all elements (files, databases, etc). If the
+        """Save the states of all resources (files, databases, etc). If the
         state file hasn't been stored yet, it creates a new one.
         """
 
-        # before saving the after_element_states, replace any None
-        # values with a recalculated state. This happens, for example,
-        # when a `creates` target is made the first time it executes
-        # the task. At this point, every target should have a state!
-        # 
-        # TODO: this is a bit of a hack to be able to use Task's
-        # get_element_state method. Should probably find a better
-        # place to organize this code so we don't have to do that
-        dummy_task = Task(creates="dummy", command="dummy")
-        dummy_task.graph = self
-        for element, state in self.after_element_states.iteritems():
-            if state is None:
-                state = dummy_task.get_element_state(element)
-                if state is None:
-                    raise ElementNotFound(element)
-                self.after_element_states[element] = state
+        # store all of the resource states in a dictionary to save it
+        # to csv
+        after_resource_states = {}
+        for name, resource in self.resource_dict.iteritems():
+            after_resource_states[name] = resource.current_state
 
-        self.write_to_storage(self.after_element_states, self.abs_state_path)
+        self.write_to_storage(after_resource_states, self.abs_state_path)
         self.write_to_storage(self.task_durations, self.abs_duration_path)
 
     def write_archive(self):
