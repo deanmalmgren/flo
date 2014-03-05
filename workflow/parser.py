@@ -15,6 +15,10 @@ from . import tasks
 CONFIG_FILENAME = "workflow.yaml"
 TASKS_KEY = 'tasks'
 
+# this is a global cache of the workflow task_graph object so we
+# aren't creating a bunch of these when we run the workflow
+_task_graph = None
+
 def find_config_path():
     """Recursively decend into parent directories looking for the 
     """
@@ -38,6 +42,9 @@ def load_task_graph():
     """Load the task graph from the configuration file located at
     config_path
     """
+    global _task_graph
+    if _task_graph is not None:
+        return _task_graph
 
     # look for workflow configuration file if it isn't already
     # specified
@@ -75,6 +82,7 @@ def load_task_graph():
     # load the state of each task's `creates` and `depends` elements
     task_graph.load_state()
 
+    _task_graph = task_graph
     return task_graph
 
 def get_available_tasks():
