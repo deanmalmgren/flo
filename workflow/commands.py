@@ -48,9 +48,12 @@ def execute(task_id=None, force=False, dry_run=False, export=False):
 
     # iterate through every task in the task graph and find the set of
     # tasks that have to be executed. we do this first so we can alert
-    # the user as to how long this workflow will take
+    # the user as to how long this workflow will take. use breadth
+    # first search on entire task graph to make sure the
+    # out_of_sync_tasks are created in the appropriate order for
+    # subsequent steps.
     out_of_sync_tasks = []
-    for task in task_graph.task_list:
+    for task in task_graph.iter_bfs():
 
         # regardless of whether we force the execution of the command,
         # run the in_sync method, which calculates the state of the
