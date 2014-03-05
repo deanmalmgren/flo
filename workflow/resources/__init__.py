@@ -16,7 +16,7 @@ def get_or_create(graph, candidate):
         # check if resource has already been created for this graph
         # and, if not, create it
         try:
-            resource = graph.get_resource(candidate)
+            resource = graph.resource_dict[candidate]
         except KeyError:
             # TODO: this is where we can differentiate different
             # protocols, but for now, everything is a FileSystem thing

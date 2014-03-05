@@ -358,19 +358,30 @@ class TaskGraph(object):
         # line
         for task in subgraph.task_list:
             task.reset_task_dependencies()
+        subgraph.dereference_depends_aliases()
         subgraph.link_dependencies()
         subgraph.load_state()
         return subgraph
 
-    def get_resource(self, resource_name):
-        """This returns a canonical name for the resource. If an alias is
-        used, it returns the name associated with the corresponding
-        `creates` element of the resource.
+    def _dereference_alias_helper(self, name):
+        for task in self.task_list:
+            if task.alias == name:
+                return task.creates
+
+    def dereference_depends_aliases(self):
+        """This converts every alias used in a depends statement into the
+        corresponding `creates` element in that task declaration. 
         """
         for task in self.task_list:
-            if resource_name == task.alias:
-                resource_name = task.creates
-        return self.resource_dict[resource_name]
+            if isinstance(task.depends, (list, tuple)):
+                for i, d in enumerate(task.depends):
+                    dd = self._dereference_alias_helper(d)
+                    if dd is not None:
+                        task.depends[i] = dd
+            else:
+                dd = self._dereference_alias_helper(task.depends)
+                if dd is not None:
+                    task.depends = dd
 
     def _link_dependency_helper(self, task, dependency):
         if dependency is not None:
