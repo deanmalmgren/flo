@@ -144,8 +144,9 @@ class Task(resources.base.BaseResource):
 
     def clean(self):
         """Remove the specified target"""
-        self.run(self.clean_command())
-        print("removed %s" % self.creates_message())
+        if not self.is_pseudotask():
+            self.run(self.clean_command())
+            print("removed %s" % self.creates_message())
 
     def execute(self, command=None):
         """Run the specified task from the root of the workflow"""

@@ -20,7 +20,8 @@ def clean(force=False, export=False, pause=0.5):
         ))
         time.sleep(pause)
         for task in task_graph.task_list:
-            print(task.creates_message())
+            if not task.is_pseudotask():
+                print(task.creates_message())
         yesno = raw_input(colors.red("Delete aforementioned files? [Y/n] "))
         if yesno == '':
             yesno = 'y'
