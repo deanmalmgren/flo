@@ -469,11 +469,12 @@ class TaskGraph(object):
             min_duration += self.task_durations.get(task.id, 0.0)
         max_duration, n_unknown, n_tasks = 0.0, 0, 0
         for task in self.iter_bfs(tasks):
-            n_tasks += 1
-            try:
-                max_duration += self.task_durations[task.id]
-            except KeyError:
-                n_unknown += 1
+            if not task.is_pseudotask():
+                n_tasks += 1
+                try:
+                    max_duration += self.task_durations[task.id]
+                except KeyError:
+                    n_unknown += 1
         msg = ''
         if n_unknown>0:
             msg += "%d new tasks with unknown durations.\n" % (
