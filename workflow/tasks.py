@@ -91,6 +91,8 @@ class Task(resources.base.BaseResource):
         #
         # XXXX TODO: use the resources to get at this...
         all_filenames = [self.creates]
+        if self.is_pseudotask():
+            all_filenames = []
         if isinstance(self.depends, (list, tuple)):
             all_filenames.extend(self.depends)
         elif self.depends is not None:
