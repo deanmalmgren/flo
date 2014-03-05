@@ -52,7 +52,10 @@ tools, but rather to be the glue that sticks them together.
    `command` key that defines the command that are required to create
    the resource defined in `creates`. You can optionally define a
    `depends` key that lists resources, either filenames on disk or
-   other task `creates` targets, to quickly set up dependency chains.
+   other task `creates` targets, to quickly set up dependency
+   chains. You can optionally omit the `command` key to create
+   pseudotasks that are collections of other tasks for quickly running
+   a subcomponent of the analysis.
 
 3. *Execute your workflow.* From the same directory as the
    `workflow.yaml` file (or any child directory), run `workflow` and
@@ -127,6 +130,18 @@ the `depends` key, multiple steps can be defined in a
 command:
   - mkdir -p $(dirname {{creates}})
   - python {{depends}} > {{creates}}
+```
+
+If the `command` key is omitted, this task is treated like a
+pseudotask to make it easy to group together a collection of other
+tasks like this:
+
+```yaml
+creates: figures         # name of pseudotask
+depends:
+  - path/to/figure/a.png # refers to another task in workflow.yaml
+  - path/to/figure/b.png # refers to another task in workflow.yaml
+  - path/to/figure/c.png # refers to another task in workflow.yaml
 ```
 
 **templating variables.** Importantly, the `command` is rendered as a

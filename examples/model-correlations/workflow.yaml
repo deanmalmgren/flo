@@ -61,7 +61,9 @@ tasks:
       - data/x_y.dat
     command: python {{depends|join(' ')}} {{x_col}} {{creates}}
 
-  # this is a pseudotarget that is a convenient alias for several subcommands
+  # this is an example of a pseudotask that is a convenient alias for
+  # several subcommands. pseudotasks are tasks that have no `command`
+  # associated with them.
   -
     creates: figures
     depends:
