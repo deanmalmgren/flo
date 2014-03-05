@@ -26,12 +26,6 @@ class BaseElement(object):
     def __repr__(self):
         return self.name + ':' + str(id(self))
 
-    def add_depends(self, task):
-        raise NotImplementedError
-
-    def add_creates(self, task):
-        raise NotImplementedError
-
     @property
     def root_directory(self):
         """Easy access to the graph's root_directory, which is stored once for
@@ -51,41 +45,28 @@ class BaseElement(object):
             state.update(data)
         return state.hexdigest()
 
-    def get_state(self):
+    @property
+    def previous_state(self):
+        """Get the previous state of this element prior to this run. If the
+        element does not exist, throw an error.
+        """
+        return self.graph.get_state_from_storage(self.name)
+
+    @property
+    def current_state(self):
         """Get the current state of this element. If the element does
         not exist, throw an error.
         
         This method must be overwritten by any child classes.
         """
-        raise NotImplementedError("Must implement get_state for child classes")
+        raise NotImplementedError(
+            "Must implement current_state for child classes"
+        )
         
-    def state_in_sync(self, element):
+    def state_in_sync(self):
         """Check the stored state of this element compared with the current
         state of this element. If they are the same, then this element
         is in_sync.
         """
-
-        # XXXX THIS IS A MESS
-
-        # if the element is None type (for example, when you only
-        # specify a `creates` and a `command`, but no `depends`),
-        # consider this in sync at this stage. 
-        if element is None:
-            return True
-
-        # Get the stored state value if it exists. If it doesn't exist,
-        # then automatically consider this element out of sync
-        stored_state = self.graph.before_element_states.get(element, None)
-
-        # get the current state of the file just before runtime
-        current_state = self.get_state()
-
-        print 'STATE', stored_state, current_state
-
-        # store the after element state here. If its none, its updated
-        # at the very end
-        self.graph.after_element_states[element] = current_state
-
-        # element is in_sync if the stored and current states are the same
-        return stored_state == current_state
+        return self.previous_state == self.current_state
 

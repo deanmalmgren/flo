@@ -6,7 +6,8 @@ class FileSystem(BaseElement):
     """Evaluate the state of elements on the file system.
     """
 
-    def get_state(self):
+    @property
+    def current_state(self):
         state = None
 
         # for filesystem protocols, dereference any soft links that

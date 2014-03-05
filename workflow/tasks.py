@@ -49,7 +49,7 @@ class Task(elements.base.BaseElement):
         # add this task to the task graph
         self.graph.add(self)
 
-        # convert the creates/depends/self into elements
+        # convert the creates/depends into elements
         self.depends_elements = elements.get_or_create(self.graph, self.depends)
         self.creates_elements = elements.get_or_create(self.graph, self.creates)
 
@@ -64,6 +64,10 @@ class Task(elements.base.BaseElement):
         # the command
         self._command = self.command
         self.command = self.render_command_template()
+
+        # call the BaseElement.__init__ to get this to behave like an
+        # element here, too
+        super(Task, self).__init__(self.graph, 'config:'+self.id)
 
     @property
     def id(self):
@@ -98,7 +102,8 @@ class Task(elements.base.BaseElement):
             all_filenames.append(self.depends)
         return all_filenames
 
-    def get_state(self):
+    @property
+    def current_state(self):
         """Get the state of this task"""
         # write the data for this task to a stream so that we can use
         # the machinery in self._get_stream_state to calculate the
@@ -115,9 +120,7 @@ class Task(elements.base.BaseElement):
         """Test whether this task is in sync with the stored state and
         needs to be executed
         """
-        in_sync = True
-
-        #XXXX SOMETHING HERE
+        in_sync = self.state_in_sync()
 
         # if the creates doesn't exist, its not in sync and the task
         # must be executed
@@ -126,18 +129,9 @@ class Task(elements.base.BaseElement):
 
         # if any of the dependencies are out of sync, then this task
         # must be executed
-        if isinstance(self.depends, (list, tuple)):
-            for dep in self.depends:
-                if not self.state_in_sync(dep):
-                    in_sync = False # but still iterate
-        elif not self.state_in_sync(self.depends):
-            in_sync = False
+        for element in self.depends_elements:
+            in_sync = in_sync and element.state_in_sync()
 
-        # if the data about this task is out of sync, then this task
-        # must be executed
-        in_sync = self.state_in_sync("config:"+self.id) and in_sync
-
-        # otherwise, its in sync
         return in_sync
 
     def run(self, command):
@@ -489,11 +483,18 @@ class TaskGraph(object):
             for item in dictionary.iteritems():
                 writer.writerow(item)
 
+    def get_state_from_storage(self, element):
+        if os.path.exists(self.abs_state_path):
+            with open(self.abs_state_path) as stream:
+                reader = csv.reader(stream)
+                for row in reader:
+                    if row[0]==element:
+                        return row[1]
+
     def load_state(self):
         """Load the states of all elements (files, databases, etc). If the
         state file hasn't been stored yet, nothing happens. This also
         loads the duration statistics on this task.
-
         """
         self.read_from_storage(self.before_element_states, self.abs_state_path)
         self.read_from_storage(self.task_durations, self.abs_duration_path)
@@ -507,24 +508,13 @@ class TaskGraph(object):
         state file hasn't been stored yet, it creates a new one.
         """
 
-        # before saving the after_element_states, replace any None
-        # values with a recalculated state. This happens, for example,
-        # when a `creates` target is made the first time it executes
-        # the task. At this point, every target should have a state!
-        # 
-        # TODO: this is a bit of a hack to be able to use Task's
-        # get_element_state method. Should probably find a better
-        # place to organize this code so we don't have to do that
-        dummy_task = Task(creates="dummy", command="dummy")
-        dummy_task.graph = self
-        for element, state in self.after_element_states.iteritems():
-            if state is None:
-                state = dummy_task.get_element_state(element)
-                if state is None:
-                    raise ElementNotFound(element)
-                self.after_element_states[element] = state
+        # store all of the element states in a dictionary to save it
+        # to csv
+        after_element_states = {}
+        for name, element in self.element_dict.iteritems():
+            after_element_states[name] = element.current_state
 
-        self.write_to_storage(self.after_element_states, self.abs_state_path)
+        self.write_to_storage(after_element_states, self.abs_state_path)
         self.write_to_storage(self.task_durations, self.abs_duration_path)
 
         # XXXX THIS NEEDS TO BE FIXED NEXT
