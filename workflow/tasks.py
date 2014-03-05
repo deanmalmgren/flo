@@ -47,9 +47,10 @@ class Task(resources.base.BaseResource):
         # add this task to the task graph
         self.graph.add(self)
 
-        # convert the creates/depends into resources
-        self.depends_resources = resources.get_or_create(self.graph, self.depends)
-        self.creates_resources = resources.get_or_create(self.graph, self.creates)
+        # this is used to store resources that are associated with
+        # this task. This is set up in TaskGraph.link_dependencies
+        self.depends_resources = []
+        self.creates_resources = []
 
         # create some data structures for storing the set of tasks on
         # which this task depends (upstream_tasks) on what depends on
@@ -361,6 +362,16 @@ class TaskGraph(object):
         subgraph.load_state()
         return subgraph
 
+    def get_resource(self, resource_name):
+        """This returns a canonical name for the resource. If an alias is
+        used, it returns the name associated with the corresponding
+        `creates` element of the resource.
+        """
+        for task in self.task_list:
+            if resource_name == task.alias:
+                resource_name = task.creates
+        return self.resource_dict[resource_name]
+
     def _link_dependency_helper(self, task, dependency):
         if dependency is not None:
             dependent_task = self.task_dict.get(dependency, None)
@@ -383,6 +394,17 @@ class TaskGraph(object):
         their dependencies.
         """
         for task in self.task_list:
+
+            # instantiate the resources associated with this task here
+            # to make sure we can resolve aliases if they exist.
+            task.depends_resources = resources.get_or_create(
+                self, task.depends
+            )
+            task.creates_resources = resources.get_or_create(
+                self, task.creates
+            )
+
+            # link up the dependencies
             if isinstance(task.depends, (list, tuple)):
                 for dependency in task.depends:
                     self._link_dependency_helper(task, dependency)
