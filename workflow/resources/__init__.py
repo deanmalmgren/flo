@@ -10,7 +10,7 @@ def get_or_create(graph, candidate):
     resources = []
     if isinstance(candidate, (list, tuple)):
         for c in candidate:
-            resources.extend(creates(graph, c))
+            resources.extend(get_or_create(graph, c))
     elif candidate is not None:
 
         # check if resource has already been created for this graph

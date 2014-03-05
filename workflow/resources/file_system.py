@@ -1,4 +1,5 @@
 import os
+import hashlib
 
 from .base import BaseResource
 
