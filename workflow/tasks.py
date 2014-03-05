@@ -30,10 +30,6 @@ class Task(resources.base.BaseResource):
             raise InvalidTaskDefinition(
                 "every task must define a `creates`"
             )
-        if self.command is None:
-            raise InvalidTaskDefinition(
-                "every task must define a `command`"
-            )
 
         # remember other attributes of this Task for rendering
         # purposes below
@@ -135,7 +131,8 @@ class Task(resources.base.BaseResource):
 
     def run(self, command):
         """Run the specified shell command using Fabric-like behavior"""
-        return shell.run(self.root_directory, command)
+        if command is not None:
+            return shell.run(self.root_directory, command)
 
     def clean_command(self):
         return "rm -rf %s" % self.creates
@@ -198,6 +195,11 @@ class Task(resources.base.BaseResource):
         if isinstance(command, (list, tuple)):
             return [self.render_command_template(cmd) for cmd in command]
 
+        # if this is a pseudotarget, return None to enable downstream
+        # functionality
+        if command is None:
+            return command
+
         # otherwise, need to render the template with Jinja2
         env = jinja2.Environment()
         template = env.from_string(command)
@@ -226,6 +228,8 @@ class Task(resources.base.BaseResource):
                 msg.append(self.command_message(command=subcommand, 
                                                 color=color, pre=pre))
             return '\n'.join(msg)
+        if command is None:
+            return '' # no command message for pseudotargets
         msg = pre + command
         if color:
             msg = color(msg)
@@ -414,6 +418,12 @@ class TaskGraph(object):
             task.creates_resources = resources.get_or_create(
                 self, task.creates
             )
+            
+            # omit creates resources from pseudotargets. this is
+            # getting sloppy. should probably do this within a task?
+            if task.command is None:
+                task.creates_resources = []
+                del self.resource_dict[task.creates]
 
             # link up the dependencies
             if isinstance(task.depends, (list, tuple)):

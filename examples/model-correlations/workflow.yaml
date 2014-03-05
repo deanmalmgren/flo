@@ -60,3 +60,12 @@ tasks:
       - src/autocorrelation.py
       - data/x_y.dat
     command: python {{depends|join(' ')}} {{x_col}} {{creates}}
+
+  # this is a pseudotarget that is a convenient alias for several subcommands
+  -
+    creates: figures
+    depends:
+      - data/x_pdf.png
+      - data/y_pdf.png
+      - data/x_autocorrelation.png
+      - data/x_y_correlation.png
