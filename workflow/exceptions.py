@@ -17,12 +17,12 @@ class ConfigurationNotFound(CommandLineException):
 class InvalidTaskDefinition(Exception):
     pass
 
-class ElementNotFound(Exception):
-    def __init__(self, element):
-        self.element = element
+class ResourceNotFound(Exception):
+    def __init__(self, resource):
+        self.resource = resource
 
     def __str__(self):
-        return "\nElement '%s' not found" % self.element
+        return "\nResource '%s' not found" % self.resource
 
 class NonUniqueTask(Exception):
     pass

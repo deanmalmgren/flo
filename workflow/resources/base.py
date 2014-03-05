@@ -1,27 +1,26 @@
-"""Base element here
+"""Base resource here
 """
 
 import hashlib
 
-class BaseElement(object):
-    """An element is any `creates` or `depends` or `task` that is
-    mentioned in a workflow.yaml. An element can be on the file
+class BaseResource(object):
+    """A resource is any `creates` or `depends` or `task` that is
+    mentioned in a workflow.yaml. A resource can be on the file
     system, in a database, etc.
 
-    The basic functionality of an element is to (i) keep track of
-    which tasks it is associated with and (ii) assess the state of the
-    element and whether it is in sync
+    The basic functionality of an resource is to assess the state of the
+    resource and whether it is in sync. 
     """
 
     def __init__(self, graph, name):
         self.graph = graph
         self.name = name
         
-        # add this element to the graph's element_dict, which globally
-        # stores all of the elements associated with this workflow
-        if self.graph.element_dict.has_key(name):
-            raise ValueError("Element '%s' already exists in this graph" % name)
-        self.graph.element_dict[name] = self
+        # add this resource to the graph's resource_dict, which globally
+        # stores all of the resources associated with this workflow
+        if self.graph.resource_dict.has_key(name):
+            raise ValueError("Resource '%s' already exists in this graph" % name)
+        self.graph.resource_dict[name] = self
 
     def __repr__(self):
         return self.name + ':' + str(id(self))
@@ -47,25 +46,30 @@ class BaseElement(object):
 
     @property
     def previous_state(self):
-        """Get the previous state of this element prior to this run. If the
-        element does not exist, throw an error.
+        """Get the previous state of this resource prior to this run. If the
+        resource does not exist, throw an error.
         """
         return self.graph.get_state_from_storage(self.name)
 
     @property
     def current_state(self):
-        """Get the current state of this element. If the element does
+        """Get the current state of this resource. If the resource does
         not exist, throw an error.
         
         This method must be overwritten by any child classes.
+
+        TODO: need to figure out a way to avoid running this method
+        multiple times on the same resource during a single workflow
+        run. this is more of a performance issue that can be revisited
+        later as it becomes an issue. can maybe cache somehow?
         """
         raise NotImplementedError(
             "Must implement current_state for child classes"
         )
         
     def state_in_sync(self):
-        """Check the stored state of this element compared with the current
-        state of this element. If they are the same, then this element
+        """Check the stored state of this resource compared with the current
+        state of this resource. If they are the same, then this resource
         is in_sync.
         """
         return self.previous_state == self.current_state

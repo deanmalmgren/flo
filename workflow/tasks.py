@@ -9,17 +9,15 @@ import glob
 
 import jinja2
 
-from .exceptions import InvalidTaskDefinition, ElementNotFound, NonUniqueTask
+from .exceptions import InvalidTaskDefinition, ResourceNotFound, NonUniqueTask
 from . import colors
 from . import shell
-from . import elements
+from . import resources
 
-# TODO: switch to calling things resources instead of 'elements'
+class Task(resources.base.BaseResource):
 
-class Task(elements.base.BaseElement):
-
-    def __init__(self, graph, 
-                 creates=None, depends=None, alias=None, command=None, **kwargs):
+    def __init__(self, graph, creates=None, depends=None, alias=None, 
+                 command=None, **kwargs):
         self.graph = graph
         self.creates = creates
         self.depends = depends
@@ -49,9 +47,9 @@ class Task(elements.base.BaseElement):
         # add this task to the task graph
         self.graph.add(self)
 
-        # convert the creates/depends into elements
-        self.depends_elements = elements.get_or_create(self.graph, self.depends)
-        self.creates_elements = elements.get_or_create(self.graph, self.creates)
+        # convert the creates/depends into resources
+        self.depends_resources = resources.get_or_create(self.graph, self.depends)
+        self.creates_resources = resources.get_or_create(self.graph, self.creates)
 
         # create some data structures for storing the set of tasks on
         # which this task depends (upstream_tasks) on what depends on
@@ -65,8 +63,8 @@ class Task(elements.base.BaseElement):
         self._command = self.command
         self.command = self.render_command_template()
 
-        # call the BaseElement.__init__ to get this to behave like an
-        # element here, too
+        # call the BaseResource.__init__ to get this to behave like an
+        # resource here, too
         super(Task, self).__init__(self.graph, 'config:'+self.id)
 
     @property
@@ -94,7 +92,7 @@ class Task(elements.base.BaseElement):
         # TODO: when we allow for non-filesystem targets, this will
         # have to change to accomodate
         #
-        # XXXX TODO: use the elements to get at this...
+        # XXXX TODO: use the resources to get at this...
         all_filenames = [self.creates]
         if isinstance(self.depends, (list, tuple)):
             all_filenames.extend(self.depends)
@@ -129,8 +127,8 @@ class Task(elements.base.BaseElement):
 
         # if any of the dependencies are out of sync, then this task
         # must be executed
-        for element in self.depends_elements:
-            in_sync = in_sync and element.state_in_sync()
+        for resource in self.depends_resources:
+            in_sync = in_sync and resource.state_in_sync()
 
         return in_sync
 
@@ -254,17 +252,9 @@ class TaskGraph(object):
         self.config_path = config_path
         self.root_directory = os.path.dirname(config_path)
 
-        # Store the local in_sync state which doesn't change during a
-        # run. These dictionaries store {element: state} pairs for
-        # every element that is in this workflow. The
-        # before_element_states read in the state stored locally in
-        # .workflow/state.csv and the after_element_states read the
-        # state calculated just before that element is run. At the end
-        # of the workflow, the after_element_states are dumped to
-        # storage as necessary. 
-        self.before_element_states = {}
-        self.after_element_states = {}
-        self.element_dict = {}
+        # Store the resources in a dictionary, keyed by name where the
+        # values are resource instances
+        self.resource_dict = {}
 
         # store the time that this task takes
         self.task_durations = {}
@@ -483,20 +473,19 @@ class TaskGraph(object):
             for item in dictionary.iteritems():
                 writer.writerow(item)
 
-    def get_state_from_storage(self, element):
+    def get_state_from_storage(self, resource):
         if os.path.exists(self.abs_state_path):
             with open(self.abs_state_path) as stream:
                 reader = csv.reader(stream)
                 for row in reader:
-                    if row[0]==element:
+                    if row[0]==resource:
                         return row[1]
 
     def load_state(self):
-        """Load the states of all elements (files, databases, etc). If the
+        """Load the states of all resources (files, databases, etc). If the
         state file hasn't been stored yet, nothing happens. This also
         loads the duration statistics on this task.
         """
-        self.read_from_storage(self.before_element_states, self.abs_state_path)
         self.read_from_storage(self.task_durations, self.abs_duration_path)
 
         # typecast the task_durations
@@ -504,20 +493,18 @@ class TaskGraph(object):
             self.task_durations[task_id] = float(duration)
 
     def save_state(self):
-        """Save the states of all elements (files, databases, etc). If the
+        """Save the states of all resources (files, databases, etc). If the
         state file hasn't been stored yet, it creates a new one.
         """
 
-        # store all of the element states in a dictionary to save it
+        # store all of the resource states in a dictionary to save it
         # to csv
-        after_element_states = {}
-        for name, element in self.element_dict.iteritems():
-            after_element_states[name] = element.current_state
+        after_resource_states = {}
+        for name, resource in self.resource_dict.iteritems():
+            after_resource_states[name] = resource.current_state
 
-        self.write_to_storage(after_element_states, self.abs_state_path)
+        self.write_to_storage(after_resource_states, self.abs_state_path)
         self.write_to_storage(self.task_durations, self.abs_duration_path)
-
-        # XXXX THIS NEEDS TO BE FIXED NEXT
 
     def write_archive(self):
         """Method to backup the current workflow
