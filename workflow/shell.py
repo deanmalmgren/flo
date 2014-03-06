@@ -3,6 +3,8 @@
 import subprocess
 import sys
 
+from . import exceptions
+
 def run(directory, command):
     """Run the specified shell command using Fabric-like behavior"""
     wrapped_command = "cd %s && %s" % (directory, command)
@@ -12,4 +14,4 @@ def run(directory, command):
     )
     pipe.communicate()
     if pipe.returncode != 0:
-        sys.exit(pipe.returncode)
+        raise exceptions.ShellError(pipe.returncode)

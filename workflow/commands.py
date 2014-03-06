@@ -5,6 +5,7 @@ import sys
 
 from .parser import load_task_graph
 from . import colors
+from . import exceptions
 
 def clean(force=False, export=False, pause=0.5):
     """Remove all `creates` targets defined in workflow
@@ -78,7 +79,7 @@ def execute(task_id=None, force=False, dry_run=False, export=False):
                 if not (dry_run or export):
                     try:
                         task.execute()
-                    except KeyboardInterrupt:
+                    except (KeyboardInterrupt, exceptions.ShellError), e:
                         # on keyboard interrupt, make sure all
                         # previously run tasks have their state
                         # properly stored. we do this by delete files
@@ -86,7 +87,7 @@ def execute(task_id=None, force=False, dry_run=False, export=False):
                         # and then saving the state before exiting
                         task.clean()
                         task_graph.save_state()
-                        sys.exit(1)
+                        sys.exit(getattr(e, 'exit_code', 1))
                 elif dry_run:
                     print(task)
                 elif export:

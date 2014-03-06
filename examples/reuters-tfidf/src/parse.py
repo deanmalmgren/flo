@@ -46,4 +46,3 @@ for filename in glob.glob(os.path.join(sys.argv[1], "*.sgm")):
         parser.feed(stream.read())
         sys.stdout.flush()
     print >> sys.stderr, 'done!'
-

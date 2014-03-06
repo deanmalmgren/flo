@@ -26,3 +26,9 @@ class ResourceNotFound(Exception):
 
 class NonUniqueTask(Exception):
     pass
+
+class ShellError(Exception):
+    def __init__(self, exit_code):
+        self.exit_code = exit_code
+    def __str__(self):
+        return "Command failed with exit code %s" % self.exit_code
