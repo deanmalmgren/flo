@@ -1,6 +1,7 @@
 import os
 import time
 from distutils.util import strtobool
+import sys
 
 from .parser import load_task_graph
 from . import colors
@@ -75,7 +76,17 @@ def execute(task_id=None, force=False, dry_run=False, export=False):
             # a workflow run, which is pretty valuable
             if (not task.in_sync() or force) and not task.is_pseudotask():
                 if not (dry_run or export):
-                    task.execute()
+                    try:
+                        task.execute()
+                    except KeyboardInterrupt:
+                        # on keyboard interrupt, make sure all
+                        # previously run tasks have their state
+                        # properly stored. we do this by delete files
+                        # that were in the process of being created
+                        # and then saving the state before exiting
+                        task.clean()
+                        task_graph.save_state()
+                        sys.exit(1)
                 elif dry_run:
                     print(task)
                 elif export:
