@@ -296,6 +296,15 @@ into conflicts.
 workflow --export          # prints out sequence of shell commands
 ```
 
+**`--alert`.** For long-running workflows, it is convenient to be
+alerted when the entire workflow completes. The `--alert` option makes
+it possible to have logs sent to an email address specified on the
+command line.
+
+```bash
+workflow --alert j.doe@example.com
+```
+
 **autocomplete.** Autocompletion of available options with workflow is
 enabled by @kislyuk's amazing
 [autocomplete](https://github.com/kislyuk/argcomplete) package. Follow
