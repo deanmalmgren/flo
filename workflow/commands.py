@@ -80,13 +80,17 @@ def execute(task_id=None, force=False, dry_run=False, export=False):
                     try:
                         task.execute()
                     except (KeyboardInterrupt, exceptions.ShellError), e:
-                        # on keyboard interrupt, make sure all
-                        # previously run tasks have their state
-                        # properly stored. we do this by delete files
-                        # that were in the process of being created
-                        # and then saving the state before exiting
-                        task.clean()
-                        task_graph.save_state()
+                        # on keyboard interrupt or error on executing
+                        # a specific step, make sure all previously
+                        # run tasks have their state properly stored
+                        # and make sure re-running the workflow will
+                        # rerun the task that was underway. we do this
+                        # by saving the state of everything but
+                        # overridding the state of the creates
+                        # resource for this task before exiting
+                        task_graph.save_state(
+                            override_resource_states={task.name:''},
+                        )
                         sys.exit(getattr(e, 'exit_code', 1))
                 elif dry_run:
                     print(task)

@@ -547,9 +547,12 @@ class TaskGraph(object):
         for task_id, duration in self.task_durations.iteritems():
             self.task_durations[task_id] = float(duration)
 
-    def save_state(self):
+    def save_state(self, override_resource_states=None):
         """Save the states of all resources (files, databases, etc). If the
-        state file hasn't been stored yet, it creates a new one.
+        state file hasn't been stored yet, it creates a new one. Can
+        optionally pass override_resource_states to set the states of
+        particular elements, which can be useful for handling keyboard
+        interrupts, for example.
         """
 
         # read all of the old storage states first, then over write
@@ -560,6 +563,11 @@ class TaskGraph(object):
         self.read_from_storage(after_resource_states, self.abs_state_path)
         for name, resource in self.resource_dict.iteritems():
             after_resource_states[name] = resource.current_state
+
+        # if override states are provided, update the resources
+        # accordingly
+        if override_resource_states:
+            after_resource_states.update(override_resource_states)
 
         self.write_to_storage(after_resource_states, self.abs_state_path)
         self.write_to_storage(self.task_durations, self.abs_duration_path)
