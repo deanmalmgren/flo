@@ -15,6 +15,7 @@ import argcomplete
 from workflow.parser import get_available_tasks, get_available_archives
 from workflow.commands import execute, clean, archive
 from workflow.exceptions import CommandLineException, ConfigurationNotFound
+from workflow.alert import alert
 
 # setup the option parser
 parser = argparse.ArgumentParser(
@@ -32,14 +33,14 @@ except ConfigurationNotFound:
     available_tasks = []
 parser.add_argument(
     'task_id',
-    metavar='task',
+    metavar='TASK',
     type=str,
     choices=available_tasks,
     nargs='?', # '*', this isn't working for some reason
     help='Specify a particular task to run.',
 )
 
-# can only specify one of --force or --dry-run
+# add a bunch of keyword arguments
 parser.add_argument(
     '-f', '--force',
     action="store_true",
@@ -61,12 +62,17 @@ parser.add_argument(
     action="store_true",
     help="Export shell script instead of running the workflow.",
 )
-
-# can only specify one of --clean or --force-clean
 parser.add_argument(
     '-c', '--clean',
     action="store_true",
     help="Confirm before removing all `creates` targets defined in workflow.",
+)
+parser.add_argument(
+    '--alert',
+    type=str,
+    metavar='EMAIL',
+    nargs=1,
+    help='Specify an email address to alert on completion',
 )
 
 # Here are a few handy commands for backing up a workflow and
@@ -93,6 +99,7 @@ group.add_argument(
 # use argcomplete to autocomplete options, the parse arguments and run
 argcomplete.autocomplete(parser)
 args = parser.parse_args()
+
 try:
     if args.clean:
         clean(task_id=args.task_id, force=args.force, export=args.export)
@@ -106,3 +113,6 @@ try:
 except CommandLineException, e:
     print(e)
     sys.exit(1)
+
+if args.alert:
+    alert(*args.alert)
