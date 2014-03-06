@@ -377,6 +377,8 @@ class TaskGraph(object):
         return subgraph
 
     def _dereference_alias_helper(self, name):
+        if name is None:
+            return 
         for task in self.task_list:
             if task.alias == name:
                 return task.creates
