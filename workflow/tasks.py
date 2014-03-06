@@ -451,15 +451,16 @@ class TaskGraph(object):
         else:
             return "%.2f" % (duration / 60 / 60 / 24) + " d"
 
-    def clean(self, export=False):
+    def clean(self, export=False, task_list=None):
         """Run clean on every task and remove the state cache file
         """
-        for task in self.task_list:
+        task_list = task_list or self.task_list
+        for task in task_list:
             if export:
                 print(task.clean_command())
             else:
                 task.clean()
-        if os.path.exists(self.abs_state_path):
+        if os.path.exists(self.abs_state_path) and task_list == self.task_list:
             if export:
                 print("rm -f %s" % self.abs_state_path)
             else:

@@ -5,12 +5,19 @@ from distutils.util import strtobool
 from .parser import load_task_graph
 from . import colors
 
-def clean(force=False, export=False, pause=0.5):
-    """Remove all `creates` targets defined in workflow
+def clean(task_id=None, force=False, export=False, pause=0.5):
+    """Remove all `creates` targets defined in workflow. If a task_id is
+    specified, only remove that target.
     """
 
     # load the task graph
     task_graph = load_task_graph()
+
+    # if a task_id is specified, only remove this particular
+    # task. otherwise, remove everything.
+    task_list = task_graph.task_list
+    if task_id is not None:
+        task_list = [task_graph.task_dict[task_id]]
 
     # print a warning message before removing all tasks. Briefly
     # pause to make sure user sees the message at the top.
@@ -19,7 +26,7 @@ def clean(force=False, export=False, pause=0.5):
             "Please confirm that you want to delete the following files."
         ))
         time.sleep(pause)
-        for task in task_graph.task_list:
+        for task in task_list:
             if not task.is_pseudotask():
                 print(task.creates_message())
         yesno = raw_input(colors.red("Delete aforementioned files? [Y/n] "))
@@ -32,7 +39,7 @@ def clean(force=False, export=False, pause=0.5):
     # `creates` targets
     if export:
         print("cd %s" % task_graph.root_directory)
-    task_graph.clean(export=export)
+    task_graph.clean(export=export, task_list=task_list)
 
 def execute(task_id=None, force=False, dry_run=False, export=False):
     """Execute the task workflow.
