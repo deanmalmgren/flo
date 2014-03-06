@@ -1,9 +1,11 @@
 import os
 import time
 from distutils.util import strtobool
+import sys
 
 from .parser import load_task_graph
 from . import colors
+from . import exceptions
 
 def clean(task_id=None, force=False, export=False, pause=0.5):
     """Remove all `creates` targets defined in workflow. If a task_id is
@@ -82,7 +84,21 @@ def execute(task_id=None, force=False, dry_run=False, export=False):
             # a workflow run, which is pretty valuable
             if (not task.in_sync() or force) and not task.is_pseudotask():
                 if not (dry_run or export):
-                    task.execute()
+                    try:
+                        task.execute()
+                    except (KeyboardInterrupt, exceptions.ShellError), e:
+                        # on keyboard interrupt or error on executing
+                        # a specific step, make sure all previously
+                        # run tasks have their state properly stored
+                        # and make sure re-running the workflow will
+                        # rerun the task that was underway. we do this
+                        # by saving the state of everything but
+                        # overridding the state of the creates
+                        # resource for this task before exiting
+                        task_graph.save_state(
+                            override_resource_states={task.name:''},
+                        )
+                        sys.exit(getattr(e, 'exit_code', 1))
                 elif dry_run:
                     print(task)
                 elif export:
