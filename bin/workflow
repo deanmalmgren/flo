@@ -95,7 +95,7 @@ argcomplete.autocomplete(parser)
 args = parser.parse_args()
 try:
     if args.clean:
-        clean(force=args.force, export=args.export)
+        clean(task_id=args.task_id, force=args.force, export=args.export)
     elif args.backup or isinstance(args.restore, (str, types.NoneType)):
         if args.restore is None:
             args.restore = available_archives[-1]

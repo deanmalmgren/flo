@@ -243,7 +243,9 @@ want to be confident a workflow properly runs from start to finish
 before inviting collaborators. Whatever the case, the `--clean` option
 can be useful for removing all `creates` targets that are defined in
 `workflow.yaml` and the `--force` option can be useful for just
-rerunning all steps, regardless of whether they are out of date.
+rerunning all steps, regardless of whether they are out of date. If
+you just want to remove a particular target, you can use `--clean
+task_id` to only remove that `creates` target.
 
 ```bash
 workflow --clean            # asks user if they want to remove `creates` results
