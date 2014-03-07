@@ -9,6 +9,7 @@ import sys
 import os
 import ConfigParser
 import types
+import traceback
 
 import argcomplete
 
@@ -112,7 +113,6 @@ try:
                 export=args.export)
 except CommandLineException, e:
     print(e)
-    sys.exit(1)
-
-if args.notify:
-    notify(*args.notify)
+finally:
+    if args.notify:
+        notify(*args.notify)

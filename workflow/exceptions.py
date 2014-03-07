@@ -14,20 +14,20 @@ class ConfigurationNotFound(CommandLineException):
             self.cwd,
         )
 
-class InvalidTaskDefinition(Exception):
+class InvalidTaskDefinition(CommandLineException):
     pass
 
-class ResourceNotFound(Exception):
+class ResourceNotFound(CommandLineException):
     def __init__(self, resource):
         self.resource = resource
 
     def __str__(self):
         return "\nResource '%s' not found" % self.resource
 
-class NonUniqueTask(Exception):
+class NonUniqueTask(CommandLineException):
     pass
 
-class ShellError(Exception):
+class ShellError(CommandLineException):
     def __init__(self, exit_code):
         self.exit_code = exit_code
     def __str__(self):
