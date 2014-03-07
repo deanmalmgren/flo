@@ -6,6 +6,7 @@ import StringIO
 import collections
 import datetime
 import glob
+import logging
 
 import jinja2
 
@@ -148,7 +149,7 @@ class Task(resources.base.BaseResource):
         """Remove the specified target"""
         if not self.is_pseudotask():
             self.run(self.clean_command())
-            print("removed %s" % self.creates_message())
+            self.graph.logger.info("removed %s" % self.creates_message())
 
     def execute(self, command=None):
         """Run the specified task from the root of the workflow"""
@@ -160,7 +161,7 @@ class Task(resources.base.BaseResource):
             # useful message about starting this task and what it is
             # called so users know how to re-call this task if they
             # notice something fishy during execution.
-            print(self.creates_message())
+            self.graph.logger.info(self.creates_message())
 
             # start a timer so we can keep track of how long this task
             # executes. Its important that we're timing watch time, not
@@ -180,15 +181,14 @@ class Task(resources.base.BaseResource):
         # the command. This takes inspiration from how
         # fabric.operations.local works http://bit.ly/1dQEgjl
         else:
-            print(self.command_message(command=command))
-            sys.stdout.flush()
+            self.graph.logger.info(self.command_message(command=command))
             self.run(command)
 
         # stop the clock and alert the user to the clock time spent
         # exeucting the task
         if start_time:
             self.duration = time.time() - start_time
-            print(self.duration_message())
+            self.graph.logger.info(self.duration_message())
 
             # store the duration on the graph object
             self.graph.task_durations[self.id] = self.duration
@@ -255,6 +255,7 @@ class TaskGraph(object):
     # relative location of various storage locations
     state_path = os.path.join(".workflow", "state.csv")
     duration_path = os.path.join(".workflow", "duration.csv")
+    log_path = os.path.join(".workflow", "workflow.log")
     archive_dir = os.path.join(".workflow", "archive")
 
     def __init__(self, config_path):
@@ -271,6 +272,34 @@ class TaskGraph(object):
 
         # store the time that this task takes
         self.task_durations = {}
+
+        # instantiate the logger instance for this workflow
+        self.logger = self._configure_logger()
+
+    def _configure_logger(self):
+        logger = logging.getLogger('workflow')
+        logger.setLevel(logging.DEBUG)
+
+        # create file handler and a console handler. the console
+        # handler writes to stderr by default
+        file_handler = logging.FileHandler(self.abs_log_path, mode='w')
+        file_handler.setLevel(logging.DEBUG)
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.DEBUG)
+
+        # TODO: strip out color codes in stream handler somehow? maybe
+        # with filters? maybe by associating color codes to particular
+        # log levels?
+
+        # create formatter and add it to the handlers
+        formatter = logging.Formatter('%(message)s')
+        console_handler.setFormatter(formatter)
+        file_handler.setFormatter(formatter)
+
+        # add the handlers to logger
+        logger.addHandler(console_handler)
+        logger.addHandler(file_handler)
+        return logger
 
     def _iter_helper(self, tasks, popmethod, updownstream):
         horizon = collections.deque(tasks)
@@ -459,7 +488,7 @@ class TaskGraph(object):
         task_list = task_list or self.task_list
         for task in task_list:
             if export:
-                print(task.clean_command())
+                self.logger.info(task.clean_command())
             else:
                 task.clean()
         if os.path.exists(self.abs_state_path) and task_list == self.task_list:
@@ -507,6 +536,11 @@ class TaskGraph(object):
     def abs_duration_path(self):
         """Convenience property for accessing duration storage location"""
         return os.path.join(self.root_directory, self.duration_path)
+
+    @property
+    def abs_log_path(self):
+        """Convenience property for accessing log storage location"""
+        return os.path.join(self.root_directory, self.log_path)
 
     @property
     def abs_archive_dir(self):
@@ -602,8 +636,7 @@ class TaskGraph(object):
 
         # create the archive
         command = "tar cjf %s %s" % (archive_name, ' '.join(all_filenames))
-        print(colors.bold_white(command))
-        sys.stdout.flush()
+        self.logger.info(colors.bold_white(command))
         shell.run(self.root_directory, command)
 
     def restore_archive(self, archive):
@@ -613,8 +646,7 @@ class TaskGraph(object):
         """
         archive_name = os.path.join(self.root_directory, archive)
         command = "tar xjf %s" % archive_name
-        print(colors.bold_white(command))
-        sys.stdout.flush()
+        self.logger.info(colors.bold_white(command))
         shell.run(self.root_directory, command)
 
     def get_available_archives(self):
