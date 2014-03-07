@@ -15,7 +15,7 @@ import argcomplete
 from workflow.parser import get_available_tasks, get_available_archives
 from workflow.commands import execute, clean, archive
 from workflow.exceptions import CommandLineException, ConfigurationNotFound
-from workflow.alert import alert
+from workflow.notify import notify
 
 # setup the option parser
 parser = argparse.ArgumentParser(
@@ -68,11 +68,11 @@ parser.add_argument(
     help="Confirm before removing all `creates` targets defined in workflow.",
 )
 parser.add_argument(
-    '--alert',
+    '--notify',
     type=str,
     metavar='EMAIL',
     nargs=1,
-    help='Specify an email address to alert on completion',
+    help='Specify an email address to notify on completion',
 )
 
 # Here are a few handy commands for backing up a workflow and
@@ -114,5 +114,5 @@ except CommandLineException, e:
     print(e)
     sys.exit(1)
 
-if args.alert:
-    alert(*args.alert)
+if args.notify:
+    notify(*args.notify)

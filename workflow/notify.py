@@ -2,16 +2,25 @@ import smtplib
 from email.mime.text import MIMEText
 import socket
 
-def alert(*contact_list):
-    """Send an alert to any email addresses specified in contact_list.
+def notify(*contact_list):
+    """Send an notification to any email addresses specified in
+    contact_list.
+
     """
     # this takes heavy inspiration from
     # http://docs.python.org/2/library/email-examples.html
 
-    # Open a plain text file for reading.  For this example, assume that
-    # the text file contains only ASCII characters.
+    # TODO: switch to using loggin instead of print() statements so
+    # that we can have output logged to a file in the .workflow
+    # directory and also have output logged to the terminal
+
+    # TODO: for now, read the last 100 lines of the log and put it in
+    # the email. it may also be useful to include other meta
+    # information, such as the commands that were run or the total
+    # time it took
+
     msg = MIMEText((
-        "workflow finished. yippee!"
+        "XXXX workflow finished. yippee!"
     ))
 
     # fill out the relevant header information

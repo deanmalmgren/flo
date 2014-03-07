@@ -22,7 +22,7 @@ incorrect results, poor performance, etc.) in the analysis and improve
 them piece by piece after the entire workflow has been written the
 first time.
 
-This packages is deliberately intended to help users write small, but
+This package is deliberately intended to help users write small, but
 compact workflow prototypes using whatever tools they prefer (R,
 pandas, scipy, hadoop) but with the explicit goal of encouraging users
 to write small scripts that produce intermediate output.
@@ -296,13 +296,13 @@ into conflicts.
 workflow --export          # prints out sequence of shell commands
 ```
 
-**`--alert`.** For long-running workflows, it is convenient to be
-alerted when the entire workflow completes. The `--alert` option makes
+**`--notify`.** For long-running workflows, it is convenient to be
+alerted when the entire workflow completes. The `--notify` option makes
 it possible to have logs sent to an email address specified on the
 command line.
 
 ```bash
-workflow --alert j.doe@example.com
+workflow --notify j.doe@example.com
 ```
 
 **autocomplete.** Autocompletion of available options with workflow is
