@@ -24,13 +24,13 @@ def clean(task_id=None, force=False, export=False, pause=0.5):
     # print a warning message before removing all tasks. Briefly
     # pause to make sure user sees the message at the top.
     if not (force or export):
-        print(colors.red(
+        task_graph.logger.info(colors.red(
             "Please confirm that you want to delete the following files."
         ))
         time.sleep(pause)
         for task in task_list:
             if not task.is_pseudotask():
-                print(task.creates_message())
+                task_graph.logger.info(task.creates_message())
         yesno = raw_input(colors.red("Delete aforementioned files? [Y/n] "))
         if yesno == '':
             yesno = 'y'
@@ -42,6 +42,10 @@ def clean(task_id=None, force=False, export=False, pause=0.5):
     if export:
         print("cd %s" % task_graph.root_directory)
     task_graph.clean(export=export, task_list=task_list)
+
+    # mark the task_graph as completing successfully to send the
+    # correct email message
+    task_graph.successful = True
 
 def execute(task_id=None, force=False, dry_run=False, export=False):
     """Execute the task workflow.
@@ -76,7 +80,9 @@ def execute(task_id=None, force=False, dry_run=False, export=False):
         if export:
             print("cd %s" % task_graph.root_directory)
         else:
-            print(task_graph.duration_message(out_of_sync_tasks))
+            task_graph.logger.info(
+                task_graph.duration_message(out_of_sync_tasks)
+            )
         for task in task_graph.iter_bfs(out_of_sync_tasks):
             # We unfortunately need (?) to re-run in_sync here in case
             # things change during the course of a run. This is not
@@ -100,21 +106,29 @@ def execute(task_id=None, force=False, dry_run=False, export=False):
                         )
                         sys.exit(getattr(e, 'exit_code', 1))
                 elif dry_run:
-                    print(task)
+                    task_graph.logger.info(task)
                 elif export:
-                    print(task.command_message(color=None, pre=""))
+                    task_graph.logger.info(
+                        task.command_message(color=None, pre="")
+                    )
         
     # if no tasks were executed, then alert the user that nothing
     # needed to be run
     else:
-        print("No tasks are out of sync in the workflow defined in '%s'" % (
-            os.path.relpath(task_graph.config_path, os.getcwd())
-        ))
+        task_graph.logger.info(
+            "No tasks are out of sync in the workflow defined in '%s'" % (
+                os.path.relpath(task_graph.config_path, os.getcwd())
+            )
+        )
         
     # otherwise, we need to recalculate hashes for everything that is
     # out of sync
     if not (dry_run or export):
         task_graph.save_state()
+
+    # mark the task_graph as completing successfully to send the
+    # correct email message
+    task_graph.successful = True
 
 def archive(backup=False, restore=False):
     """Interact with archives of the workflow, by either backing it up or
@@ -133,3 +147,7 @@ def archive(backup=False, restore=False):
     # anything.
     if restore:
         task_graph.restore_archive(restore)
+
+    # mark the task_graph as completing successfully to send the
+    # correct email message
+    task_graph.successful = True

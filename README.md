@@ -22,7 +22,7 @@ incorrect results, poor performance, etc.) in the analysis and improve
 them piece by piece after the entire workflow has been written the
 first time.
 
-This packages is deliberately intended to help users write small, but
+This package is deliberately intended to help users write small, but
 compact workflow prototypes using whatever tools they prefer (R,
 pandas, scipy, hadoop) but with the explicit goal of encouraging users
 to write small scripts that produce intermediate output.
@@ -189,7 +189,10 @@ you could use this. If you have suggestions for other ideas, please
 This package ships with the `workflow` command, which embodies the
 entire command line interface for this package. This command can be
 run from the directory that contains `workflow.yaml` or any of its
-child directories.
+child directories. Output has been formatted to be as useful as
+possible, including the task names that are run, the commands that are
+run, and how long each task takes. For convenience, this information
+is also stored in `.workflow/workflow.log`.
 
 By default, running `workflow` will execute the entire workflow, or at
 least the portion of it that is "out of sync" since the last time it
@@ -294,6 +297,16 @@ into conflicts.
 
 ```bash
 workflow --export          # prints out sequence of shell commands
+```
+
+**`--notify`.** For long-running workflows, it is convenient to be
+alerted when the entire workflow completes. The `--notify` option
+makes it possible to have the last 100 lines of the
+`.workflow/workflow.log` sent to an email address specified on the
+command line.
+
+```bash
+workflow --notify j.doe@example.com
 ```
 
 **autocomplete.** Autocompletion of available options with workflow is
