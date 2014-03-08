@@ -276,6 +276,10 @@ class TaskGraph(object):
         # instantiate the logger instance for this workflow
         self.logger = self._configure_logger()
 
+        # the success status is used for managing notification emails
+        # in an intelligent way
+        self.successful = False
+
     def _configure_logger(self):
         logger = logging.getLogger('workflow')
         logger.setLevel(logging.DEBUG)

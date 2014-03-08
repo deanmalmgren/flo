@@ -2,29 +2,32 @@ import smtplib
 from email.mime.text import MIMEText
 import socket
 
+from .parser import load_task_graph
+
 def notify(*contact_list):
     """Send an notification to any email addresses specified in
     contact_list.
-
     """
     # this takes heavy inspiration from
     # http://docs.python.org/2/library/email-examples.html
 
-    # TODO: switch to using loggin instead of print() statements so
-    # that we can have output logged to a file in the .workflow
-    # directory and also have output logged to the terminal
+    # set the subject to notify about success/failure on this
+    # particular host
+    task_graph = load_task_graph()
+    status = 'failed'
+    if task_graph.successful:
+        status = 'successfully finished'
 
-    # TODO: for now, read the last 100 lines of the log and put it in
-    # the email. it may also be useful to include other meta
-    # information, such as the commands that were run or the total
-    # time it took
-
-    msg = MIMEText((
-        "XXXX workflow finished. yippee!"
-    ))
+    # read in the logs for the body of the message
+    n_lines = 100
+    with open(task_graph.abs_log_path, 'r') as stream:
+        text = "the last %d lines of %s\n\n" % (n_lines, task_graph.abs_log_path)
+        text += '"'*80 + "\n\n"
+        text += '\n'.join(stream.readlines()[-100:])
 
     # fill out the relevant header information
-    msg['Subject'] = 'workflow finished'
+    msg = MIMEText(text)
+    msg['Subject'] = "workflow %s on '%s'" % (status, socket.gethostname(), )
     msg['From'] = 'root@localhost'
     msg['To'] = ', '.join(contact_list)
 

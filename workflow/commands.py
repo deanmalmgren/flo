@@ -43,6 +43,10 @@ def clean(task_id=None, force=False, export=False, pause=0.5):
         print("cd %s" % task_graph.root_directory)
     task_graph.clean(export=export, task_list=task_list)
 
+    # mark the task_graph as completing successfully to send the
+    # correct email message
+    task_graph.successful = True
+
 def execute(task_id=None, force=False, dry_run=False, export=False):
     """Execute the task workflow.
     """
@@ -122,6 +126,10 @@ def execute(task_id=None, force=False, dry_run=False, export=False):
     if not (dry_run or export):
         task_graph.save_state()
 
+    # mark the task_graph as completing successfully to send the
+    # correct email message
+    task_graph.successful = True
+
 def archive(backup=False, restore=False):
     """Interact with archives of the workflow, by either backing it up or
     restoring it from a previous backup.
@@ -139,3 +147,7 @@ def archive(backup=False, restore=False):
     # anything.
     if restore:
         task_graph.restore_archive(restore)
+
+    # mark the task_graph as completing successfully to send the
+    # correct email message
+    task_graph.successful = True
