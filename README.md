@@ -189,7 +189,10 @@ you could use this. If you have suggestions for other ideas, please
 This package ships with the `workflow` command, which embodies the
 entire command line interface for this package. This command can be
 run from the directory that contains `workflow.yaml` or any of its
-child directories.
+child directories. Output has been formatted to be as useful as
+possible, including the task names that are run, the commands that are
+run, and how long each task takes. For convenience, this information
+is also stored in `.workflow/workflow.log`.
 
 By default, running `workflow` will execute the entire workflow, or at
 least the portion of it that is "out of sync" since the last time it
@@ -297,8 +300,9 @@ workflow --export          # prints out sequence of shell commands
 ```
 
 **`--notify`.** For long-running workflows, it is convenient to be
-alerted when the entire workflow completes. The `--notify` option makes
-it possible to have logs sent to an email address specified on the
+alerted when the entire workflow completes. The `--notify` option
+makes it possible to have the last 100 lines of the
+`.workflow/workflow.log` sent to an email address specified on the
 command line.
 
 ```bash

@@ -14,7 +14,7 @@ def notify(*contact_list):
     # set the subject to notify about success/failure on this
     # particular host
     task_graph = load_task_graph()
-    status = 'failed'
+    status = 'FAILED'
     if task_graph.successful:
         status = 'successfully finished'
 
