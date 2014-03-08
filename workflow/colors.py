@@ -1,5 +1,6 @@
 """Inspiration from https://github.com/fabric/fabric/blob/master/fabric/colors.py
 """
+import re
 
 def _wrap_with(code, bold=False):
 
@@ -25,3 +26,8 @@ bold_blue = _wrap_with('34', True)
 bold_magenta = _wrap_with('35', True)
 bold_cyan = _wrap_with('36', True)
 bold_white = _wrap_with('37', True)
+
+# regular expression to omit colorcodes
+def colorless(text):
+    """Remove color from the text"""
+    return re.sub("\033\[(1;)?[\d]+m", '', text)

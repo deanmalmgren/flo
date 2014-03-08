@@ -6,7 +6,6 @@ import StringIO
 import collections
 import datetime
 import glob
-import logging
 
 import jinja2
 
@@ -14,6 +13,7 @@ from .exceptions import InvalidTaskDefinition, ResourceNotFound, NonUniqueTask
 from . import colors
 from . import shell
 from . import resources
+from . import logger
 
 class Task(resources.base.BaseResource):
 
@@ -274,36 +274,11 @@ class TaskGraph(object):
         self.task_durations = {}
 
         # instantiate the logger instance for this workflow
-        self.logger = self._configure_logger()
+        self.logger = logger.configure(self)
 
         # the success status is used for managing notification emails
         # in an intelligent way
         self.successful = False
-
-    def _configure_logger(self):
-        logger = logging.getLogger('workflow')
-        logger.setLevel(logging.DEBUG)
-
-        # create file handler and a console handler. the console
-        # handler writes to stderr by default
-        file_handler = logging.FileHandler(self.abs_log_path, mode='w')
-        file_handler.setLevel(logging.DEBUG)
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.DEBUG)
-
-        # TODO: strip out color codes in stream handler somehow? maybe
-        # with filters? maybe by associating color codes to particular
-        # log levels?
-
-        # create formatter and add it to the handlers
-        formatter = logging.Formatter('%(message)s')
-        console_handler.setFormatter(formatter)
-        file_handler.setFormatter(formatter)
-
-        # add the handlers to logger
-        logger.addHandler(console_handler)
-        logger.addHandler(file_handler)
-        return logger
 
     def _iter_helper(self, tasks, popmethod, updownstream):
         horizon = collections.deque(tasks)
