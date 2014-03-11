@@ -1,11 +1,21 @@
 language: python
 python:
-  - "2.7"
   - "2.6"
+  - "2.7"
 
+# install system dependencies here with apt-get. 
+before_install: 
+  # these are technically in the examples/REQUIREMENTS, too, but
+  # installing dependencies is a bit of a pain in the ass
+  - apt-get install python-numpy python-matplotlib
+
+# install python dependencies including this package in the travis
+# virtualenv
 install: 
   - pip install -r REQUIREMENTS --use-mirrors
   - pip install .
+  - pip install -r examples/REQUIREMENTS
 
 # command to run tests, e.g. python setup.py test
-script:  echo hello world
+script: 
+  - ./examples/run_functional_tests.sh
