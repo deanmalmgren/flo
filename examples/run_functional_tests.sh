@@ -7,8 +7,8 @@
 exit_code=0
 
 # get the directory of this script
-# http://stackoverflow.com/q/242538/564709
-BASEDIR=$(dirname $0)
+# http://stackoverflow.com/a/9107028/564709
+BASEDIR=$(cd `dirname "${BASH_SOURCE[0]}"` && pwd)
 
 # run the hello-world example and make sure it has the same results as
 # what is archived in our test archive
@@ -18,6 +18,13 @@ exit_code=$(expr ${exit_code} + $?)
 workflow
 exit_code=$(expr ${exit_code} + $?)
 
+# run the model-correlations example and make sure it has the same
+# results as what is archived in our test archive
+cd $BASEDIR/model-correlations
+workflow -fc
+exit_code=$(expr ${exit_code} + $?)
+workflow
+exit_code=$(expr ${exit_code} + $?)
 
 # exit with the sum of the status
 exit ${exit_code}
