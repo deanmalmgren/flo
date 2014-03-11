@@ -262,9 +262,13 @@ class TaskGraph(object):
         self.task_list = []
         self.task_dict = {}
 
-        # store paths once for all tasks.
+        # store paths once for all tasks and make sure the base
+        # directory exists
         self.config_path = config_path
         self.root_directory = os.path.dirname(config_path)
+        directory = os.path.dirname(self.abs_state_path)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
 
         # Store the resources in a dictionary, keyed by name where the
         # values are resource instances
@@ -534,9 +538,6 @@ class TaskGraph(object):
                     dictionary[row[0]] = row[1]
 
     def write_to_storage(self, dictionary, storage_location):
-        directory = os.path.dirname(storage_location)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
         with open(storage_location, 'w') as stream:
             writer = csv.writer(stream)
             for item in dictionary.iteritems():
