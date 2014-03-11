@@ -376,5 +376,16 @@ the roadmap, but if you have any suggestions for other ideas, please
    workflow
    ```
 
-5. Contribute! There are several [open issues](issues) that provide
-   good places to dig in.
+5. To be more thorough, there is a suite of functional tests to make
+   sure any patches you have made haven't disturbed the behavior of
+   this package in any substantitive way.
+
+   ```bash
+   ./examples/run_functional_tests.sh
+   ```
+
+  Current build status: [![Build Status](https://travis-ci.org/deanmalmgren/data-workflow.png)](https://travis-ci.org/deanmalmgren/data-workflow)
+
+6. Contribute! There are several [open issues](issues) that provide
+   good places to dig in. Send pull requests; your help is greatly
+   appreciated!
