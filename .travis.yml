@@ -7,7 +7,7 @@ python:
 before_install: 
   # these are technically in the examples/REQUIREMENTS, too, but
   # installing dependencies is a bit of a pain in the ass
-  - apt-get install python-numpy python-matplotlib
+  - sudo apt-get install python-numpy python-matplotlib
 
 # install python dependencies including this package in the travis
 # virtualenv
