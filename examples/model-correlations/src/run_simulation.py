@@ -5,6 +5,8 @@ import random
 import csv
 import sys
 
+random.seed(sys.argv[1])
+
 writer = csv.writer(sys.stdout, delimiter='\t')
 for i in range(10000):
     writer.writerow([

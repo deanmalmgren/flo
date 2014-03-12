@@ -6,6 +6,7 @@
 # tasks. See how these are used below
 x_col: 0
 y_col: 1
+seed: 123871
 
 # this evokes global variable mode
 tasks: 
@@ -16,7 +17,7 @@ tasks:
     depends: src/run_simulation.py
     command: 
       - mkdir -p $(dirname {{creates}})
-      - python {{depends}} > {{creates}}
+      - python {{depends}} {{seed}} > {{creates}}
   
   # process the results
   -
