@@ -610,6 +610,7 @@ class TaskGraph(object):
             os.path.basename(self.config_path),
             self.state_path,
             self.duration_path,
+            self.log_path,
         ])
         for task in self.task_list:
             all_filenames.update(task.get_all_filenames())
