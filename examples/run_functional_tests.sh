@@ -12,10 +12,11 @@ BASEDIR=$(cd `dirname "${BASH_SOURCE[0]}"` && pwd)
 
 # annoying problem that md5 (OSX) and md5sum (Linux) are not the same
 # in coreutils
-MD5=md5
 which md5 > /dev/null
 if [ $? -ne 0 ]; then
-    MD5=md5sum
+    md5 () {
+	md5sum $1 | awk '{print $1}'
+    }
 fi
 
 # formatting functions
