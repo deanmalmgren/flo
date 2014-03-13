@@ -1,5 +1,8 @@
 """This set of modules is intended to parse and process the
-CONFIG_FILENAME, workflow.yaml
+CONFIG_FILENAME, workflow.yaml, into a TaskGraph object. This also
+provides a singleton instance of the TaskGraph (often called
+'task_graph') that can be accessed from anywhere.
+
 """
 
 import os
@@ -20,7 +23,8 @@ TASKS_KEY = 'tasks'
 _task_graph = None
 
 def find_config_path():
-    """Recursively decend into parent directories looking for the 
+    """Recursively decend into parent directories looking for the config
+    file. Raise an error if none found.
     """
 
     config_path = ''
@@ -38,27 +42,13 @@ def find_config_path():
         )
     return config_path
 
-def load_task_graph():
-    """Load the task graph from the configuration file located at
-    config_path
+def config_yaml2task_kwargs_list(config_yaml): 
+    """convert the config_yaml iterator into python dictionaries as
+    necessary. this makes it possible to have global variables and
+    tasks embedded in the YAML under a something with the key
+    TASKS_KEY
     """
-    global _task_graph
-    if _task_graph is not None:
-        return _task_graph
-
-    # look for workflow configuration file if it isn't already
-    # specified
-    config_path = find_config_path()
-
-    # load the data
-    with open(config_path) as stream:
-        config_yaml = yaml.load_all(stream.read())
-
-    # convert the config_yaml iterator into python dictionaries as
-    # necessary. this makes it possible to have global variables and
-    # tasks embedded in the YAML under a something with the key
-    # TASKS_KEY
-    task_list = []
+    task_kwargs_list = []
     uses_global_config = False
     for i, yaml_obj in enumerate(config_yaml):
         if i==0 and yaml_obj.has_key(TASKS_KEY):
@@ -69,14 +59,32 @@ def load_task_graph():
 
             for task_data in yaml_obj[TASKS_KEY]:
                 task_data.update(global_config)
-                task_list.append(task_data)
+                task_kwargs_list.append(task_data)
         elif not uses_global_config:
-            task_list.append(yaml_obj)
+            task_kwargs_list.append(yaml_obj)
+    return task_kwargs_list
 
-    # convert each yaml to a task and add it to the graph
+def load_task_graph():
+    """Load the task graph from the configuration file located at
+    config_path
+    """
+    global _task_graph
+    if _task_graph is not None:
+        return _task_graph
+
+    # get workflow configuration file
+    config_path = find_config_path()
+
+    # load the data
+    with open(config_path) as stream:
+        config_yaml = yaml.load_all(stream.read())
+    task_kwargs_list = config_yaml2task_kwargs_list(config_yaml)
+
+    # convert each task_kwargs into a Task object and add it to the
+    # TaskGraph
     task_graph = tasks.TaskGraph(config_path)
-    for task_data in task_list:
-        task = tasks.Task(task_graph, **task_data)
+    for task_kwargs in task_kwargs_list:
+        task = tasks.Task(task_graph, **task_kwargs)
     task_graph.dereference_depends_aliases()
     task_graph.link_dependencies()
 
