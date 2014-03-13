@@ -19,6 +19,7 @@ def notify(*contact_list):
         status = 'successfully finished'
 
     # read in the logs for the body of the message
+    # TODO: this reads the ENTIRE log into memory. likely not a good idea.
     n_lines = 100
     with open(task_graph.abs_log_path, 'r') as stream:
         text = "the last %d lines of %s\n\n" % (n_lines, task_graph.abs_log_path)

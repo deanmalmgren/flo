@@ -37,10 +37,7 @@ def clean(task_id=None, force=False, export=False, pause=0.5):
         if not strtobool(yesno):
             return
 
-    # for every task in the task graph, remove the corresponding
-    # `creates` targets
-    if export:
-        print("cd %s" % task_graph.root_directory)
+    # now actually clean things up with the TaskGraph.clean method
     task_graph.clean(export=export, task_list=task_list)
 
     # mark the task_graph as completing successfully to send the
@@ -137,6 +134,13 @@ def archive(backup=False, restore=False):
     
     # load in the task_graph
     task_graph = load_task_graph()
+
+    # general purpose type checking. 
+    # make sure that exactly one of backup or restore is true (XOR)
+    if not (isinstance(backup, bool) and isinstance(restore, bool)):
+        raise TypeError("backup and restore must be bools")
+    if backup == restore:
+        raise ValueError("exactly one of backup or restore must be true")
 
     # create an ensemble of filenames that need to be archived
     if backup:

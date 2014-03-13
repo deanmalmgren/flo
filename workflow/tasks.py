@@ -269,6 +269,8 @@ class TaskGraph(object):
         directory = os.path.dirname(self.abs_state_path)
         if not os.path.exists(directory):
             os.makedirs(directory)
+        if not os.path.exists(self.abs_archive_dir):
+            os.makedirs(self.abs_archive_dir)
 
         # Store the resources in a dictionary, keyed by name where the
         # values are resource instances
@@ -468,6 +470,12 @@ class TaskGraph(object):
     def clean(self, export=False, task_list=None):
         """Run clean on every task and remove the state cache file
         """
+
+        # make sure to change into the correct directory first if
+        # we're exporting
+        if export:
+            self.logger.info("cd %s" % self.root_directory)
+
         task_list = task_list or self.task_list
         for task in task_list:
             if export:
@@ -476,7 +484,7 @@ class TaskGraph(object):
                 task.clean()
         if os.path.exists(self.abs_state_path) and task_list == self.task_list:
             if export:
-                print("rm -f %s" % self.abs_state_path)
+                self.logger.info("rm -f %s" % self.abs_state_path)
             else:
                 os.remove(self.abs_state_path)
 
@@ -597,8 +605,6 @@ class TaskGraph(object):
         # dates for now to make it easy to identify a good default
         # archive to restore in self.restore_archive (the last one)
         now = datetime.datetime.now()
-        if not os.path.exists(self.abs_archive_dir):
-            os.makedirs(self.abs_archive_dir)
         archive_name = os.path.join(
             self.abs_archive_dir,
             "%s.tar.bz2" % now.strftime("%Y%m%d%H%M%S"),
