@@ -106,7 +106,7 @@ def execute(task_id=None, force=False, dry_run=False, export=False):
                         )
                         sys.exit(getattr(e, 'exit_code', 1))
                 elif dry_run:
-                    task_graph.logger.info(task)
+                    task_graph.logger.info(str(task))
                 elif export:
                     task_graph.logger.info(
                         task.command_message(color=None, pre="")
