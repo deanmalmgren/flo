@@ -99,6 +99,11 @@ clean_parser.add_argument( # TODO: how to not specify for two subparsers
     action="store_true",
     help="Remove all `creates` targets in workflow without confirmation.",
 )
+clean_parser.add_argument(
+    '--include-internals',
+    action="store_true",
+    help="Remove all files in the .workflow/ directory.",
+)
 clean_parser.set_defaults(func=clean)
 
 ######################################################################## archive

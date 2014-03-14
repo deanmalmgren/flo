@@ -253,10 +253,11 @@ class TaskGraph(object):
     """Simple graph implementation of a list of task nodes"""
 
     # relative location of various storage locations
-    state_path = os.path.join(".workflow", "state.csv")
-    duration_path = os.path.join(".workflow", "duration.csv")
-    log_path = os.path.join(".workflow", "workflow.log")
-    archive_dir = os.path.join(".workflow", "archive")
+    internals_path = ".workflow"
+    state_path = os.path.join(internals_path, "state.csv")
+    duration_path = os.path.join(internals_path, "duration.csv")
+    log_path = os.path.join(internals_path, "workflow.log")
+    archive_dir = os.path.join(internals_path, "archive")
 
     def __init__(self, config_path):
         self.task_list = []
@@ -467,7 +468,7 @@ class TaskGraph(object):
         else:
             return "%.2f" % (duration / 60 / 60 / 24) + " d"
 
-    def clean(self, export=False, task_list=None):
+    def clean(self, export=False, task_list=None, include_internals=False):
         """Run clean on every task and remove the state cache file
         """
 
@@ -476,17 +477,28 @@ class TaskGraph(object):
         if export:
             self.logger.info("cd %s" % self.root_directory)
 
+        if os.path.exists(self.abs_state_path) and task_list is None:
+            if export:
+                self.logger.info("rm -f %s" % self.abs_state_path)
+            else:
+                os.remove(self.abs_state_path)
+
+        if include_internals:
+            cmd = "rm -rf %s" % self.internals_path
+            if export:
+                self.logger.info(cmd)
+            else:
+                self.logger.info(
+                    "removed %s" % colors.green(self.internals_path)
+                )
+                shell.run(self.root_directory, cmd)
+
         task_list = task_list or self.task_list
         for task in task_list:
             if export:
                 self.logger.info(task.clean_command())
             else:
                 task.clean()
-        if os.path.exists(self.abs_state_path) and task_list == self.task_list:
-            if export:
-                self.logger.info("rm -f %s" % self.abs_state_path)
-            else:
-                os.remove(self.abs_state_path)
 
     def duration_message(self, tasks=None, color=colors.blue):
         tasks = tasks or self.task_list
