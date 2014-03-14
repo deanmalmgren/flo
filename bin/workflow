@@ -18,21 +18,33 @@ from workflow.commands import execute, clean, archive
 from workflow.exceptions import CommandLineException, ConfigurationNotFound
 from workflow.notify import notify
 
-# setup the option parser
-parser = argparse.ArgumentParser(
-    description=__doc__,
-)
-
-# make it possible for users to specify task_ids on the command line. 
-#
-# NOTE: for some reason, nargs='*' is not working when you don't
-# specify any tasks. Not sure if this is a pythong 2.7 problem or
-# what, but nothing seemed to work with this.
+# get some information from the YAML configuration to make the command
+# line options as useful as possible, particularly for tab completion
 try:
     available_tasks = get_available_tasks()
 except ConfigurationNotFound:
     available_tasks = []
-parser.add_argument(
+try:
+    available_archives = get_available_archives()
+except ConfigurationNotFound:
+    available_archives = []
+
+# setup the option parser
+parser = argparse.ArgumentParser(
+    description=__doc__,
+)
+subparsers = parser.add_subparsers(
+    title='SUBCOMMANDS',
+    description='valid subcommands',
+    help='additional help'
+)
+
+######################################################################## execute
+execute_parser = subparsers.add_parser(
+    'run', 
+    help='run the workflow',
+)
+execute_parser.add_argument(
     'task_id',
     metavar='TASK',
     type=str,
@@ -42,15 +54,12 @@ parser.add_argument(
 )
 
 # add a bunch of keyword arguments
-parser.add_argument(
+execute_parser.add_argument(
     '-f', '--force',
     action="store_true",
-    help=(
-        "Rerun entire workflow, regardless of task state. With --clean, "
-        "remove all `creates` targets in workflow without confirmation."
-    ),
+    help="Rerun entire workflow, regardless of task state.",
 )
-parser.add_argument(
+execute_parser.add_argument(
     '-d', '--dry-run',
     action="store_true",
     help=(
@@ -58,61 +67,67 @@ parser.add_argument(
         "long it would take."
     ),
 )
-parser.add_argument(
+execute_parser.add_argument(
     '-e', '--export',
     action="store_true",
     help="Export shell script instead of running the workflow.",
 )
-parser.add_argument(
-    '-c', '--clean',
-    action="store_true",
-    help="Confirm before removing all `creates` targets defined in workflow.",
-)
-parser.add_argument(
+execute_parser.add_argument(
     '--notify',
     type=str,
     metavar='EMAIL',
     nargs=1,
     help='Specify an email address to notify on completion',
 )
+execute_parser.set_defaults(func=execute)
 
-# Here are a few handy commands for backing up a workflow and
-# restoring it. This will hopefully make debugging a lot easier! Can
-# only specify one of these options
-try:
-    available_archives = get_available_archives()
-except ConfigurationNotFound:
-    available_archives = []
-group = parser.add_mutually_exclusive_group()
-group.add_argument(
-    '--backup',
-    action="store_true",
-    help="Backup the current state of the workflow."
+########################################################################## clean
+clean_parser = subparsers.add_parser(
+    'clean', 
+    help='clean up the workflow',
 )
-group.add_argument(
+clean_parser.add_argument( # TODO: how to not specify for two subparsers
+    'task_id',
+    metavar='TASK',
+    type=str,
+    choices=available_tasks,
+    nargs='?', # '*', this isn't working for some reason
+    help='Specify a particular task to clean rather than all of them.',
+)
+clean_parser.add_argument( # TODO: how to not specify for two subparsers
+    '-f', '--force',
+    action="store_true",
+    help="Remove all `creates` targets in workflow without confirmation.",
+)
+clean_parser.set_defaults(func=clean)
+
+######################################################################## archive
+archive_parser = subparsers.add_parser(
+    'archive', 
+    help='Create and restore backup archives of data analysis workflows',
+)
+archive_parser.add_argument(
     '--restore',
     choices=available_archives,
     default=False,
     nargs='?',
     help="Restore the state of the workflow."
 )
+archive_parser.set_defaults(func=archive)
 
 # use argcomplete to autocomplete options, the parse arguments and run
 argcomplete.autocomplete(parser)
 args = parser.parse_args()
 
+# if the error has an exit_code associated with it (from a ShellError
+# of running the workflow), exit with that status if there was an
+# exception.
 try:
-    if args.clean:
-        clean(task_id=args.task_id, force=args.force, export=args.export)
-    elif args.backup or isinstance(args.restore, (str, types.NoneType)):
-        if args.restore is None:
-            args.restore = available_archives[-1]
-        archive(backup=args.backup, restore=args.restore)
-    else:
-        execute(task_id=args.task_id, force=args.force, dry_run=args.dry_run,
-                export=args.export)
+    args.func(**args.__dict__)
 except CommandLineException, e:
     print(e)
+    sys.exit(getattr(e, 'exit_code', 1))
 finally:
-    if args.notify:
+    # TODO: should this should be moved inside the execute command?
+    if getattr(args, 'notify', None):
         notify(*args.notify)

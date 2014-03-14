@@ -7,7 +7,7 @@ from .parser import load_task_graph
 from . import colors
 from . import exceptions
 
-def clean(task_id=None, force=False, export=False, pause=0.5):
+def clean(task_id=None, force=False, export=False, pause=0.5, **kwargs):
     """Remove all `creates` targets defined in workflow. If a task_id is
     specified, only remove that target.
     """
@@ -44,7 +44,7 @@ def clean(task_id=None, force=False, export=False, pause=0.5):
     # correct email message
     task_graph.successful = True
 
-def execute(task_id=None, force=False, dry_run=False, export=False):
+def execute(task_id=None, force=False, dry_run=False, export=False, **kwargs):
     """Execute the task workflow.
     """
 
@@ -127,7 +127,7 @@ def execute(task_id=None, force=False, dry_run=False, export=False):
     # correct email message
     task_graph.successful = True
 
-def archive(backup=False, restore=False):
+def archive(restore=False, **kwargs):
     """Interact with archives of the workflow, by either backing it up or
     restoring it from a previous backup.
     """
@@ -135,22 +135,16 @@ def archive(backup=False, restore=False):
     # load in the task_graph
     task_graph = load_task_graph()
 
-    # general purpose type checking. 
-    # make sure that exactly one of backup or restore is true (XOR)
-    if not (isinstance(backup, bool) and isinstance(restore, bool)):
-        raise TypeError("backup and restore must be bools")
-    if backup == restore:
-        raise ValueError("exactly one of backup or restore must be true")
-
-    # create an ensemble of filenames that need to be archived
-    if backup:
-        task_graph.write_archive()
-
     # find an archive to restore and restore it. This should probably
     # ask the user to confirm which archive to restore before doing
     # anything.
     if restore:
         task_graph.restore_archive(restore)
+
+    # create an ensemble of filenames that need to be archived
+    else:
+        task_graph.write_archive()
+
 
     # mark the task_graph as completing successfully to send the
     # correct email message
