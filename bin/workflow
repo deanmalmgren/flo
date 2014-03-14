@@ -113,6 +113,11 @@ archive_parser.add_argument(
     nargs='?',
     help="Restore the state of the workflow."
 )
+archive_parser.add_argument(
+    '--exclude-internals',
+    action="store_true",
+    help="exclude internals in the .workflow/ directory from archive",
+)
 archive_parser.set_defaults(func=archive)
 
 # use argcomplete to autocomplete options, the parse arguments and run

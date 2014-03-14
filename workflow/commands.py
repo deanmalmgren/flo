@@ -127,7 +127,7 @@ def execute(task_id=None, force=False, dry_run=False, export=False, **kwargs):
     # correct email message
     task_graph.successful = True
 
-def archive(restore=False, **kwargs):
+def archive(restore=False, exclude_internals=False, **kwargs):
     """Interact with archives of the workflow, by either backing it up or
     restoring it from a previous backup.
     """
@@ -143,7 +143,7 @@ def archive(restore=False, **kwargs):
 
     # create an ensemble of filenames that need to be archived
     else:
-        task_graph.write_archive()
+        task_graph.write_archive(exclude_internals=exclude_internals)
 
 
     # mark the task_graph as completing successfully to send the
