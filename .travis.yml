@@ -3,18 +3,14 @@ python:
   - "2.7"
 
 # install system dependencies here with apt-get. 
-before_install: 
-  # these are technically in the examples/REQUIREMENTS, too, but
-  # installing dependencies is a bit of a pain in the ass
-  - sudo apt-get install python-numpy python-matplotlib
+before_install:
+  - ./provision/debian.sh
 
 # install python dependencies including this package in the travis
 # virtualenv
-install: 
-  - pip install -r REQUIREMENTS --use-mirrors
-  - pip install .
-  - pip install -r examples/REQUIREMENTS
+install:
+  - ./provision/python.sh
 
 # command to run tests, e.g. python setup.py test
-script: 
-  - ./examples/run_functional_tests.sh
+script:
+ - ./examples/run_functional_tests.sh

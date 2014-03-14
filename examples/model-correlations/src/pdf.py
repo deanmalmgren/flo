@@ -4,6 +4,11 @@
 import sys
 import csv
 
+# use headless matplotlib
+# http://stackoverflow.com/a/3054314/564709
+import matplotlib
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plot
 
 import loaders
