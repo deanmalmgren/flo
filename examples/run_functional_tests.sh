@@ -30,16 +30,26 @@ validate_example () {
     example=$1
     test_checksum=$2
     cd $BASEDIR/${example}
-    workflow -fc
+    workflow clean --force --include-internals
     exit_code=$(expr ${exit_code} + $?)
-    workflow
+    workflow run
     exit_code=$(expr ${exit_code} + $?)
-    local_checksum=$(cat workflow.yaml */* | md5)
+    workflow archive --exclude-internals
+    exit_code=$(expr ${exit_code} + $?)
+
+    # hack to compute checksum of resulting archive since tarballs of
+    # files with the same content are apparently not guaranteed to
+    # have the same md5 hash
+    temp_dir=/tmp/${example}
+    mkdir -p ${temp_dir}
+    tar -xf .workflow/archive/* -C ${temp_dir}
+    local_checksum=$(find ${temp_dir}/ -type f | sort | xargs cat | md5)
+    rm -rf ${temp_dir}
     if [ "${local_checksum}" != "${test_checksum}" ]; then
-	red "ERROR--CHECKSUM OF ${example} DOES NOT MATCH"
-	red "    local checksum=${local_checksum}"
-	red "     test checksum=${test_checksum}"
-	exit_code=$(expr ${exit_code} + 1)
+        red "ERROR--CHECKSUM OF ${example} DOES NOT MATCH"
+        red "    local checksum=${local_checksum}"
+        red "     test checksum=${test_checksum}"
+        exit_code=$(expr ${exit_code} + 1)
     fi
 }
 
@@ -47,8 +57,8 @@ validate_example () {
 # supposed to. if you update an example, be sure to update the
 # checksum by just running this script and determining what the
 # correct checksum is
-validate_example hello-world 1027ea472a2c1050bfbded4994677478
-validate_example model-correlations abfeb32f33b2049af8f63a19aa77911b
+validate_example hello-world fb8915998f1095695ec34bc579bb41e6
+validate_example model-correlations 932e5c296b356cf1831241798923e9f5
 
 # exit with the sum of the status
 exit ${exit_code}
