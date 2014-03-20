@@ -1,5 +1,1 @@
 textblob
-
-# # these packages are now installed by ../provision/debian.sh
-# numpy>=1.4
-# matplotlib

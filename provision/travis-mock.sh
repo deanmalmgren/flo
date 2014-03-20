@@ -7,3 +7,12 @@
 # http://docs.travis-ci.com/user/languages/python/#Travis-CI-Uses-Isolated-virtualenvs
 sudo apt-get update
 sudo apt-get install -y python-pip python-dev build-essential
+
+# make sure the PYTHONPATH and PATH variables are properly configured
+# for the vagrant user. Always change into the /vagrant directory on
+# the virtual machine to make it easy to start developing
+cat << EOF > /home/vagrant/.bash_profile
+export PATH=/vagrant/bin:$PATH
+export PYTHONPATH=/vagrant:$PYTHONPATH
+cd /vagrant
+EOF

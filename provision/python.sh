@@ -8,7 +8,7 @@ if [ "$#" -eq 1 ]; then
     cd $1
 fi
 
-# install the requirements for this package as well as this module
+# install the requirements for this package as well as this module.
 pip install -r REQUIREMENTS
 pip install .
 

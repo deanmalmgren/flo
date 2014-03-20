@@ -352,23 +352,19 @@ the roadmap, but if you have any suggestions for other ideas, please
    git clone https://github.com/YOUR-USERNAME/data-workflow.git
    ```
 
-2. Create a virtual environment and install the dependencies with [virtualenvwrapper](http://virtualenvwrapper.readthedocs.org/en/latest/)
+2. Install Vagrant and Virtualbox and launch the development virtual
+   machine.
 
    ```bash
-   mkvirtualenv data-workflow
-   pip install -r REQUIREMENTS -r examples/REQUIREMENTS
+   vagrant up && vagrant provision
    ```
 
-3. Adjust `PYTHONPATH`, `PATH`, and python environment so you can use
-   the development version.
-
-   ```bash
-   export PYTHONPATH=$PYTHONPATH:`pwd`
-   export PATH=$PATH:`pwd`/bin
-   workon data-workflow
-   ```
-
-4. Make sure everything is working by executing workflows in
+   On `vagrant ssh`ing to the virtual machine, note that the
+   `PYTHONPATH` and `PATH` environment variables have been altered in
+   this virtual machine so that any changes you make to your local
+   data workflow scripts are automatically reloaded.
+   
+3. Make sure everything is working by executing workflows in
    `examples/*/workflow.yaml`
 
    ```bash
@@ -376,7 +372,7 @@ the roadmap, but if you have any suggestions for other ideas, please
    workflow
    ```
 
-5. To be more thorough, there is a suite of functional tests to make
+4. To be more thorough, there is a suite of functional tests to make
    sure any patches you have made haven't disturbed the behavior of
    this package in any substantitive way.
 
@@ -384,8 +380,11 @@ the roadmap, but if you have any suggestions for other ideas, please
    ./examples/run_functional_tests.sh
    ```
 
-  Current build status: [![Build Status](https://travis-ci.org/deanmalmgren/data-workflow.png)](https://travis-ci.org/deanmalmgren/data-workflow)
+  These functional tests are designed to be run on an Ubuntu 12.04 LTS
+  server, just like the virtual machine and the server that runs the
+  travis-ci test suite. Current build status:
+  [![Build Status](https://travis-ci.org/deanmalmgren/data-workflow.png)](https://travis-ci.org/deanmalmgren/data-workflow)
 
-6. Contribute! There are several [open issues](issues) that provide
+5. Contribute! There are several [open issues](issues) that provide
    good places to dig in. Send pull requests; your help is greatly
    appreciated!
