@@ -58,9 +58,7 @@ validate_example () {
 # checksum by just running this script and determining what the
 # correct checksum is
 validate_example hello-world fb8915998f1095695ec34bc579bb41e6
-validate_example model-correlations 932e5c296b356cf1831241798923e9f5
-
-head $BASEDIR/model-correlations/data/results.tsv
+validate_example model-correlations 4fd1f3409af9472447b67f7a839d81f9
 
 # exit with the sum of the status
 exit ${exit_code}
