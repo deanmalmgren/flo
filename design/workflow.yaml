@@ -48,9 +48,9 @@ command: python {{depends|join(' ')}} > {{creates}}
 # easily run on one file or all the files in a direcotry.
 # 
 # COMMAND LINE INTERFACE EXAMPLES:
-# [unix]$ workflow data/per_file
-# [unix]$ workflow data/per_file --filename-root=a_specific_filename
-# [unix]$ workflow data/per_file --time-limit=1s
+# [unix]$ workflow run data/per_file
+# [unix]$ workflow run data/per_file --filename-root=a_specific_filename
+# [unix]$ workflow run data/per_file --time-limit=1s
 ---
 alias: data/per_file
 creates: data/per_file/{{filename_root}}.dat

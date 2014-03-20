@@ -326,7 +326,8 @@ enabled by @kislyuk's amazing
 [autocomplete](https://github.com/kislyuk/argcomplete) package. Follow
 instructions to
 [enable global autocomplete](https://github.com/kislyuk/argcomplete#activating-global-completion)
-and you should be all set.
+and you should be all set. This is also configured in the
+[virtual machine provisioning](blob/master/provision/python.sh#L20).
 
 **more info.** For more details about these and other options, see
 `workflow --help`.
@@ -381,7 +382,7 @@ the roadmap, but if you have any suggestions for other ideas, please
 
    ```bash
    cd examples/reuters-tfidf
-   workflow
+   workflow run
    ```
 
 4. To be more thorough, there is a suite of functional tests to make
