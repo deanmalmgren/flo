@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- mode: python -*-
+# PYTHON_ARGCOMPLETE_OK
 
 """Execute data workflows defined in workflow.yaml files
 """
