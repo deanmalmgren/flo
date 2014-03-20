@@ -624,10 +624,9 @@ class TaskGraph(object):
 
         # get the set of all filenames that should be archived based
         # on the current workflow specification
-        all_filenames = set()
+        all_filenames = set([os.path.basename(self.config_path)])
         if not exclude_internals:
             all_filenames.update(set([
-                os.path.basename(self.config_path),
                 self.state_path,
                 self.duration_path,
                 self.log_path,
