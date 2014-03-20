@@ -60,5 +60,7 @@ validate_example () {
 validate_example hello-world fb8915998f1095695ec34bc579bb41e6
 validate_example model-correlations 932e5c296b356cf1831241798923e9f5
 
+head $BASEDIR/model-correlations/data/results.tsv
+
 # exit with the sum of the status
 exit ${exit_code}
