@@ -61,5 +61,9 @@ validate_example hello-world fb8915998f1095695ec34bc579bb41e6
 validate_example model-correlations c7a09e0a30c20a731ef6112591e697e3
 #validate_example reuters-tfidf 211d66460dd680a79211cf0521bb4445
 
+md5sum $BASEDIR/model-correlations/workflow.yaml
+md5sum $BASEDIR/model-correlations/data/*
+md5sum $BASEDIR/model-correlations/src/*
+
 # exit with the sum of the status
 exit ${exit_code}
