@@ -53,6 +53,10 @@ Vagrant.configure("2") do |config|
     # as on the virtual machine
     provision_script(server_config, "provision/debian.sh")
     provision_script(server_config, "provision/python.sh")
+
+    # these provisioning steps are only done locally as a convenience
+    # for setting up a useful development environment
+    provision_script(server_config, "provision/development.sh")
   end
 
 end

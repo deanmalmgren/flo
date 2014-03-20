@@ -327,7 +327,7 @@ enabled by @kislyuk's amazing
 instructions to
 [enable global autocomplete](https://github.com/kislyuk/argcomplete#activating-global-completion)
 and you should be all set. This is also configured in the
-[virtual machine provisioning](blob/master/provision/python.sh#L20).
+[virtual machine provisioning](blob/master/provision/development.sh#L17).
 
 **more info.** For more details about these and other options, see
 `workflow --help`.

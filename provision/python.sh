@@ -14,7 +14,3 @@ pip install .
 
 # install the requirements for running the examples
 pip install -r examples/REQUIREMENTS
-
-# setup global argcomplete
-# https://github.com/kislyuk/argcomplete#activating-global-completion
-activate-global-python-argcomplete --dest /etc/bash_completion.d/
