@@ -58,12 +58,7 @@ validate_example () {
 # checksum by just running this script and determining what the
 # correct checksum is
 validate_example hello-world fb8915998f1095695ec34bc579bb41e6
-validate_example model-correlations c07223b877e49ff8bb4559c2829cdd47
-#validate_example reuters-tfidf 211d66460dd680a79211cf0521bb4445
-
-md5sum $BASEDIR/model-correlations/workflow.yaml
-md5sum $BASEDIR/model-correlations/data/*
-md5sum $BASEDIR/model-correlations/src/*
+validate_example model-correlations 88cf5da8c613c0da7c41afeff9467822
 
 # exit with the sum of the status
 exit ${exit_code}
