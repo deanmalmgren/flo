@@ -253,18 +253,25 @@ class TaskGraph(object):
     """Simple graph implementation of a list of task nodes"""
 
     # relative location of various storage locations
-    state_path = os.path.join(".workflow", "state.csv")
-    duration_path = os.path.join(".workflow", "duration.csv")
-    log_path = os.path.join(".workflow", "workflow.log")
-    archive_dir = os.path.join(".workflow", "archive")
+    internals_path = ".workflow"
+    state_path = os.path.join(internals_path, "state.csv")
+    duration_path = os.path.join(internals_path, "duration.csv")
+    log_path = os.path.join(internals_path, "workflow.log")
+    archive_dir = os.path.join(internals_path, "archive")
 
     def __init__(self, config_path):
         self.task_list = []
         self.task_dict = {}
 
-        # store paths once for all tasks.
+        # store paths once for all tasks and make sure the base
+        # directory exists
         self.config_path = config_path
         self.root_directory = os.path.dirname(config_path)
+        directory = os.path.dirname(self.abs_state_path)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        if not os.path.exists(self.abs_archive_dir):
+            os.makedirs(self.abs_archive_dir)
 
         # Store the resources in a dictionary, keyed by name where the
         # values are resource instances
@@ -461,20 +468,37 @@ class TaskGraph(object):
         else:
             return "%.2f" % (duration / 60 / 60 / 24) + " d"
 
-    def clean(self, export=False, task_list=None):
+    def clean(self, export=False, task_list=None, include_internals=False):
         """Run clean on every task and remove the state cache file
         """
+
+        # make sure to change into the correct directory first if
+        # we're exporting
+        if export:
+            self.logger.info("cd %s" % self.root_directory)
+
+        if os.path.exists(self.abs_state_path) and task_list is None:
+            if export:
+                self.logger.info("rm -f %s" % self.abs_state_path)
+            else:
+                os.remove(self.abs_state_path)
+
+        if include_internals:
+            cmd = "rm -rf %s" % self.internals_path
+            if export:
+                self.logger.info(cmd)
+            else:
+                self.logger.info(
+                    "removed %s" % colors.green(self.internals_path)
+                )
+                shell.run(self.root_directory, cmd)
+
         task_list = task_list or self.task_list
         for task in task_list:
             if export:
                 self.logger.info(task.clean_command())
             else:
                 task.clean()
-        if os.path.exists(self.abs_state_path) and task_list == self.task_list:
-            if export:
-                print("rm -f %s" % self.abs_state_path)
-            else:
-                os.remove(self.abs_state_path)
 
     def duration_message(self, tasks=None, color=colors.blue):
         tasks = tasks or self.task_list
@@ -534,9 +558,6 @@ class TaskGraph(object):
                     dictionary[row[0]] = row[1]
 
     def write_to_storage(self, dictionary, storage_location):
-        directory = os.path.dirname(storage_location)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
         with open(storage_location, 'w') as stream:
             writer = csv.writer(stream)
             for item in dictionary.iteritems():
@@ -586,7 +607,7 @@ class TaskGraph(object):
         self.write_to_storage(after_resource_states, self.abs_state_path)
         self.write_to_storage(self.task_durations, self.abs_duration_path)
 
-    def write_archive(self):
+    def write_archive(self, exclude_internals=False):
         """Method to backup the current workflow
         """
         
@@ -596,8 +617,6 @@ class TaskGraph(object):
         # dates for now to make it easy to identify a good default
         # archive to restore in self.restore_archive (the last one)
         now = datetime.datetime.now()
-        if not os.path.exists(self.abs_archive_dir):
-            os.makedirs(self.abs_archive_dir)
         archive_name = os.path.join(
             self.abs_archive_dir,
             "%s.tar.bz2" % now.strftime("%Y%m%d%H%M%S"),
@@ -605,16 +624,23 @@ class TaskGraph(object):
 
         # get the set of all filenames that should be archived based
         # on the current workflow specification
-        all_filenames = set([
-            os.path.basename(self.config_path),
-            self.state_path,
-            self.duration_path,
-        ])
+        all_filenames = set([os.path.basename(self.config_path)])
+        if not exclude_internals:
+            all_filenames.update(set([
+                self.state_path,
+                self.duration_path,
+                self.log_path,
+            ]))
         for task in self.task_list:
             all_filenames.update(task.get_all_filenames())
 
-        # create the archive
-        command = "tar cjf %s %s" % (archive_name, ' '.join(all_filenames))
+        # create the archive. filenames are ordered here so that the
+        # corresponding archive will have a consistent md5 hash (which is
+        # used in functional tests).
+        command = "tar cjf %s %s" % (
+            archive_name, 
+            ' '.join(sorted(all_filenames)),
+        )
         self.logger.info(colors.bold_white(command))
         shell.run(self.root_directory, command)
 

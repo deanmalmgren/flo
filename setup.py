@@ -33,7 +33,10 @@ setup(
     author_email='dean.malmgren@datascopeanalytics.com',
     license='MIT',
     scripts=scripts,
-    packages=[workflow.__name__],
+    packages=[
+        'workflow',
+        'workflow.resources',
+    ],
     install_requires=dependencies,
     zip_safe=False,
 )

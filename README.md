@@ -58,11 +58,11 @@ tools, but rather to be the glue that sticks them together.
    a subcomponent of the analysis.
 
 3. *Execute your workflow.* From the same directory as the
-   `workflow.yaml` file (or any child directory), run `workflow` and
+   `workflow.yaml` file (or any child directory), execute `workflow run` and
    this will run each task defined in your `workflow.yaml` until
    everything is complete. If any task definition in the
    `workflow.yaml` or the contents of its dependencies change,
-   re-running `workflow` will only redo the parts of the workflow that
+   re-running `workflow run` will only redo the parts of the workflow that
    are out of sync since the last time you ran it. The `workflow`
    command has
    [several other convenience options](#command-line-interface) to
@@ -70,7 +70,7 @@ tools, but rather to be the glue that sticks them together.
    [hello-world example](examples/hello-world) for the first time
    yields something like this:
 
-   ![hello world screenshot](http://i.imgur.com/8Jdijen.png)
+   ![hello world screenshot](http://i.imgur.com/WZsUJNN.png)
 
 4. *Repeat steps 2-3 until your data workflow is complete.* When
    developing a data workflow, it is common to write an entire
@@ -155,7 +155,7 @@ but you can also use other variables like this:
 creates: path/to/some/output/file.txt
 sigma: 2.137
 depends: path/to/some/script.py
-command python {{depends}} {{sigma} > {{creates}}
+command: python {{depends}} {{sigma} > {{creates}}
 ```
 
 In the aforementioned example, `sigma` is only available when rendering
@@ -171,7 +171,7 @@ tasks:
   - 
     creates: path/to/some/output/file.txt
     depends: path/to/some/script.py
-    command python {{depends}} {{sigma} > {{creates}}
+    command: python {{depends}} {{sigma} > {{creates}}
   -
     creates: path/to/another/output/file.txt
     depends:
@@ -194,30 +194,30 @@ possible, including the task names that are run, the commands that are
 run, and how long each task takes. For convenience, this information
 is also stored in `.workflow/workflow.log`.
 
-By default, running `workflow` will execute the entire workflow, or at
-least the portion of it that is "out of sync" since the last time it
-ran. Running `workflow` twice in a row without editing any files in
-the interim will not rerun any steps. If you edit a particular file in
-the workflow and rerun `workflow`, this will only re-execute the parts
-that have been affected by the change. This makes it very easy to
-iterate quickly on data analysis problems without having to worry
-about re-running an arsenal commands --- you only have to remember
-one, `workflow`.
+By default, the `workflow run` command will execute the entire
+workflow, or at least the portion of it that is "out of sync" since
+the last time it ran. Executing `workflow run` twice in a row without
+editing any files in the interim will not rerun any steps. If you edit
+a particular file in the workflow and re-execute `workflow run`, this
+will only re-execute the parts that have been affected by the
+change. This makes it very easy to iterate quickly on data analysis
+problems without having to worry about re-running an arsenal commands
+--- you only have to remember one, `workflow run`.
 
 ```bash
-workflow                    # runs everything for the first time
-workflow                    # nothing changed; runs nothing
+workflow run                # runs everything for the first time
+workflow run                # nothing changed; runs nothing
 edit path/to/some/script.py
-workflow                    # only runs the parts that are affected by change
+workflow run                # only runs the parts that are affected by change
 ```
 
 Importantly, if you edit a particular task in the `workflow.yaml`
 itself, this will cause that particular task to be re-run as well:
 
 ```bash
-workflow
+workflow run
 edit workflow.yaml          # change a particular task's command
-workflow                    # rerun's that command and any dependent task
+workflow run                # rerun's that command and any dependent task
 ```
 
 The `workflow` command is able to do this by tracking the status of
@@ -233,80 +233,92 @@ you can specify a particular task (either by its `alias` or its
 `creates`) on the command line like this:
 
 ```bash
-workflow path/to/some/output/file.txt
+workflow run path/to/some/output/file.txt
 ```
 
 This limits `workflow` to only executing the task defined in
 `path/to/some/output/file.txt` and all of its recursive upstream
 dependencies.
 
-**`--clean` and `--force`.** Sometimes you want to start with a clean
-slate. Perhaps the data you originally started with is dated or you
-want to be confident a workflow properly runs from start to finish
-before inviting collaborators. Whatever the case, the `--clean` option
-can be useful for removing all `creates` targets that are defined in
-`workflow.yaml` and the `--force` option can be useful for just
-rerunning all steps, regardless of whether they are out of date. If
-you just want to remove a particular target, you can use `--clean
-task_id` to only remove that `creates` target.
+**`workflow run --dry-run`.** While [we don't recommend it](#op-ed),
+its not uncommon to get "in the zone" and make several edits to
+analysis scripts before re-running your workflow. Because we're human,
+its easy to incorrectly remember the files you edited and how they may
+affect re-running the workflow. To help, the `--dry-run` command line
+option lets you see which commands will be run and approximately how
+much time it should take (!!!).
 
 ```bash
-workflow --clean            # asks user if they want to remove `creates` results
-workflow --force            # rerun entire workflow
-```
-
-**`--backup` and `--restore`.** Before removing or totally redoing an
-analysis, I've often found it useful to backup my results and compare
-the differences later. The `--backup` and `--restore` command line
-options make it easy to quickly backup an entire workflow (including
-generated `creates` targets, source code specified in `depends`, and
-the underlying `workflow.yaml`) and compare it to previous versions.
-
-```bash
-workflow --backup           # store archive in .workflow/archives/*.tar.bz2
-for i in `seq 20`; do
-	edit path/to/some/script.py
-	workflow
-done
-echo 'oh crap, this sequence of changes was a mistake'
-workflow --restore          # uncompresses archive
-```
-
-**`--dry-run`.** While [we don't recommend it](#op-ed), its not
-uncommon to get "in the zone" and make several edits to analysis
-scripts before re-running your workflow. Because we're human, its easy
-to incorrectly remember the files you edited and how they may affect
-re-running the workflow. To help, the `--dry-run` option lets you see
-which commands will be run and approximately how much time it should
-take (!!!).
-
-```bash
-workflow
+workflow run
 edit path/to/some/script.py
 edit path/to/another/script.py
-workflow --dry-run         # don't run anything, just report what would be done
+workflow run --dry-run     # don't run anything, just report what would be done
 ```
 
 For reference, `workflow` stores the duration of each task in
 `.workflow/duration.csv`.
 
-**`--export`.** Sometimes you just want a shell script, plain and
-simple. The `--export` option makes it easy to quickly export the
-sequence of steps that are specified in your workflow without running
-into conflicts.
+**`workflow run --force`**. Sometimes it is convenient to rerun an
+entire workflow, regardless of the current status of the files that
+were generated.
 
 ```bash
-workflow --export          # prints out sequence of shell commands
+workflow run
+# don't do anything for several months
+echo "Rip Van Winkle awakens and wonders, where did I leave off again?"
+echo "Screw it, lets just redo the entire analysis"
+workflow run --force
 ```
 
-**`--notify`.** For long-running workflows, it is convenient to be
-alerted when the entire workflow completes. The `--notify` option
-makes it possible to have the last 100 lines of the
-`.workflow/workflow.log` sent to an email address specified on the
-command line.
+**`workflow run --export`.** Sometimes you just want a shell script,
+plain and simple. The `--export` command line option makes it easy to
+quickly export the sequence of steps that are specified in your
+workflow without running into conflicts.
 
 ```bash
-workflow --notify j.doe@example.com
+workflow run --export      # prints out sequence of shell commands
+```
+
+**`workflow run --notify`.** For long-running workflows, it is
+convenient to be alerted when the entire workflow completes. The
+`--notify` command line option makes it possible to have the last 100
+lines of the `.workflow/workflow.log` sent to an email address
+specified on the command line.
+
+```bash
+workflow run --notify j.doe@example.com
+```
+
+**`workflow clean`**. Sometimes you want to start with a clean
+slate. Perhaps the data you originally started with is dated or you
+want to be confident a workflow properly runs from start to finish
+before inviting collaborators. Whatever the case, the `workflow clean`
+command can be useful for removing all `creates` targets that are
+defined in `workflow.yaml`. With the `--force` command line option,
+you can remove all files without having to confirm that you want to
+remove them. If you just want to remove a particular target, you can
+use `workflow clean task_id` to only remove that `creates` target.
+
+```bash
+workflow clean              # asks user if they want to remove `creates` results
+workflow clean --force      # removes all `creates` targets without confirmation
+```
+
+**`workflow archive`.** Before removing or totally redoing an
+analysis, I've often found it useful to backup my results and compare
+the differences later. The `workflow archive` command makes it easy to
+quickly backup an entire workflow (including generated `creates`
+targets, source code specified in `depends`, and the underlying
+`workflow.yaml`) and compare it to previous versions.
+
+```bash
+workflow archive            # store archive in .workflow/archives/*.tar.bz2
+for i in `seq 20`; do
+	edit path/to/some/script.py
+	workflow run
+done
+echo 'oh crap, this sequence of changes was a mistake'
+workflow archive --restore  # uncompresses archive
 ```
 
 **autocomplete.** Autocompletion of available options with workflow is
@@ -314,7 +326,8 @@ enabled by @kislyuk's amazing
 [autocomplete](https://github.com/kislyuk/argcomplete) package. Follow
 instructions to
 [enable global autocomplete](https://github.com/kislyuk/argcomplete#activating-global-completion)
-and you should be all set.
+and you should be all set. This is also configured in the
+[virtual machine provisioning](blob/master/provision/development.sh#L17).
 
 **more info.** For more details about these and other options, see
 `workflow --help`.
@@ -352,29 +365,39 @@ the roadmap, but if you have any suggestions for other ideas, please
    git clone https://github.com/YOUR-USERNAME/data-workflow.git
    ```
 
-2. Create a virtual environment and install the dependencies with [virtualenvwrapper](http://virtualenvwrapper.readthedocs.org/en/latest/)
+2. Install Vagrant and Virtualbox and launch the development virtual
+   machine.
 
    ```bash
-   mkvirtualenv data-workflow
-   pip install -r REQUIREMENTS -r examples/REQUIREMENTS
+   vagrant up && vagrant provision
    ```
 
-3. Adjust `PYTHONPATH`, `PATH`, and python environment so you can use
-   the development version.
-
-   ```bash
-   export PYTHONPATH=$PYTHONPATH:`pwd`
-   export PATH=$PATH:`pwd`/bin
-   workon data-workflow
-   ```
-
-4. Make sure everything is working by executing workflows in
+   On `vagrant ssh`ing to the virtual machine, note that the
+   `PYTHONPATH` and `PATH` environment variables have been altered in
+   this virtual machine so that any changes you make to your local
+   data workflow scripts are automatically reloaded.
+   
+3. Make sure everything is working by executing workflows in
    `examples/*/workflow.yaml`
 
    ```bash
    cd examples/reuters-tfidf
-   workflow
+   workflow run
    ```
 
+4. To be more thorough, there is a suite of functional tests to make
+   sure any patches you have made haven't disturbed the behavior of
+   this package in any substantitive way.
+
+   ```bash
+   ./examples/run_functional_tests.sh
+   ```
+
+  These functional tests are designed to be run on an Ubuntu 12.04 LTS
+  server, just like the virtual machine and the server that runs the
+  travis-ci test suite. Current build status:
+  [![Build Status](https://travis-ci.org/deanmalmgren/data-workflow.png)](https://travis-ci.org/deanmalmgren/data-workflow)
+
 5. Contribute! There are several [open issues](issues) that provide
-   good places to dig in.
+   good places to dig in. Send pull requests; your help is greatly
+   appreciated!

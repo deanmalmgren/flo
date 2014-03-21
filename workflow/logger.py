@@ -4,6 +4,7 @@ sending notifications with useful content
 """
 
 import logging
+import sys
 
 from .colors import colorless
 
@@ -16,10 +17,9 @@ def configure(task_graph):
     logger = logging.getLogger('workflow')
     logger.setLevel(logging.DEBUG)
 
-    # create file handler and a console handler. the console
-    # handler writes to stderr by default
+    # create file handler and a console handler that logs to stdout
     file_handler = ColorlessFileHandler(task_graph.abs_log_path, mode='w')
-    console_handler = logging.StreamHandler()
+    console_handler = logging.StreamHandler(sys.stdout)
 
     # set the logging levels on these handlers
     file_handler.setLevel(logging.DEBUG)
