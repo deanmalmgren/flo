@@ -58,7 +58,7 @@ validate_example () {
 # checksum by just running this script and determining what the
 # correct checksum is
 validate_example hello-world fb8915998f1095695ec34bc579bb41e6
-validate_example model-correlations 88cf5da8c613c0da7c41afeff9467822
+validate_example model-correlations c07223b877e49ff8bb4559c2829cdd47
 
 # exit with the sum of the status
 exit ${exit_code}
