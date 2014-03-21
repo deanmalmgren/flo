@@ -5,7 +5,7 @@ input_name: data/sp500.html
 tasks:
 # create some data to analyze.
   -
-    creates: data/sp500.html
+    creates: "{{input_name}}"
     command:
       - mkdir -p $(dirname {{creates}})
       - wget http://en.wikipedia.org/wiki/List_of_S%26P_500_companies -O {{creates}}
@@ -16,5 +16,5 @@ tasks:
     creates: data/sp500.csv
     depends: 
       - code/parse_sp500.py
-      - get_data
-    command: python {{depends[0]}} data/sp500.html > {{creates}}
+      - "{{input_name}}"
+    command: python {{depends|join(' ')}} > {{creates}}
