@@ -26,49 +26,38 @@ tasks:
     command: cut -f{{x_col+1}},{{y_col+1}} {{depends}} > {{creates}}
   
   # create a figure for the correlation between x and y
-  # QUESTION: SHOULD THIS DEPEND ON src/loaders.py?
   -
-    creates: data/x_y_correlation.png
+    creates: data/x_y_correlation.dat
     depends: 
-      - src/scatterplot.py
+      - src/correlation.py
       - data/x_y.dat
-    command: python {{depends|join(' ')}} {{creates}}
+      - src/loaders.py
+    command: python {{depends[:2]|join(' ')}} > {{creates}}
   
   # create a figure to display the distribution of x
-  # QUESTION: SHOULD THIS DEPEND ON src/loaders.py?
   -
-    creates: data/x_pdf.png
+    creates: data/x_cdf.dat
     depends: 
-      - src/pdf.py
+      - src/cdf.py
       - data/x_y.dat
-    command: python {{depends|join(' ')}} {{x_col}} {{creates}}
+      - src/loaders.py
+    command: python {{depends[:2]|join(' ')}} {{x_col}} > {{creates}}
   
   # create a figure to display the distribution of y
-  # QUESTION: SHOULD THIS DEPEND ON src/loaders.py?
   -
-    creates: data/y_pdf.png
+    creates: data/y_cdf.dat
     depends: 
-      - src/pdf.py
+      - src/cdf.py
       - data/x_y.dat
-    command: python {{depends|join(' ')}} {{y_col}} {{creates}}
+      - src/loaders.py
+    command: python {{depends[:2]|join(' ')}} {{y_col}} > {{creates}}
   
-  # create a figure for the autocorrelation between consecutive x,y
-  # pairs
-  # QUESTION: SHOULD THIS DEPEND ON src/loaders.py?
-  -
-    creates: data/x_autocorrelation.png
-    depends: 
-      - src/autocorrelation.py
-      - data/x_y.dat
-    command: python {{depends|join(' ')}} {{x_col}} {{creates}}
-
   # this is an example of a pseudotask that is a convenient alias for
   # several subcommands. pseudotasks are tasks that have no `command`
   # associated with them.
   -
-    creates: figures
+    creates: analysis
     depends:
-      - data/x_pdf.png
-      - data/y_pdf.png
-      - data/x_autocorrelation.png
-      - data/x_y_correlation.png
+      - data/x_cdf.dat
+      - data/y_cdf.dat
+      - data/x_y_correlation.dat
