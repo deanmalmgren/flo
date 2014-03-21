@@ -522,10 +522,17 @@ class TaskGraph(object):
             len(tasks),
             n_tasks,
         )
-        msg += "which will take between %s and %s." % (
-            self.duration_string(min_duration),
-            self.duration_string(max_duration),
-        )
+        if max_duration == min_duration == 0.0:
+            msg += "which will take an indeterminate amount of time."
+        elif max_duration == min_duration:
+            msg += "which will take approximately %s." % (
+                self.duration_string(min_duration),
+            )
+        else:
+            msg += "which will take between %s and %s." % (
+                self.duration_string(min_duration),
+                self.duration_string(max_duration),
+            )
         if color:
             msg = color(msg)
         return msg

@@ -17,4 +17,4 @@ command:
 ---
 creates: data/word_count.dat
 depends: data/hello_world.txt
-command: tr ' ' '\n' < {{depends}} | sort | uniq -c > {{creates}}
+command: tr ' ' '\n' < {{depends}} | sort | uniq -c >  {{creates}}
