@@ -20,26 +20,41 @@ class Task(resources.base.BaseResource):
     def __init__(self, graph, creates=None, depends=None, alias=None, 
                  command=None, **kwargs):
         self.graph = graph
-        self.creates = creates
-        self.depends = depends
-        self.command = command
-        self.alias = alias
+        self._creates = creates
+        self._depends = depends
+        self._command = command
+        self._alias = alias
 
         # quick type checking to make sure the tasks in the
         # configuration file are valid
-        if self.creates is None:
+        if self._creates is None:
             raise InvalidTaskDefinition(
                 "every task must define a `creates`"
             )
 
         # remember other attributes of this Task for rendering
         # purposes below
-        self.command_attrs = kwargs
-        self.command_attrs.update({
+        self.attrs = kwargs
+
+        # render the creates and depends templates as necessary. this
+        # is to address issue #33
+        # https://github.com/deanmalmgren/data-workflow/issues/33
+        self.creates = self.render_template(self._creates)
+        self.depends = self.render_template(self._depends)
+        self.alias = self.render_template(self._alias)
+
+        # update the attrs to reflect any changes from the template
+        # rendering from global variables
+        self.attrs.update({
             'creates': self.creates,
             'depends': self.depends,
             'alias': self.alias,
         })
+
+        # save the original command strings in _command for checking
+        # the state of this command and render the jinja template for
+        # the command
+        self.command = self.render_command_template()
 
         # add this task to the task graph
         self.graph.add(self)
@@ -54,12 +69,6 @@ class Task(resources.base.BaseResource):
         # it (downstream_tasks)
         self.downstream_tasks = set()
         self.upstream_tasks = set()        
-
-        # save the original command strings in _command for checking
-        # the state of this command and render the jinja template for
-        # the command
-        self._command = self.command
-        self.command = self.render_command_template()
 
         # call the BaseResource.__init__ to get this to behave like an
         # resource here, too
@@ -108,16 +117,16 @@ class Task(resources.base.BaseResource):
         # state
         msg = self.creates + str(self.depends) + str(self._command) + \
               str(self.alias)
-        keys = self.command_attrs.keys()
+        keys = self.attrs.keys()
         keys.sort()
         for k in keys:
-            msg += k + str(self.command_attrs[k])
+            msg += k + str(self.attrs[k])
         return self._get_stream_state(StringIO.StringIO(msg))
 
     def is_pseudotask(self):
         """Check to see if this task is a pseudotask.
         """
-        return self.command is None
+        return self._command is None
 
     def in_sync(self):
         """Test whether this task is in sync with the stored state and
@@ -193,25 +202,30 @@ class Task(resources.base.BaseResource):
             # store the duration on the graph object
             self.graph.task_durations[self.id] = self.duration
 
-    def render_command_template(self, command=None):
+    def render_template(self, template):
+        """Render a `template` using self.attrs as a template
+        context. `template` can either be a list or a string."""
+
+        if template is None:
+            return None
+
+        # if template is a list, make sure to render each element of
+        # the list
+        if isinstance(template, (list, tuple)):
+            return [self.render_template(ts) for ts in template]
+
+        # render the template as if its a jinja template
+        env = jinja2.Environment()
+        template_obj = env.from_string(template)
+        return template_obj.render(self.attrs)
+
+    def render_command_template(self):
         """Uses jinja template syntax to render the command from the other
         data specified in the YAML file
         """
-
-        # if command is a list, render recursively
-        command = command or self.command
-        if isinstance(command, (list, tuple)):
-            return [self.render_command_template(cmd) for cmd in command]
-
-        # if this is a pseudotask, return None to enable downstream
-        # functionality
         if self.is_pseudotask():
             return None
-
-        # otherwise, need to render the template with Jinja2
-        env = jinja2.Environment()
-        template = env.from_string(command)
-        return template.render(self.command_attrs)
+        return self.render_template(self._command)
 
     def duration_message(self, color=colors.blue):
         msg = "%79s" % self.graph.duration_string(self.duration)

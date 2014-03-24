@@ -180,9 +180,37 @@ tasks:
     command: python {{depends[0]}} {{sigma}} < {{depends[1]}} > {{creates}}
 ```
 
+Another common use case for global variables is when you have several
+tasks that all depend on the same file. You can also use jinja
+templating in the `creates` and `depends` attributes of your
+`workflow.yaml` like this:
+
+```yaml
+---
+input: data/sp500.html
+tasks:
+  -
+    creates: "{{input}}"
+	command:
+	  - mkdir -p $(dirname {{creates}})
+      - wget http://en.wikipedia.org/wiki/List_of_S%26P_500_companies -O {{creates}}
+  -
+	creates: data/names.dat
+	depends:
+      - src/extract_names.py
+      - "{{input}}"
+	command: python {{depends|join(' ')}} > {{creates}}
+  -
+	creates: data/symbols.dat
+	depends:
+      - src/extract_symbols.py
+      - "{{input}}"
+	command: python {{depends|join(' ')}} > {{creates}}
+```
+
 There are several [examples](examples/) for more inspiration on how
-you could use this. If you have suggestions for other ideas, please
-[add them](issues)!
+you could use the workflow.yaml specification. If you have suggestions
+for other ideas, please [add them](issues)!
 
 ### command line interface
 
