@@ -132,19 +132,20 @@ class Task(resources.base.BaseResource):
         """Test whether this task is in sync with the stored state and
         needs to be executed
         """
-        in_sync = self.state_in_sync()
 
         # if the creates doesn't exist, its not in sync and the task
         # must be executed
         if not os.path.exists(os.path.join(self.root_directory, self.creates)):
-            in_sync = False
+            return False
 
-        # if any of the dependencies are out of sync, then this task
-        # must be executed
-        for resource in self.depends_resources:
-            in_sync = in_sync and resource.state_in_sync()
-
-        return in_sync
+        # if this task or any of its dependencies are out of sync,
+        # then this task must be executed. We use `all` here to
+        # deliberately stop checking states when any resource state is
+        # out of sync (this is more computationally efficient for
+        # checking large file hashes)
+        return self.state_in_sync() and all(
+            resource.state_in_sync() for resource in self.depends_resources
+        )
 
     def run(self, command):
         """Run the specified shell command using Fabric-like behavior"""
@@ -179,10 +180,15 @@ class Task(resources.base.BaseResource):
 
         # execute a sequence of commands by recursively calling this
         # method
+        #
+        # TODO: either (i) make _execute_helper method OR force
+        # self.command to ALWAYS be a list
         command = command or self.command
         if isinstance(command, (list, tuple)):
             for cmd in command:
                 self.execute(cmd)
+
+        # XXXX LEFT OFF HERE WITH GABE
 
         # if its not a list or a tuple, then this string should be
         # executed. Update the user on our progress so far, be sure to
@@ -323,6 +329,9 @@ class TaskGraph(object):
         that do not depend on anything.
         http://en.wikipedia.org/wiki/Breadth-first_search
         """
+        # TODO: if iter_dfs is NOT needed, we can make this __iter__
+        # to make things easier to understand.
+
         # implement this starting from sources and working our way
         # downstream to make sure it is easy to specify particular tasks
         # on the command line (which should only re-run dependencies
@@ -391,13 +400,19 @@ class TaskGraph(object):
 
         # add these tasks to the subgraph by iterating depth-first
         # search upstream
+        # TODO: is depth-first search needed here?!?!
         subgraph = TaskGraph(self.config_path)
         for task in self.iter_dfs(tasks):
             subgraph.add(task)
 
         # reset the task connections to prevent the workflow from
         # going past the specified `creates` targets on the command
-        # line
+        # line 
+        #
+        # TODO: this is damaging self --- this particular TaskGraph
+        # instance. this can definitely be cleaned up somehow. make a
+        # copy of Task objects? Another approach: have self manipulate
+        # the tasks in this TaskGraph?
         for task in subgraph.task_list:
             task.reset_task_dependencies()
         subgraph.dereference_depends_aliases()

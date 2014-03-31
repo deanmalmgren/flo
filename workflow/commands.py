@@ -66,17 +66,16 @@ def execute(task_id=None, force=False, dry_run=False, export=False, **kwargs):
 
     # iterate through every task in the task graph and find the set of
     # tasks that have to be executed. we do this first so we can alert
-    # the user as to how long this workflow will take. use breadth
-    # first search on entire task graph to make sure the
-    # out_of_sync_tasks are created in the appropriate order for
-    # subsequent steps.
+    # the user as to how long this workflow will take. breadth first
+    # search on entire task graph to make sure the out_of_sync_tasks
+    # are created in the appropriate order for subsequent steps.
     out_of_sync_tasks = []
     for task in task_graph.iter_bfs():
 
         # regardless of whether we force the execution of the command,
         # run the in_sync method, which calculates the state of the
         # task and all `creates` / `depends` elements
-        if (not task.in_sync() or force) and not task.is_pseudotask():
+        if not task.is_pseudotask() and (force or not task.in_sync()):
             out_of_sync_tasks.append(task)
 
     # report the minimum amount of time this will take to execute and
@@ -93,7 +92,7 @@ def execute(task_id=None, force=False, dry_run=False, export=False, **kwargs):
             # things change during the course of a run. This is not
             # ideal but makes it possible to estimate the duration of
             # a workflow run, which is pretty valuable
-            if (not task.in_sync() or force) and not task.is_pseudotask():
+            if not task.is_pseudotask() and (force or not task.in_sync()):
                 if not (dry_run or export):
                     try:
                         task.execute()
@@ -117,8 +116,7 @@ def execute(task_id=None, force=False, dry_run=False, export=False, **kwargs):
                         task.command_message(color=None, pre="")
                     )
         
-    # if no tasks were executed, then alert the user that nothing
-    # needed to be run
+    # if no tasks needed to be executed, then alert the user.
     else:
         task_graph.logger.info(
             "No tasks are out of sync in the workflow defined in '%s'" % (
