@@ -1,0 +1,6 @@
+---
+creates: data/img
+depends: src/download_images.py
+command: 
+  - mkdir -p {{creates}}
+  - python {{depends}} {{creates}}
