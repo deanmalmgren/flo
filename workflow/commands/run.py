@@ -12,7 +12,7 @@ def command(task_id=None, force=False, dry_run=False, export=False, **kwargs):
     # REFACTOR TODO: this function is almost certainly overcommented
     # and should be broken into separate methods in a TaskGraph
 
-    # TODO: 
+    # TODO: does this introduce bugs in the .workflow/state.csv file?
     # 
     # if any tasks are specified, limit the task graph to only those
     # tasks that are required to create the specified tasks
@@ -96,7 +96,7 @@ def add_to_parser(subparsers):
 
     parser = subparsers.add_parser(
         'run', 
-        help='run the workflow',
+        help='Run the workflow.',
     )
     parser.add_argument(
         'task_id',
@@ -129,6 +129,6 @@ def add_to_parser(subparsers):
         type=str,
         metavar='EMAIL',
         nargs=1,
-        help='Specify an email address to notify on completion',
+        help='Specify an email address to notify on completion.',
     )
     parser.set_defaults(func=command)

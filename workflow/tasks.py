@@ -6,6 +6,7 @@ import StringIO
 import collections
 import datetime
 import glob
+from distutils.util import strtobool
 
 import jinja2
 
@@ -487,6 +488,37 @@ class TaskGraph(object):
             else:
                 self._link_dependency_helper(task, task.depends)
 
+    def confirm_clean(self, task_list=None, include_internals=False, pause=0.5):
+        self.logger.info(colors.red(
+            "Please confirm that you want to delete the following files:"
+        ))
+        time.sleep(pause)
+        task_list = task_list or self.task_list
+        if include_internals:
+            self.logger.info(green(self.internals_path))
+        for task in task_list:
+            if not task.is_pseudotask():
+                self.logger.info(task.creates_message())
+        yesno = raw_input(colors.red("Delete aforementioned files? [Y/n] "))
+        if yesno == '':
+            yesno = 'y'
+        return strtobool(yesno)
+
+    def clean(self, task_list=None, include_internals=False):
+        """Remove appropriate internal files managed by workflow as well as
+        any resulting files created by the specified `task_list`.
+        """
+        if os.path.exists(self.abs_state_path) and task_list is None:
+            os.remove(self.abs_state_path)
+        if include_internals:
+            shell.run(self.root_directory, "rm -rf %s" % self.internals_path)
+            self.logger.info(
+                "removed %s" % colors.green(self.internals_path)
+            )
+        task_list = task_list or self.task_list
+        for task in task_list:
+            task.clean()
+
     def duration_string(self, duration):
         if duration < 10 * 60: # 10 minutes
             return "%.2f" % (duration) + " s" 
@@ -496,38 +528,6 @@ class TaskGraph(object):
             return "%.2f" % (duration / 60 / 60) + " h"
         else:
             return "%.2f" % (duration / 60 / 60 / 24) + " d"
-
-    def clean(self, export=False, task_list=None, include_internals=False):
-        """Run clean on every task and remove the state cache file
-        """
-
-        # make sure to change into the correct directory first if
-        # we're exporting
-        if export:
-            self.logger.info("cd %s" % self.root_directory)
-
-        if os.path.exists(self.abs_state_path) and task_list is None:
-            if export:
-                self.logger.info("rm -f %s" % self.abs_state_path)
-            else:
-                os.remove(self.abs_state_path)
-
-        if include_internals:
-            cmd = "rm -rf %s" % self.internals_path
-            if export:
-                self.logger.info(cmd)
-            else:
-                self.logger.info(
-                    "removed %s" % colors.green(self.internals_path)
-                )
-                shell.run(self.root_directory, cmd)
-
-        task_list = task_list or self.task_list
-        for task in task_list:
-            if export:
-                self.logger.info(task.clean_command())
-            else:
-                task.clean()
 
     def duration_message(self, tasks=None, color=colors.blue):
         tasks = tasks or self.task_list
