@@ -4,8 +4,8 @@ from ..parser import load_task_graph, get_available_tasks
 from ..colors import red, green
 from ..exceptions import ConfigurationNotFound
 
-def command(task_id=None, force=False, include_internals=False, **kwargs):
-    """Remove all `creates` targets defined in workflow. If a task_id is
+def command(task_id=None, force=False, include_internals=False):
+    """Remove all `creates` targets defined in workflow. If a `task_id` is
     specified, only remove that target.
     """
     task_graph = load_task_graph()
@@ -33,31 +33,27 @@ def command(task_id=None, force=False, include_internals=False, **kwargs):
     # correct email message
     task_graph.successful = True
 
-def add_to_parser(subparsers):
+def add_command_line_options(options):
     try:
         available_tasks = get_available_tasks()
     except ConfigurationNotFound:
         available_tasks = []
-    parser = subparsers.add_parser(
-        'clean', 
-        help='Remove results from previous workflow runs.',
-    )
-    parser.add_argument(
+    options.add_argument(
         'task_id',
-        metavar='TASK',
+        metavar='task_id',
         type=str,
         choices=available_tasks,
         nargs='?', # '*', this isn't working for some reason
         help='Specify a particular task to clean rather than all of them.',
     )
-    parser.add_argument(
+    options.add_argument(
         '-f', '--force',
         action="store_true",
         help="Remove all `creates` targets in workflow without confirmation.",
     )
-    parser.add_argument(
+    options.add_argument(
         '--include-internals',
         action="store_true",
         help="Remove all files in the .workflow/ directory.",
     )
-    parser.set_defaults(func=command)
+    return options

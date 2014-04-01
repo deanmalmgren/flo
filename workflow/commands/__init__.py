@@ -6,8 +6,9 @@ that command.
 
 import argparse
 
+from ..exceptions import CommandLineException
 from . import run, clean, archive
-SUBCOMMANDS = [run, clean, archive]
+SUBCOMMAND_MODULES = [run, clean, archive]
 
 # REFACTOR TODO: tried to clean this up a bit to make the actual
 # `workflow` script easier to read. Do we want to have a Command class
@@ -22,20 +23,34 @@ SUBCOMMANDS = [run, clean, archive]
 #   * load a task graph consistently
 #   * consistently mark things as successful
 
-def get_cli_parser():
+def get_command_line_parser():
     """Public function for creating a parser to execute all of the commands
     in this sub-package.
     """
-    parser = argparse.ArgumentParser(
+    command_line_parser = argparse.ArgumentParser(
         description="Execute data workflows defined in workflow.yaml files",
     )
-    subparsers = parser.add_subparsers(
+    subcommand_creator = command_line_parser.add_subparsers(
         title='SUBCOMMANDS',
-        description='valid subcommands',
-        help='additional help'
     )
-    for subcommand in SUBCOMMANDS:
-        subcommand.add_to_parser(subparsers)
-    return parser
+    for module in SUBCOMMAND_MODULES:
+        module_name = module.__name__.rsplit('.', 1)[1]
+        command_doc = module.command.__doc__
+        options = subcommand_creator.add_parser(
+            module_name, help=command_doc, description=command_doc,
+        )
+        options = module.add_command_line_options(options)
+
+        # this sets up the function that should be run if this
+        # subcommand is specified on the command line. See
+        # run_subcommand for how this is used.
+        options.set_defaults(command=module.command)
+    return command_line_parser
 
 
+def run_subcommand(args):
+
+    # This is where the actual command is run. This is set up with
+    # the get_command_line_parser above.
+    command = args.__dict__.pop("command")
+    command(**args.__dict__)

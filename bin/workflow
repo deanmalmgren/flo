@@ -6,31 +6,9 @@ import sys
 
 import argcomplete
 
-from workflow.commands import get_cli_parser
-from workflow.exceptions import CommandLineException
-from workflow.notify import notify
+from workflow.commands import get_command_line_parser, run_subcommand
 
-# add all of the subcommands to the parsers
-cli_parser = get_cli_parser()
-
-# use argcomplete to autocomplete options, the parse arguments and run
-argcomplete.autocomplete(cli_parser)
-args = cli_parser.parse_args()
-
-# if the error has an exit_code associated with it (from a ShellError
-# of running the workflow), exit with that status if there was an
-# exception.
-try:
-
-    # REFACTOR TODO: this feels unnatural because its not clear that
-    # args.func will exist. If args.func is defined by us, let's give
-    # it a more descriptive name so that people [gabe] dont get
-    # confused and think it's built in.
-    args.func(**args.__dict__)
-except CommandLineException, e:
-    print(e)
-    sys.exit(getattr(e, 'exit_code', 1))
-finally:
-    # REFACTOR TODO: should this should be moved inside the run command? 
-    if getattr(args, 'notify', None):
-        notify(*args.notify)
+command_line_parser = get_command_line_parser()
+argcomplete.autocomplete(command_line_parser)
+args = command_line_parser.parse_args()
+run_subcommand(args)

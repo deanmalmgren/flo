@@ -3,10 +3,9 @@ import sys
 
 from ..parser import load_task_graph, get_available_tasks
 from ..exceptions import ShellError, ConfigurationNotFound
+from ..notify import notify
 
-def command(task_id=None, force=False, dry_run=False, **kwargs):
-    """Execute the task workflow.
-    """
+def inner_command(task_id, force, dry_run):
     task_graph = load_task_graph()
 
     # REFACTOR TODO: this function is almost certainly overcommented
@@ -81,30 +80,38 @@ def command(task_id=None, force=False, dry_run=False, **kwargs):
     # correct email message
     task_graph.successful = True
 
-def add_to_parser(subparsers):
+def command(task_id=None, force=False, dry_run=False, notify_emails=None):
+    """Run the task workflow.
+    """
+    try:
+        inner_command(task_id, force, dry_run)
+    except CommandLineException, e:
+        print(e)
+        sys.exit(getattr(e, 'exit_code', 1))
+    finally:
+        if notify_emails:
+            notify(*notify_emails)
+
+def add_command_line_options(options):
     try:
         available_tasks = get_available_tasks()
     except ConfigurationNotFound:
         available_tasks = []
 
-    parser = subparsers.add_parser(
-        'run', 
-        help='Run the workflow.',
-    )
-    parser.add_argument(
+    options.add_argument(
         'task_id',
-        metavar='TASK',
+        metavar='task_id',
         type=str,
         choices=available_tasks,
         nargs='?', # '*', this isn't working for some reason
         help='Specify a particular task to run.',
     )
-    parser.add_argument(
+    options.add_argument(
         '-f', '--force',
         action="store_true",
         help="Rerun entire workflow, regardless of task state.",
     )
-    parser.add_argument(
+    options.add_argument(
         '-d', '--dry-run',
         action="store_true",
         help=(
@@ -112,11 +119,12 @@ def add_to_parser(subparsers):
             "long it would take."
         ),
     )
-    parser.add_argument(
+    options.add_argument(
         '--notify',
         type=str,
         metavar='EMAIL',
+        dest="notify_emails",
         nargs=1,
         help='Specify an email address to notify on completion.',
     )
-    parser.set_defaults(func=command)
+    return options
