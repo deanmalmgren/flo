@@ -31,11 +31,15 @@ class BaseResource(object):
         every task"""
         return self.graph.root_directory
 
-    def _get_stream_state(self, stream, block_size=2**20):
+    def get_stream_state(self, stream, block_size=2**20):
         """Read in a stream in relatively small `block_size`s to make sure we
         won't have memory problems on BIG DATA streams.
         http://stackoverflow.com/a/1131255/564709
         """
+        # TODO: this is called relatively frquently and is almost
+        # certainly IO bound. think about optimizing for speed if
+        # necessary by possibly reading random chunks of a stream
+        # instead of the whole darn thing
         state = hashlib.sha1()
         while True:
             data = stream.read(block_size)
@@ -44,15 +48,13 @@ class BaseResource(object):
             state.update(data)
         return state.hexdigest()
 
-    @property
-    def previous_state(self):
+    def get_previous_state(self):
         """Get the previous state of this resource prior to this run. If the
         resource does not exist, throw an error.
         """
         return self.graph.get_state_from_storage(self.name)
 
-    @property
-    def current_state(self):
+    def get_current_state(self):
         """Get the current state of this resource. If the resource does
         not exist, throw an error.
         
@@ -72,5 +74,5 @@ class BaseResource(object):
         state of this resource. If they are the same, then this resource
         is in_sync.
         """
-        return self.previous_state == self.current_state
+        return self.get_previous_state() == self.get_current_state()
 

@@ -83,7 +83,8 @@ class Task(resources.base.BaseResource):
     @property
     def root_directory(self):
         """Easy access to the graph's root_directory, which is stored once for
-        every task"""
+        every task
+        """
         return self.graph.root_directory
 
     def add_task_dependency(self, depends_on):
@@ -110,11 +111,10 @@ class Task(resources.base.BaseResource):
             all_filenames.append(self.depends)
         return all_filenames
 
-    @property
-    def current_state(self):
+    def get_current_state(self):
         """Get the state of this task"""
         # write the data for this task to a stream so that we can use
-        # the machinery in self._get_stream_state to calculate the
+        # the machinery in self.get_stream_state to calculate the
         # state
         msg = self.creates + str(self.depends) + str(self._command) + \
               str(self.alias)
@@ -122,7 +122,7 @@ class Task(resources.base.BaseResource):
         keys.sort()
         for k in keys:
             msg += k + str(self.attrs[k])
-        return self._get_stream_state(StringIO.StringIO(msg))
+        return self.get_stream_state(StringIO.StringIO(msg))
 
     def is_pseudotask(self):
         """Check to see if this task is a pseudotask.
@@ -637,11 +637,11 @@ class TaskGraph(object):
         # selected to run
         after_resource_states = self.read_from_storage(self.abs_state_path)
         for name, resource in self.resource_dict.iteritems():
-            after_resource_states[name] = resource.current_state
+            after_resource_states[name] = resource.get_current_state()
 
         # if override states are provided, update the resources
         # accordingly
-        if override_resource_states:
+        if isinstance(override_resource_states, dict):
             after_resource_states.update(override_resource_states)
 
         self.write_to_storage(after_resource_states, self.abs_state_path)

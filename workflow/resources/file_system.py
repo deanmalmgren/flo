@@ -15,7 +15,7 @@ class FileSystem(BaseResource):
 
     def file_state(self, resource_path=None):
         with open(resource_path or self.resource_path) as stream:
-            state = self._get_stream_state(stream)
+            state = self.get_stream_state(stream)
         return state
 
     def directory_state(self):
@@ -25,8 +25,7 @@ class FileSystem(BaseResource):
                 state_hash.update(self.file_state(filename))
         return state_hash.hexdigest()
 
-    @property
-    def current_state(self):
+    def get_current_state(self):
         if not os.path.exists(self.resource_path):
             return None
         elif os.path.isfile(self.resource_path):
