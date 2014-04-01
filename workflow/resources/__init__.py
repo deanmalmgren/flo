@@ -7,6 +7,11 @@ def get_or_create(graph, candidate):
     strings.
     """
 
+    # REFACTOR TODO: make this a wrapper instead of recursing once. 
+
+    # REFACTOR TODO: make ALL recursing once functions wrappers OR
+    # make everything a list
+
     resources = []
     if isinstance(candidate, (list, tuple)):
         for c in candidate:

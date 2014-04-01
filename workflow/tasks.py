@@ -162,8 +162,11 @@ class Task(resources.base.BaseResource):
             self.run(self.clean_command())
             self.graph.logger.info("removed %s" % self.creates_message())
 
-    def execute(self, command=None):
+    def timed_run(self, command=None):
         """Run the specified task from the root of the workflow"""
+
+        # REFACTOR TODO: separate out the running of a the command
+        # from the timing of the command
 
         # start of task execution
         start_time = None
@@ -182,14 +185,12 @@ class Task(resources.base.BaseResource):
         # execute a sequence of commands by recursively calling this
         # method
         #
-        # TODO: either (i) make _execute_helper method OR force
+        # REFACTOR TODO: either (i) make _execute_helper method OR force
         # self.command to ALWAYS be a list
         command = command or self.command
         if isinstance(command, (list, tuple)):
             for cmd in command:
-                self.execute(cmd)
-
-        # XXXX LEFT OFF HERE WITH GABE
+                self.timed_run(cmd)
 
         # if its not a list or a tuple, then this string should be
         # executed. Update the user on our progress so far, be sure to
@@ -201,7 +202,7 @@ class Task(resources.base.BaseResource):
             self.run(command)
 
         # stop the clock and alert the user to the clock time spent
-        # exeucting the task
+        # running the task
         if start_time:
             self.duration = time.time() - start_time
             self.graph.logger.info(self.duration_message())
@@ -330,7 +331,7 @@ class TaskGraph(object):
         that do not depend on anything.
         http://en.wikipedia.org/wiki/Breadth-first_search
         """
-        # TODO: if iter_dfs is NOT needed, we can make this __iter__
+        # REFACTOR TODO: if iter_dfs is NOT needed, we can make this __iter__
         # to make things easier to understand.
 
         # implement this starting from sources and working our way
@@ -401,7 +402,7 @@ class TaskGraph(object):
 
         # add these tasks to the subgraph by iterating depth-first
         # search upstream
-        # TODO: is depth-first search needed here?!?!
+        # REFACTOR TODO: is depth-first search needed here?!?!
         subgraph = TaskGraph(self.config_path)
         for task in self.iter_dfs(tasks):
             subgraph.add(task)
@@ -410,7 +411,7 @@ class TaskGraph(object):
         # going past the specified `creates` targets on the command
         # line 
         #
-        # TODO: this is damaging self --- this particular TaskGraph
+        # REFACTOR TODO: this is damaging self --- this particular TaskGraph
         # instance. this can definitely be cleaned up somehow. make a
         # copy of Task objects? Another approach: have self manipulate
         # the tasks in this TaskGraph?
@@ -586,12 +587,14 @@ class TaskGraph(object):
         """Convenience property for accessing the archive location"""
         return os.path.join(self.root_directory, self.archive_dir)
 
-    def read_from_storage(self, dictionary, storage_location):
+    def read_from_storage(self, storage_location):
+        dictionary = {}
         if os.path.exists(storage_location):
             with open(storage_location) as stream:
                 reader = csv.reader(stream)
                 for row in reader:
                     dictionary[row[0]] = row[1]
+        return dictionary
 
     def write_to_storage(self, dictionary, storage_location):
         with open(storage_location, 'w') as stream:
@@ -612,7 +615,9 @@ class TaskGraph(object):
         state file hasn't been stored yet, nothing happens. This also
         loads the duration statistics on this task.
         """
-        self.read_from_storage(self.task_durations, self.abs_duration_path)
+        self.task_durations.update(
+            self.read_from_storage(self.abs_duration_path)
+        )
 
         # typecast the task_durations
         for task_id, duration in self.task_durations.iteritems():
@@ -630,8 +635,7 @@ class TaskGraph(object):
         # the old states with the current states before writing to a
         # CSV. this is important for situations where a subgraph is
         # selected to run
-        after_resource_states = {}
-        self.read_from_storage(after_resource_states, self.abs_state_path)
+        after_resource_states = self.read_from_storage(self.abs_state_path)
         for name, resource in self.resource_dict.iteritems():
             after_resource_states[name] = resource.current_state
 

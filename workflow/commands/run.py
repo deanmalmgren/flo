@@ -50,7 +50,7 @@ def command(task_id=None, force=False, dry_run=False, export=False, **kwargs):
             if not task.is_pseudotask() and (force or not task.in_sync()):
                 if not (dry_run or export):
                     try:
-                        task.execute()
+                        task.timed_run()
                     except (KeyboardInterrupt, ShellError), e:
                         # on keyboard interrupt or error on executing
                         # a specific step, make sure all previously

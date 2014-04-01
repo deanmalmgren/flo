@@ -1,4 +1,4 @@
-"""Every subcommand within the workflow must have two public function,
+"""Every subcommand within the workflow must have two public functions,
 an `add_to_parser` function that sets up the appropriate subcommand
 parser with `argparse` and a `command` function that actually executes
 that command.
