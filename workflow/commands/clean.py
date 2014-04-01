@@ -4,6 +4,7 @@ from ..parser import load_task_graph, get_available_tasks
 from ..colors import red, green
 from ..exceptions import ConfigurationNotFound
 
+
 def command(task_id=None, force=False, include_internals=False):
     """Remove all `creates` targets defined in workflow. If a `task_id` is
     specified, only remove that target.
@@ -33,6 +34,7 @@ def command(task_id=None, force=False, include_internals=False):
     # correct email message
     task_graph.successful = True
 
+
 def add_command_line_options(options):
     try:
         available_tasks = get_available_tasks()
@@ -43,7 +45,7 @@ def add_command_line_options(options):
         metavar='task_id',
         type=str,
         choices=available_tasks,
-        nargs='?', # '*', this isn't working for some reason
+        nargs='?',  # '*', this isn't working for some reason
         help='Specify a particular task to clean rather than all of them.',
     )
     options.add_argument(

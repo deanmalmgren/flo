@@ -23,6 +23,7 @@ SUBCOMMAND_MODULES = [run, clean, archive]
 #   * load a task graph consistently
 #   * consistently mark things as successful
 
+
 def get_command_line_parser():
     """Public function for creating a parser to execute all of the commands
     in this sub-package.
@@ -49,7 +50,6 @@ def get_command_line_parser():
 
 
 def run_subcommand(args):
-
     # This is where the actual command is run. This is set up with
     # the get_command_line_parser above.
     command = args.__dict__.pop("command")

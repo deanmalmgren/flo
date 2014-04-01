@@ -16,9 +16,10 @@ from . import shell
 from . import resources
 from . import logger
 
+
 class Task(resources.base.BaseResource):
 
-    def __init__(self, graph, creates=None, depends=None, alias=None, 
+    def __init__(self, graph, creates=None, depends=None, alias=None,
                  command=None, **kwargs):
         self.graph = graph
         self._creates = creates
@@ -69,7 +70,7 @@ class Task(resources.base.BaseResource):
         # which this task depends (upstream_tasks) on what depends on
         # it (downstream_tasks)
         self.downstream_tasks = set()
-        self.upstream_tasks = set()        
+        self.upstream_tasks = set()
 
         # call the BaseResource.__init__ to get this to behave like an
         # resource here, too
@@ -117,7 +118,7 @@ class Task(resources.base.BaseResource):
         # the machinery in self.get_stream_state to calculate the
         # state
         msg = self.creates + str(self.depends) + str(self._command) + \
-              str(self.alias)
+            str(self.alias)
         keys = self.attrs.keys()
         keys.sort()
         for k in keys:
@@ -255,11 +256,11 @@ class Task(resources.base.BaseResource):
         if isinstance(command, (list, tuple)):
             msg = []
             for subcommand in command:
-                msg.append(self.command_message(command=subcommand, 
+                msg.append(self.command_message(command=subcommand,
                                                 color=color, pre=pre))
             return '\n'.join(msg)
         if command is None:
-            return '' # no command message for pseudotasks
+            return ''  # no command message for pseudotasks
         msg = pre + command
         if color:
             msg = color(msg)
@@ -270,6 +271,7 @@ class Task(resources.base.BaseResource):
             self.creates_message(),
             self.command_message()
         ])
+
 
 class TaskGraph(object):
     """Simple graph implementation of a list of task nodes"""
@@ -385,11 +387,15 @@ class TaskGraph(object):
         """
         self.task_list.append(task)
         if task.alias is not None:
-            if self.task_dict.has_key(task.alias):
-                raise NonUniqueTask("task `alias` '%s' is not unique"%task.alias)
+            if task.alias in self.task_dict:
+                raise NonUniqueTask(
+                    "task `alias` '%s' is not unique" % task.alias
+                )
             self.task_dict[task.alias] = task
-        if self.task_dict.has_key(task.creates):
-            raise NonUniqueTask("task `creates` '%s' is not unique"%task.creates)
+        if task.creates in self.task_dict:
+            raise NonUniqueTask(
+                "task `creates` '%s' is not unique" % task.creates
+            )
         self.task_dict[task.creates] = task
 
     def subgraph_needed_for(self, task_ids):
@@ -409,7 +415,7 @@ class TaskGraph(object):
 
         # reset the task connections to prevent the workflow from
         # going past the specified `creates` targets on the command
-        # line 
+        # line
         #
         # REFACTOR TODO: this is damaging self --- this particular TaskGraph
         # instance. this can definitely be cleaned up somehow. make a
@@ -424,14 +430,14 @@ class TaskGraph(object):
 
     def _dereference_alias_helper(self, name):
         if name is None:
-            return 
+            return
         for task in self.task_list:
             if task.alias == name:
                 return task.creates
 
     def dereference_depends_aliases(self):
         """This converts every alias used in a depends statement into the
-        corresponding `creates` element in that task declaration. 
+        corresponding `creates` element in that task declaration.
         """
         for task in self.task_list:
             if isinstance(task.depends, (list, tuple)):
@@ -457,7 +463,7 @@ class TaskGraph(object):
                         "Unknown `depends` declaration '%s'" % dependency
                     )
                 return
-            
+
             # now add the task dependency
             task.add_task_dependency(dependent_task)
 
@@ -475,7 +481,7 @@ class TaskGraph(object):
             task.creates_resources = resources.get_or_create(
                 self, task.creates
             )
-            
+
             # omit creates resources from pseudotasks. this is
             # getting sloppy. should probably do this within a task?
             if task.is_pseudotask():
@@ -489,11 +495,11 @@ class TaskGraph(object):
             else:
                 self._link_dependency_helper(task, task.depends)
 
-    def confirm_clean(self, task_list=None, include_internals=False, pause=0.5):
+    def confirm_clean(self, task_list=None, include_internals=False):
         self.logger.info(colors.red(
             "Please confirm that you want to delete the following files:"
         ))
-        time.sleep(pause)
+        time.sleep(0.5)
         task_list = task_list or self.task_list
         if include_internals:
             self.logger.info(green(self.internals_path))
@@ -521,11 +527,11 @@ class TaskGraph(object):
             task.clean()
 
     def duration_string(self, duration):
-        if duration < 10 * 60: # 10 minutes
-            return "%.2f" % (duration) + " s" 
-        elif duration < 2 * 60 * 60: # 2 hours
+        if duration < 10 * 60:  # 10 minutes
+            return "%.2f" % (duration) + " s"
+        elif duration < 2 * 60 * 60:  # 2 hours
             return "%.2f" % (duration / 60) + " m"
-        elif duration < 2 * 60 * 60 * 24: # 2 days
+        elif duration < 2 * 60 * 60 * 24:  # 2 days
             return "%.2f" % (duration / 60 / 60) + " h"
         else:
             return "%.2f" % (duration / 60 / 60 / 24) + " d"
@@ -544,9 +550,9 @@ class TaskGraph(object):
                 except KeyError:
                     n_unknown += 1
         msg = ''
-        if n_unknown>0:
+        if n_unknown > 0:
             msg += "%d new tasks with unknown durations.\n" % (
-                n_unknown, 
+                n_unknown,
             )
         msg += "The remaining %d-%d tasks need to be executed,\n" % (
             len(tasks),
@@ -607,7 +613,7 @@ class TaskGraph(object):
             with open(self.abs_state_path) as stream:
                 reader = csv.reader(stream)
                 for row in reader:
-                    if row[0]==resource:
+                    if row[0] == resource:
                         return row[1]
 
     def load_state(self):
@@ -650,9 +656,9 @@ class TaskGraph(object):
     def write_archive(self, exclude_internals=False):
         """Method to backup the current workflow
         """
-        
-        # for now, create archives based on the date. 
-        # 
+
+        # for now, create archives based on the date.
+        #
         # TODO: would it be better to specify by hg/git hash id? Doing
         # dates for now to make it easy to identify a good default
         # archive to restore in self.restore_archive (the last one)
@@ -678,7 +684,7 @@ class TaskGraph(object):
         # corresponding archive will have a consistent md5 hash (which is
         # used in functional tests).
         command = "tar cjf %s %s" % (
-            archive_name, 
+            archive_name,
             ' '.join(sorted(all_filenames)),
         )
         self.logger.info(colors.bold_white(command))
@@ -697,7 +703,7 @@ class TaskGraph(object):
     def get_available_archives(self):
         """Method to list all of the available archives"""
         available_archives = self.get_abs_available_archives()
-        return [os.path.relpath(a, self.root_directory) 
+        return [os.path.relpath(a, self.root_directory)
                 for a in available_archives]
 
     def get_abs_available_archives(self):

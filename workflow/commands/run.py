@@ -5,6 +5,7 @@ from ..parser import load_task_graph, get_available_tasks
 from ..exceptions import ShellError, ConfigurationNotFound
 from ..notify import notify
 
+
 def inner_command(task_id, force, dry_run):
     task_graph = load_task_graph()
 
@@ -12,7 +13,7 @@ def inner_command(task_id, force, dry_run):
     # and should be broken into separate methods in a TaskGraph
 
     # TODO: does this introduce bugs in the .workflow/state.csv file?
-    # 
+    #
     # if any tasks are specified, limit the task graph to only those
     # tasks that are required to create the specified tasks
     if task_id is not None:
@@ -57,12 +58,12 @@ def inner_command(task_id, force, dry_run):
                         # overridding the state of the creates
                         # resource for this task before exiting
                         task_graph.save_state(
-                            override_resource_states={task.name:''},
+                            override_resource_states={task.name: ''},
                         )
                         sys.exit(getattr(e, 'exit_code', 1))
                 elif dry_run:
                     task_graph.logger.info(str(task))
-        
+
     # if no tasks needed to be executed, then alert the user.
     else:
         task_graph.logger.info(
@@ -70,7 +71,7 @@ def inner_command(task_id, force, dry_run):
                 os.path.relpath(task_graph.config_path, os.getcwd())
             )
         )
-        
+
     # otherwise, we need to recalculate hashes for everything that is
     # out of sync
     if not dry_run:
@@ -79,6 +80,7 @@ def inner_command(task_id, force, dry_run):
     # mark the task_graph as completing successfully to send the
     # correct email message
     task_graph.successful = True
+
 
 def command(task_id=None, force=False, dry_run=False, notify_emails=None):
     """Run the task workflow.
@@ -92,6 +94,7 @@ def command(task_id=None, force=False, dry_run=False, notify_emails=None):
         if notify_emails:
             notify(*notify_emails)
 
+
 def add_command_line_options(options):
     try:
         available_tasks = get_available_tasks()
@@ -103,7 +106,7 @@ def add_command_line_options(options):
         metavar='task_id',
         type=str,
         choices=available_tasks,
-        nargs='?', # '*', this isn't working for some reason
+        nargs='?',  # '*', this isn't working for some reason
         help='Specify a particular task to run.',
     )
     options.add_argument(
@@ -115,8 +118,8 @@ def add_command_line_options(options):
         '-d', '--dry-run',
         action="store_true",
         help=(
-            "Do not run workflow, just report which tasks would be run and how "
-            "long it would take."
+            "Do not run workflow, just report which tasks would be run and how"
+            " long it would take."
         ),
     )
     options.add_argument(

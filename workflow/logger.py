@@ -8,10 +8,12 @@ import sys
 
 from .colors import colorless
 
+
 class ColorlessFileHandler(logging.FileHandler):
     def emit(self, record):
         record.msg = colorless(record.msg)
         return super(ColorlessFileHandler, self).emit(record)
+
 
 def configure(task_graph):
     logger = logging.getLogger('workflow')
@@ -34,6 +36,4 @@ def configure(task_graph):
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
 
-
     return logger
-

@@ -22,6 +22,7 @@ TASKS_KEY = 'tasks'
 # aren't creating a bunch of these when we run the workflow
 _task_graph = None
 
+
 def find_config_path():
     """Recursively decend into parent directories looking for the config
     file. Raise an error if none found.
@@ -42,7 +43,8 @@ def find_config_path():
         )
     return config_path
 
-def config_yaml2task_kwargs_list(config_yaml): 
+
+def config_yaml2task_kwargs_list(config_yaml):
     """convert the config_yaml iterator into python dictionaries as
     necessary. this makes it possible to have global variables and
     tasks embedded in the YAML under a something with the key
@@ -51,7 +53,7 @@ def config_yaml2task_kwargs_list(config_yaml):
     task_kwargs_list = []
     uses_global_config = False
     for i, yaml_obj in enumerate(config_yaml):
-        if i==0 and yaml_obj.has_key(TASKS_KEY):
+        if i == 0 and TASKS_KEY in yaml_obj:
             uses_global_config = True
 
             global_config = copy.deepcopy(yaml_obj)
@@ -63,6 +65,7 @@ def config_yaml2task_kwargs_list(config_yaml):
         elif not uses_global_config:
             task_kwargs_list.append(yaml_obj)
     return task_kwargs_list
+
 
 def load_task_graph():
     """Load the task graph from the configuration file located at
@@ -94,6 +97,7 @@ def load_task_graph():
     _task_graph = task_graph
     return task_graph
 
+
 def get_available_tasks():
     """Return the available set of tasks that are specified in the
     configuration file. These are returned in the order they are
@@ -101,6 +105,7 @@ def get_available_tasks():
     """
     task_graph = load_task_graph()
     return [task.id for task in task_graph.task_list]
+
 
 def get_available_archives():
     """Return the list of available archives that are stored in

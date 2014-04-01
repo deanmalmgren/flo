@@ -3,6 +3,7 @@ import hashlib
 
 from .base import BaseResource
 
+
 class FileSystem(BaseResource):
     """Evaluate the state of resources on the file system.
     """

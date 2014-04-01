@@ -1,13 +1,14 @@
 from . import base
 from .file_system import FileSystem
 
+
 def get_or_create(graph, candidate):
     """This is a factory function that instantiates resources from a
     candidate. The candidate can either be a string or a list of
     strings.
     """
 
-    # REFACTOR TODO: make this a wrapper instead of recursing once. 
+    # REFACTOR TODO: make this a wrapper instead of recursing once.
 
     # REFACTOR TODO: make ALL recursing once functions wrappers OR
     # make everything a list
@@ -31,4 +32,3 @@ def get_or_create(graph, candidate):
         resources.append(resource)
 
     return resources
-

@@ -5,3 +5,6 @@ textblob
 # environment on travis-ci
 numpy>=1.4
 matplotlib
+
+# this is used for testing
+pep8

@@ -1,6 +1,7 @@
 from ..parser import load_task_graph, get_available_archives
 from ..exceptions import ConfigurationNotFound
 
+
 def command(restore=False, exclude_internals=False):
     """Create and restore backup archives of data analysis workflows.
     """
@@ -16,6 +17,7 @@ def command(restore=False, exclude_internals=False):
     # mark the task_graph as completing successfully to send the
     # correct email message
     task_graph.successful = True
+
 
 def add_command_line_options(options):
     try:

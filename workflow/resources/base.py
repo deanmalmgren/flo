@@ -3,23 +3,26 @@
 
 import hashlib
 
+
 class BaseResource(object):
     """A resource is any `creates` or `depends` or `task` that is
     mentioned in a workflow.yaml. A resource can be on the file
     system, in a database, etc.
 
     The basic functionality of an resource is to assess the state of the
-    resource and whether it is in sync. 
+    resource and whether it is in sync.
     """
 
     def __init__(self, graph, name):
         self.graph = graph
         self.name = name
-        
+
         # add this resource to the graph's resource_dict, which globally
         # stores all of the resources associated with this workflow
-        if self.graph.resource_dict.has_key(name):
-            raise ValueError("Resource '%s' already exists in this graph" % name)
+        if name in self.graph.resource_dict:
+            raise ValueError(
+                "Resource '%s' already exists in this graph" % name
+            )
         self.graph.resource_dict[name] = self
 
     def __repr__(self):
@@ -57,7 +60,7 @@ class BaseResource(object):
     def get_current_state(self):
         """Get the current state of this resource. If the resource does
         not exist, throw an error.
-        
+
         This method must be overwritten by any child classes.
 
         TODO: need to figure out a way to avoid running this method
@@ -68,11 +71,10 @@ class BaseResource(object):
         raise NotImplementedError(
             "Must implement current_state for child classes"
         )
-        
+
     def state_in_sync(self):
         """Check the stored state of this resource compared with the current
         state of this resource. If they are the same, then this resource
         is in_sync.
         """
         return self.get_previous_state() == self.get_current_state()
-
