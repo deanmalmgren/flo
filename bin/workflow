@@ -2,133 +2,20 @@
 # -*- mode: python -*-
 # PYTHON_ARGCOMPLETE_OK
 
-"""Execute data workflows defined in workflow.yaml files
-"""
-
-import argparse
 import sys
-import os
-import ConfigParser
-import types
-import traceback
 
 import argcomplete
 
-from workflow.parser import get_available_tasks, get_available_archives
-from workflow.commands import run, clean, archive
-from workflow.exceptions import CommandLineException, ConfigurationNotFound
+from workflow.commands import get_cli_parser
+from workflow.exceptions import CommandLineException
 from workflow.notify import notify
 
-# get some information from the YAML configuration to make the command
-# line options as useful as possible, particularly for tab completion
-try:
-    available_tasks = get_available_tasks()
-except ConfigurationNotFound:
-    available_tasks = []
-try:
-    available_archives = get_available_archives()
-except ConfigurationNotFound:
-    available_archives = []
-
-# setup the option parser
-parser = argparse.ArgumentParser(
-    description=__doc__,
-)
-subparsers = parser.add_subparsers(
-    title='SUBCOMMANDS',
-    description='valid subcommands',
-    help='additional help'
-)
-
-########################################################################### run
-run_parser = subparsers.add_parser(
-    'run', 
-    help='run the workflow',
-)
-run_parser.add_argument(
-    'task_id',
-    metavar='TASK',
-    type=str,
-    choices=available_tasks,
-    nargs='?', # '*', this isn't working for some reason
-    help='Specify a particular task to run.',
-)
-
-# add a bunch of keyword arguments
-run_parser.add_argument(
-    '-f', '--force',
-    action="store_true",
-    help="Rerun entire workflow, regardless of task state.",
-)
-run_parser.add_argument(
-    '-d', '--dry-run',
-    action="store_true",
-    help=(
-        "Do not run workflow, just report which tasks would be run and how "
-        "long it would take."
-    ),
-)
-run_parser.add_argument(
-    '-e', '--export',
-    action="store_true",
-    help="Export shell script instead of running the workflow.",
-)
-run_parser.add_argument(
-    '--notify',
-    type=str,
-    metavar='EMAIL',
-    nargs=1,
-    help='Specify an email address to notify on completion',
-)
-run_parser.set_defaults(func=run)
-
-########################################################################## clean
-clean_parser = subparsers.add_parser(
-    'clean', 
-    help='clean up the workflow',
-)
-clean_parser.add_argument( # TODO: how to not specify for two subparsers
-    'task_id',
-    metavar='TASK',
-    type=str,
-    choices=available_tasks,
-    nargs='?', # '*', this isn't working for some reason
-    help='Specify a particular task to clean rather than all of them.',
-)
-clean_parser.add_argument( # TODO: how to not specify for two subparsers
-    '-f', '--force',
-    action="store_true",
-    help="Remove all `creates` targets in workflow without confirmation.",
-)
-clean_parser.add_argument(
-    '--include-internals',
-    action="store_true",
-    help="Remove all files in the .workflow/ directory.",
-)
-clean_parser.set_defaults(func=clean)
-
-######################################################################## archive
-archive_parser = subparsers.add_parser(
-    'archive', 
-    help='Create and restore backup archives of data analysis workflows',
-)
-archive_parser.add_argument(
-    '--restore',
-    choices=available_archives,
-    default=False,
-    nargs='?',
-    help="Restore the state of the workflow."
-)
-archive_parser.add_argument(
-    '--exclude-internals',
-    action="store_true",
-    help="exclude internals in the .workflow/ directory from archive",
-)
-archive_parser.set_defaults(func=archive)
+# add all of the subcommands to the parsers
+cli_parser = get_cli_parser()
 
 # use argcomplete to autocomplete options, the parse arguments and run
-argcomplete.autocomplete(parser)
-args = parser.parse_args()
+argcomplete.autocomplete(cli_parser)
+args = cli_parser.parse_args()
 
 # if the error has an exit_code associated with it (from a ShellError
 # of running the workflow), exit with that status if there was an
@@ -139,6 +26,6 @@ except CommandLineException, e:
     print(e)
     sys.exit(getattr(e, 'exit_code', 1))
 finally:
-    # TODO: should this should be moved inside the run command?
+    # REFACTOR TODO: should this should be moved inside the run command?
     if getattr(args, 'notify', None):
         notify(*args.notify)

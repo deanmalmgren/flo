@@ -1,16 +1,19 @@
 import os
 import sys
 
-from ..parser import load_task_graph
-from ..exceptions import ShellError
+from ..parser import load_task_graph, get_available_tasks
+from ..exceptions import ShellError, ConfigurationNotFound
 
-def run(task_id=None, force=False, dry_run=False, export=False, **kwargs):
+def command(task_id=None, force=False, dry_run=False, export=False, **kwargs):
     """Execute the task workflow.
     """
-
-    # load the task graph
     task_graph = load_task_graph()
 
+    # REFACTOR TODO: this function is almost certainly overcommented
+    # and should be broken into separate methods in a TaskGraph
+
+    # TODO: 
+    # 
     # if any tasks are specified, limit the task graph to only those
     # tasks that are required to create the specified tasks
     if task_id is not None:
@@ -84,3 +87,48 @@ def run(task_id=None, force=False, dry_run=False, export=False, **kwargs):
     # mark the task_graph as completing successfully to send the
     # correct email message
     task_graph.successful = True
+
+def add_to_parser(subparsers):
+    try:
+        available_tasks = get_available_tasks()
+    except ConfigurationNotFound:
+        available_tasks = []
+
+    parser = subparsers.add_parser(
+        'run', 
+        help='run the workflow',
+    )
+    parser.add_argument(
+        'task_id',
+        metavar='TASK',
+        type=str,
+        choices=available_tasks,
+        nargs='?', # '*', this isn't working for some reason
+        help='Specify a particular task to run.',
+    )
+    parser.add_argument(
+        '-f', '--force',
+        action="store_true",
+        help="Rerun entire workflow, regardless of task state.",
+    )
+    parser.add_argument(
+        '-d', '--dry-run',
+        action="store_true",
+        help=(
+            "Do not run workflow, just report which tasks would be run and how "
+            "long it would take."
+        ),
+    )
+    parser.add_argument(
+        '-e', '--export',
+        action="store_true",
+        help="Export shell script instead of running the workflow.",
+    )
+    parser.add_argument(
+        '--notify',
+        type=str,
+        metavar='EMAIL',
+        nargs=1,
+        help='Specify an email address to notify on completion',
+    )
+    parser.set_defaults(func=command)
