@@ -298,15 +298,6 @@ echo "Screw it, lets just redo the entire analysis"
 workflow run --force
 ```
 
-**`workflow run --export`.** Sometimes you just want a shell script,
-plain and simple. The `--export` command line option makes it easy to
-quickly export the sequence of steps that are specified in your
-workflow without running into conflicts.
-
-```bash
-workflow run --export      # prints out sequence of shell commands
-```
-
 **`workflow run --notify`.** For long-running workflows, it is
 convenient to be alerted when the entire workflow completes. The
 `--notify` command line option makes it possible to have the last 100

@@ -4,7 +4,7 @@ import sys
 from ..parser import load_task_graph, get_available_tasks
 from ..exceptions import ShellError, ConfigurationNotFound
 
-def command(task_id=None, force=False, dry_run=False, export=False, **kwargs):
+def command(task_id=None, force=False, dry_run=False, **kwargs):
     """Execute the task workflow.
     """
     task_graph = load_task_graph()
@@ -36,19 +36,16 @@ def command(task_id=None, force=False, dry_run=False, export=False, **kwargs):
     # report the minimum amount of time this will take to execute and
     # execute all tasks
     if out_of_sync_tasks:
-        if export:
-            print("cd %s" % task_graph.root_directory)
-        else:
-            task_graph.logger.info(
-                task_graph.duration_message(out_of_sync_tasks)
-            )
+        task_graph.logger.info(
+            task_graph.duration_message(out_of_sync_tasks)
+        )
         for task in task_graph.iter_bfs(out_of_sync_tasks):
             # We unfortunately need (?) to re-run in_sync here in case
             # things change during the course of a run. This is not
             # ideal but makes it possible to estimate the duration of
             # a workflow run, which is pretty valuable
             if not task.is_pseudotask() and (force or not task.in_sync()):
-                if not (dry_run or export):
+                if not dry_run:
                     try:
                         task.timed_run()
                     except (KeyboardInterrupt, ShellError), e:
@@ -66,10 +63,6 @@ def command(task_id=None, force=False, dry_run=False, export=False, **kwargs):
                         sys.exit(getattr(e, 'exit_code', 1))
                 elif dry_run:
                     task_graph.logger.info(str(task))
-                elif export:
-                    task_graph.logger.info(
-                        task.command_message(color=None, pre="")
-                    )
         
     # if no tasks needed to be executed, then alert the user.
     else:
@@ -81,7 +74,7 @@ def command(task_id=None, force=False, dry_run=False, export=False, **kwargs):
         
     # otherwise, we need to recalculate hashes for everything that is
     # out of sync
-    if not (dry_run or export):
+    if not dry_run:
         task_graph.save_state()
 
     # mark the task_graph as completing successfully to send the
@@ -118,11 +111,6 @@ def add_to_parser(subparsers):
             "Do not run workflow, just report which tasks would be run and how "
             "long it would take."
         ),
-    )
-    parser.add_argument(
-        '-e', '--export',
-        action="store_true",
-        help="Export shell script instead of running the workflow.",
     )
     parser.add_argument(
         '--notify',
