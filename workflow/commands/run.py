@@ -1,58 +1,10 @@
 import os
-import time
-from distutils.util import strtobool
 import sys
 
-from .parser import load_task_graph
-from . import colors
-from . import exceptions
+from ..parser import load_task_graph
+from ..exceptions import ShellError
 
-def clean(task_id=None, force=False, export=False, pause=0.5, 
-          include_internals=False, **kwargs):
-    """Remove all `creates` targets defined in workflow. If a task_id is
-    specified, only remove that target.
-    """
-
-    # load the task graph
-    task_graph = load_task_graph()
-
-    # if a task_id is specified, only remove this particular
-    # task. otherwise, remove everything.
-    task_list = task_graph.task_list
-    if task_id is not None:
-        task_list = [task_graph.task_dict[task_id]]
-
-    # XXXX LEFT OFF HERE. FIND WAY TO INCLUDE ALL OF THE INTERNALS IN
-    # A SMART WAY HERE. THIS SHOULD ALERT USER IF --force IS NOT USED
-    # AND ALSO REMOVE THE CORRESPONDING CONTENT AFTER THE FACT
-
-    # print a warning message before removing all tasks. Briefly
-    # pause to make sure user sees the message at the top.
-    if not (force or export):
-        task_graph.logger.info(colors.red(
-            "Please confirm that you want to delete the following files."
-        ))
-        time.sleep(pause)
-        for task in task_list:
-            if not task.is_pseudotask():
-                task_graph.logger.info(task.creates_message())
-        if include_internals:
-            task_graph.logger.info(colors.green(task_graph.internals_path))
-        yesno = raw_input(colors.red("Delete aforementioned files? [Y/n] "))
-        if yesno == '':
-            yesno = 'y'
-        if not strtobool(yesno):
-            return
-
-    # now actually clean things up with the TaskGraph.clean method
-    task_graph.clean(export=export, task_list=task_list, 
-                     include_internals=include_internals)
-
-    # mark the task_graph as completing successfully to send the
-    # correct email message
-    task_graph.successful = True
-
-def execute(task_id=None, force=False, dry_run=False, export=False, **kwargs):
+def run(task_id=None, force=False, dry_run=False, export=False, **kwargs):
     """Execute the task workflow.
     """
 
@@ -96,7 +48,7 @@ def execute(task_id=None, force=False, dry_run=False, export=False, **kwargs):
                 if not (dry_run or export):
                     try:
                         task.execute()
-                    except (KeyboardInterrupt, exceptions.ShellError), e:
+                    except (KeyboardInterrupt, ShellError), e:
                         # on keyboard interrupt or error on executing
                         # a specific step, make sure all previously
                         # run tasks have their state properly stored
@@ -128,29 +80,6 @@ def execute(task_id=None, force=False, dry_run=False, export=False, **kwargs):
     # out of sync
     if not (dry_run or export):
         task_graph.save_state()
-
-    # mark the task_graph as completing successfully to send the
-    # correct email message
-    task_graph.successful = True
-
-def archive(restore=False, exclude_internals=False, **kwargs):
-    """Interact with archives of the workflow, by either backing it up or
-    restoring it from a previous backup.
-    """
-    
-    # load in the task_graph
-    task_graph = load_task_graph()
-
-    # find an archive to restore and restore it. This should probably
-    # ask the user to confirm which archive to restore before doing
-    # anything.
-    if restore:
-        task_graph.restore_archive(restore)
-
-    # create an ensemble of filenames that need to be archived
-    else:
-        task_graph.write_archive(exclude_internals=exclude_internals)
-
 
     # mark the task_graph as completing successfully to send the
     # correct email message
