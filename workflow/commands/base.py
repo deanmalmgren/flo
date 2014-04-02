@@ -21,11 +21,6 @@ class BaseCommand(object):
         )
         self.add_command_line_options()
 
-        # this sets a default value for the command "option" so that,
-        # when this Command is selected by argparse from the command
-        # line, we know which comman instance it corresponds with.
-        self.option_parser.set_defaults(command=self)
-
     def get_command_name(self):
         """The command name defaults to the name of the module."""
         return self.__module__.rsplit('.', 1)[1]
