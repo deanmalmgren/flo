@@ -2,7 +2,7 @@ from .base import BaseCommand
 
 
 class Command(BaseCommand):
-    help_text="Create and restore backup archives of data analysis workflows."
+    help_text = "Create and restore backup archives of workflows."
 
     def execute(self, restore=False, exclude_internals=False):
         if restore:

@@ -5,6 +5,7 @@ from ..exceptions import ShellError
 from ..notify import notify
 from .base import BaseCommand, TaskIdMixin
 
+
 class Command(BaseCommand, TaskIdMixin):
     help_text = "Run the task workflow."
 
@@ -83,7 +84,7 @@ class Command(BaseCommand, TaskIdMixin):
         # correct email message
         task_graph.successful = True
 
-    def execute(self, task_id=None, force=False, dry_run=False, 
+    def execute(self, task_id=None, force=False, dry_run=False,
                 notify_emails=None):
         try:
             self.inner_execute(task_id, force, dry_run)
@@ -93,7 +94,6 @@ class Command(BaseCommand, TaskIdMixin):
         finally:
             if notify_emails:
                 notify(*notify_emails)
-
 
     def add_command_line_options(self):
         self.option_parser.add_argument(

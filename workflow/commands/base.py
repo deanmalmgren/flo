@@ -13,7 +13,7 @@ class BaseCommand(object):
             self.task_graph = None
 
         # set up the subcommand options
-        self.subcommand_creator = subcommand_creator        
+        self.subcommand_creator = subcommand_creator
         self.option_parser = self.subcommand_creator.add_parser(
             self.get_command_name(),
             help=self.help_text,
