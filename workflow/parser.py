@@ -96,20 +96,3 @@ def load_task_graph():
 
     _task_graph = task_graph
     return task_graph
-
-
-def get_available_tasks():
-    """Return the available set of tasks that are specified in the
-    configuration file. These are returned in the order they are
-    specified in the configuration files.
-    """
-    task_graph = load_task_graph()
-    return [task.id for task in task_graph.task_list]
-
-
-def get_available_archives():
-    """Return the list of available archives that are stored in
-    .workflow/archives
-    """
-    task_graph = load_task_graph()
-    return task_graph.get_available_archives()

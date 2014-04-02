@@ -1,61 +1,41 @@
-import time
-
-from ..parser import load_task_graph, get_available_tasks
-from ..colors import red, green
-from ..exceptions import ConfigurationNotFound
+from .base import BaseCommand, TaskIdMixin
 
 
-def command(task_id=None, force=False, include_internals=False):
-    """Remove all `creates` targets defined in workflow. If a `task_id` is
-    specified, only remove that target.
-    """
-    task_graph = load_task_graph()
-    clean_kwargs = {
-        'include_internals': include_internals,
-    }
-
-    # if a task_id is specified, only remove this particular
-    # task. otherwise, remove everything.
-    if task_id is not None:
-        clean_kwargs['task_list'] = [task_graph.task_dict[task_id]]
-
-    # print a warning message before removing all tasks. Briefly
-    # pause to make sure user sees the message at the top.
-    if not force:
-        proceed = task_graph.confirm_clean(**clean_kwargs)
-        if not proceed:
-            return
-    task_graph.clean(**clean_kwargs)
-
-    # REFACTOR TODO: IS THIS NECESSARY IF NOTIFY IS ONLY USED WITH run
-    # COMMAND? see REFACTOR TODO in __init__.py
-    #
-    # mark the task_graph as completing successfully to send the
-    # correct email message
-    task_graph.successful = True
-
-
-def add_command_line_options(options):
-    try:
-        available_tasks = get_available_tasks()
-    except ConfigurationNotFound:
-        available_tasks = []
-    options.add_argument(
-        'task_id',
-        metavar='task_id',
-        type=str,
-        choices=available_tasks,
-        nargs='?',  # '*', this isn't working for some reason
-        help='Specify a particular task to clean rather than all of them.',
+class Command(BaseCommand, TaskIdMixin):
+    help_text = (
+        "Remove all `creates` targets defined in workflow. If a `task_id` is"
+        "specified, only remove that target."
     )
-    options.add_argument(
-        '-f', '--force',
-        action="store_true",
-        help="Remove all `creates` targets in workflow without confirmation.",
-    )
-    options.add_argument(
-        '--include-internals',
-        action="store_true",
-        help="Remove all files in the .workflow/ directory.",
-    )
-    return options
+
+    def execute(self, task_id=None, force=False, include_internals=False):
+        clean_kwargs = {
+            'include_internals': include_internals,
+        }
+
+        # if a task_id is specified, only remove this particular
+        # task. otherwise, remove everything.
+        if task_id is not None:
+            clean_kwargs['task_list'] = [self.task_graph.task_dict[task_id]]
+
+        # print a warning message before removing all tasks. Briefly
+        # pause to make sure user sees the message at the top.
+        if not force:
+            proceed = self.task_graph.confirm_clean(**clean_kwargs)
+            if not proceed:
+                return
+        self.task_graph.clean(**clean_kwargs)
+
+    def add_command_line_options(self):
+        self.option_parser.add_argument(
+            '-f', '--force',
+            action="store_true",
+            help="Remove all `creates` targets without confirmation.",
+        )
+        self.option_parser.add_argument(
+            '--include-internals',
+            action="store_true",
+            help="Remove all files in the .workflow/ directory.",
+        )
+        self.add_task_id_option(
+            'Specify a particular task to clean rather than all of them.'
+        )

@@ -379,6 +379,10 @@ class TaskGraph(object):
                 sink_tasks.add(task)
         return sink_tasks
 
+    def get_task_ids(self):
+        """Get the list of all task ids"""
+        return [task.id for task in self.task_list]
+
     def add(self, task):
         """Connect the task to this TaskGraph instance. This stores the task
         in the TaskGraph.task_list and puts it in the
