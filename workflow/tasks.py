@@ -7,6 +7,7 @@ import collections
 import datetime
 import glob
 from distutils.util import strtobool
+import copy
 
 import jinja2
 
@@ -26,6 +27,7 @@ class Task(resources.base.BaseResource):
         self._depends = depends
         self._command = command
         self._alias = alias
+        self._kwargs = copy.deepcopy(kwargs)
 
         # quick type checking to make sure the tasks in the
         # configuration file are valid
@@ -62,7 +64,7 @@ class Task(resources.base.BaseResource):
         self.graph.add(self)
 
         # this is used to store resources that are associated with
-        # this task. This is set up in TaskGraph.link_dependencies
+        # this task. This is set up in TaskGraph._link_dependencies
         self.depends_resources = []
         self.creates_resources = []
 
@@ -75,6 +77,17 @@ class Task(resources.base.BaseResource):
         # call the BaseResource.__init__ to get this to behave like an
         # resource here, too
         super(Task, self).__init__(self.graph, 'config:'+self.id)
+
+    @property
+    def yaml_data(self):
+        out = copy.deepcopy(self._kwargs)
+        out.update({
+            "creates": self._creates,
+            "depends": self._depends,
+            "command": self._command,
+            "alias": self._alias,
+        })
+        return out
 
     @property
     def id(self):
@@ -283,7 +296,7 @@ class TaskGraph(object):
     log_path = os.path.join(internals_path, "workflow.log")
     archive_dir = os.path.join(internals_path, "archive")
 
-    def __init__(self, config_path):
+    def __init__(self, config_path, task_kwargs_list):
         self.task_list = []
         self.task_dict = {}
 
@@ -311,8 +324,28 @@ class TaskGraph(object):
         # in an intelligent way
         self.successful = False
 
-    def _iter_helper(self, tasks, popmethod, updownstream):
-        horizon = collections.deque(tasks)
+        # add tasks and load all dependencies between tasks
+        for task_kwargs in task_kwargs_list:
+            task = Task(task_graph, **task_kwargs)
+        self._dereference_depends_aliases()
+        self._link_dependencies()
+        self._load_state()
+
+    def iter_graph(self, tasks=None, downstream=True):
+        """Iterate over graph with breadth-first search of task dependencies,
+        starting from `tasks` or the set of tasks that do not depend
+        on anything.
+        http://en.wikipedia.org/wiki/Breadth-first_search
+        """
+        if downstream:
+            tasks = tasks or self.get_source_tasks()
+            popmethod = 'popleft'
+            updownstream = 'downstream_tasks'
+        else:
+            tasks = tasks or self.get_sink_tasks()
+            popmethod = 'pop'
+            updownstream = 'upstream_tasks'
+        horizon  = collections.deque(tasks)
         done, horizon_set = set(), set(tasks)
         task_order = []
         popmethod = getattr(horizon, popmethod)
@@ -328,47 +361,14 @@ class TaskGraph(object):
                     horizon_set.add(task)
         return task_order
 
-    def iter_bfs(self, tasks=None):
-        """Breadth-first search of task dependencies, starting from the tasks
-        that do not depend on anything.
-        http://en.wikipedia.org/wiki/Breadth-first_search
-        """
-        # REFACTOR TODO: if iter_dfs is NOT needed, we can make this __iter__
-        # to make things easier to understand.
-
-        # implement this starting from sources and working our way
-        # downstream to make sure it is easy to specify particular tasks
-        # on the command line (which should only re-run dependencies
-        # as necessary)
-        return self._iter_helper(
-            tasks or self.get_source_tasks(),
-            "popleft",
-            "downstream_tasks",
-        )
-
-    def iter_dfs(self, tasks=None):
-        """Depth-first search of task dependencies, starting from the tasks
-        that do not have anything depending on them.
-        http://en.wikipedia.org/wiki/Depth-first_search
-        """
-        # implement this starting from sinks and working our way
-        # upstream to make sure it is easy to specify particular tasks
-        # on the command line (which should only re-run dependencies
-        # as necessary)
-        return reversed(self._iter_helper(
-            tasks or self.get_sink_tasks(),
-            "pop",
-            "upstream_tasks",
-        ))
-
     def get_source_tasks(self):
         """Get the set of tasks that do not depend on anything else.
         """
-        sink_tasks = set()
+        source_tasks = set()
         for task in self.task_list:
             if not task.upstream_tasks:
-                sink_tasks.add(task)
-        return sink_tasks
+                source_tasks.add(task)
+        return source_tasks
 
     def get_sink_tasks(self):
         """Get the set of tasks that do not have any dependencies.
@@ -378,6 +378,13 @@ class TaskGraph(object):
             if not task.downstream_tasks:
                 sink_tasks.add(task)
         return sink_tasks
+
+    def get_out_of_sync_tasks(self):
+        out_of_sync_tasks = []
+        for task in self.iter_graph():
+            if not task.is_pseudotask() and not task.in_sync():
+                out_of_sync_tasks.append(task)
+        return out_of_sync_tasks
 
     def get_task_ids(self):
         """Get the list of all task ids"""
@@ -407,29 +414,12 @@ class TaskGraph(object):
         if not task_ids:
             return self
 
-        # cast strings to task objects
-        tasks = [self.task_dict[task_id] for task_id in task_ids]
-
-        # add these tasks to the subgraph by iterating depth-first
-        # search upstream
-        # REFACTOR TODO: is depth-first search needed here?!?!
-        subgraph = TaskGraph(self.config_path)
-        for task in self.iter_dfs(tasks):
-            subgraph.add(task)
-
-        # reset the task connections to prevent the workflow from
-        # going past the specified `creates` targets on the command
-        # line
-        #
-        # REFACTOR TODO: this is damaging self --- this particular TaskGraph
-        # instance. this can definitely be cleaned up somehow. make a
-        # copy of Task objects? Another approach: have self manipulate
-        # the tasks in this TaskGraph?
-        for task in subgraph.task_list:
-            task.reset_task_dependencies()
-        subgraph.dereference_depends_aliases()
-        subgraph.link_dependencies()
-        subgraph.load_state()
+        # instantiate a new graph instance from the original data from
+        # the tasks of self
+        tasks = map(self.task_dict.get, task_ids)
+        tasks_kwargs_list = [task.yaml_data for task in 
+                             self.iter_graph(tasks, downstream=False)]
+        subgraph = TaskGraph(self.config_path, tasks_kwargs_list)
         return subgraph
 
     def _dereference_alias_helper(self, name):
@@ -439,7 +429,7 @@ class TaskGraph(object):
             if task.alias == name:
                 return task.creates
 
-    def dereference_depends_aliases(self):
+    def _dereference_depends_aliases(self):
         """This converts every alias used in a depends statement into the
         corresponding `creates` element in that task declaration.
         """
@@ -471,7 +461,7 @@ class TaskGraph(object):
             # now add the task dependency
             task.add_task_dependency(dependent_task)
 
-    def link_dependencies(self):
+    def _link_dependencies(self):
         """Iterate over all tasks and make connections between tasks based on
         their dependencies.
         """
@@ -499,7 +489,9 @@ class TaskGraph(object):
             else:
                 self._link_dependency_helper(task, task.depends)
 
-    def confirm_clean(self, task_list=None, include_internals=False):
+    def get_user_clean_confirmation(self, task_list=None, 
+                                    include_internals=False):
+        """This method gets user confirmation about cleaning up the workflow"""
         self.logger.info(colors.red(
             "Please confirm that you want to delete the following files:"
         ))
@@ -546,7 +538,7 @@ class TaskGraph(object):
         for task in tasks:
             min_duration += self.task_durations.get(task.id, 0.0)
         max_duration, n_unknown, n_tasks = 0.0, 0, 0
-        for task in self.iter_bfs(tasks):
+        for task in self.iter_graph(tasks):
             if not task.is_pseudotask():
                 n_tasks += 1
                 try:
@@ -620,7 +612,7 @@ class TaskGraph(object):
                     if row[0] == resource:
                         return row[1]
 
-    def load_state(self):
+    def _load_state(self):
         """Load the states of all resources (files, databases, etc). If the
         state file hasn't been stored yet, nothing happens. This also
         loads the duration statistics on this task.

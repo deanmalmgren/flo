@@ -1,7 +1,7 @@
 import os
 import sys
 
-from ..exceptions import ShellError
+from ..exceptions import ShellError, CommandLineException
 from ..notify import notify
 from .base import BaseCommand, TaskIdMixin
 
@@ -11,38 +11,31 @@ class Command(BaseCommand, TaskIdMixin):
 
     def inner_execute(self, task_id, force, dry_run):
 
-        # REFACTOR TODO: this is a temporary hack
-        task_graph = self.task_graph
-
         # REFACTOR TODO: this function is almost certainly overcommented
-        # and should be broken into separate methods in a TaskGraph
+        # and should be broken into separate methods in TaskGraph
 
-        # if any tasks are specified, limit the task graph to only those
-        # tasks that are required to create the specified tasks
         if task_id is not None:
-            task_graph = task_graph.subgraph_needed_for([task_id])
+            self.task_graph = self.task_graph.subgraph_needed_for([task_id])
 
-        # iterate through every task in the task graph and find the set of
-        # tasks that have to be executed. we do this first so we can alert
-        # the user as to how long this workflow will take. breadth first
-        # search on entire task graph to make sure the out_of_sync_tasks
-        # are created in the appropriate order for subsequent steps.
-        out_of_sync_tasks = []
-        for task in task_graph.iter_bfs():
+        # we do this first so we can alert the user as to how long
+        # this workflow will take. 
+        if force:
+            out_of_sync_tasks = list(task_graph.iter_graph())
+        else:
+            out_of_sync_tasks = task_graph.get_out_of_sync_tasks()
 
-            # regardless of whether we force the execution of the command,
-            # run the in_sync method, which calculates the state of the
-            # task and all `creates` / `depends` elements
-            if not task.is_pseudotask() and (force or not task.in_sync()):
-                out_of_sync_tasks.append(task)
+        # REFACTOR TODO: maybe separate out timing better? separate
+        # out exceptions into different function? figure out how to
+        # deal with force better so that iter_graph can really give us
+        # just what we want... OR have two methods -- one that
+        # executes EVERYTHING no matter what and another that checks
+        # to see if a task is in sync before it runs.
 
-        # report the minimum amount of time this will take to execute and
-        # execute all tasks
         if out_of_sync_tasks:
             task_graph.logger.info(
                 task_graph.duration_message(out_of_sync_tasks)
             )
-            for task in task_graph.iter_bfs(out_of_sync_tasks):
+            for task in task_graph.iter_graph(out_of_sync_tasks):
                 # We unfortunately need (?) to re-run in_sync here in case
                 # things change during the course of a run. This is not
                 # ideal but makes it possible to estimate the duration of
@@ -52,14 +45,6 @@ class Command(BaseCommand, TaskIdMixin):
                         try:
                             task.timed_run()
                         except (KeyboardInterrupt, ShellError), e:
-                            # on keyboard interrupt or error on executing
-                            # a specific step, make sure all previously
-                            # run tasks have their state properly stored
-                            # and make sure re-running the workflow will
-                            # rerun the task that was underway. we do this
-                            # by saving the state of everything but
-                            # overridding the state of the creates
-                            # resource for this task before exiting
                             task_graph.save_state(
                                 override_resource_states={task.name: ''},
                             )

@@ -8,22 +8,19 @@ class Command(BaseCommand, TaskIdMixin):
     )
 
     def execute(self, task_id=None, force=False, include_internals=False):
-        clean_kwargs = {
+        kwargs = {
             'include_internals': include_internals,
         }
 
         # if a task_id is specified, only remove this particular
         # task. otherwise, remove everything.
         if task_id is not None:
-            clean_kwargs['task_list'] = [self.task_graph.task_dict[task_id]]
+            kwargs['task_list'] = [self.task_graph.task_dict[task_id]]
 
         # print a warning message before removing all tasks. Briefly
         # pause to make sure user sees the message at the top.
-        if not force:
-            proceed = self.task_graph.confirm_clean(**clean_kwargs)
-            if not proceed:
-                return
-        self.task_graph.clean(**clean_kwargs)
+        if force or self.task_graph.get_user_clean_confirmation(**kwargs):
+            self.task_graph.clean(**kwargs)
 
     def add_command_line_options(self):
         self.option_parser.add_argument(

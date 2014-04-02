@@ -85,14 +85,5 @@ def load_task_graph():
 
     # convert each task_kwargs into a Task object and add it to the
     # TaskGraph
-    task_graph = tasks.TaskGraph(config_path)
-    for task_kwargs in task_kwargs_list:
-        task = tasks.Task(task_graph, **task_kwargs)
-    task_graph.dereference_depends_aliases()
-    task_graph.link_dependencies()
-
-    # load the state of each task's `creates` and `depends` elements
-    task_graph.load_state()
-
-    _task_graph = task_graph
-    return task_graph
+    _task_graph = tasks.TaskGraph(config_path, task_kwargs_list)
+    return _task_graph
