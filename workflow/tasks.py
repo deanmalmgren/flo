@@ -326,7 +326,7 @@ class TaskGraph(object):
 
         # add tasks and load all dependencies between tasks
         for task_kwargs in task_kwargs_list:
-            task = Task(task_graph, **task_kwargs)
+            task = Task(self, **task_kwargs)
         self._dereference_depends_aliases()
         self._link_dependencies()
         self._load_state()
