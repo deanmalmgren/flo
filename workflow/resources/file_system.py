@@ -23,7 +23,8 @@ class FileSystem(BaseResource):
         state_hash = hashlib.sha1()
         for root, directories, filenames in os.walk(self.resource_path):
             for filename in filenames:
-                state_hash.update(self.file_state(filename))
+                abs_filename = os.path.join(root, filename)
+                state_hash.update(self.file_state(abs_filename))
         return state_hash.hexdigest()
 
     def get_current_state(self):

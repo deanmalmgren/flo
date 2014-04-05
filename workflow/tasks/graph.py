@@ -1,3 +1,4 @@
+import sys
 import os
 import time
 import csv
@@ -6,7 +7,7 @@ import datetime
 import glob
 from distutils.util import strtobool
 
-from ..exceptions import InvalidTaskDefinition, NonUniqueTask
+from ..exceptions import InvalidTaskDefinition, NonUniqueTask, ShellError
 from .. import colors
 from .. import shell
 from .. import resources
@@ -300,13 +301,13 @@ class TaskGraph(object):
             msg = color(msg)
         return msg
 
-    def _run_helper(self, starting_tasks, run_test, mock_run):
+    def _run_helper(self, starting_tasks, do_run_func, mock_run):
         """This is a convenience method that is used to slightly modify the
         behavior of running a workflow depending on the circumstances.
         """
         self.logger.info(self.duration_message(starting_tasks))
         for task in self.iter_graph(starting_tasks):
-            if run_test(task):
+            if do_run_func(task):
                 if mock_run:
                     task.mock_run()
                 else:
@@ -326,20 +327,20 @@ class TaskGraph(object):
         """
         starting_tasks = list(task for task in self.iter_graph())
 
-        def run_test(task):
+        def do_run_func(task):
             return not task.is_pseudotask()
 
-        self._run_helper(starting_tasks, run_test, mock_run)
+        self._run_helper(starting_tasks, do_run_func, mock_run)
 
     def run_all_out_of_sync(self, mock_run=False):
         """Execute all tasks in the workflow that are out of sync at runtime.
         """
         starting_tasks = self.get_out_of_sync_tasks()
 
-        def run_test(task):
+        def do_run_func(task):
             return not task.is_pseudotask() and not task.in_sync()
 
-        self._run_helper(starting_tasks, run_test, mock_run)
+        self._run_helper(starting_tasks, do_run_func, mock_run)
 
     @property
     def abs_state_path(self):
