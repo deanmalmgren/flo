@@ -345,7 +345,7 @@ class TaskGraph(object):
             tasks = tasks or self.get_sink_tasks()
             popmethod = 'pop'
             updownstream = 'upstream_tasks'
-        horizon  = collections.deque(tasks)
+        horizon = collections.deque(tasks)
         done, horizon_set = set(), set(tasks)
         task_order = []
         popmethod = getattr(horizon, popmethod)
@@ -417,7 +417,7 @@ class TaskGraph(object):
         # instantiate a new graph instance from the original data from
         # the tasks of self
         tasks = map(self.task_dict.get, task_ids)
-        tasks_kwargs_list = [task.yaml_data for task in 
+        tasks_kwargs_list = [task.yaml_data for task in
                              self.iter_graph(tasks, downstream=False)]
         subgraph = TaskGraph(self.config_path, tasks_kwargs_list)
         return subgraph
@@ -489,7 +489,7 @@ class TaskGraph(object):
             else:
                 self._link_dependency_helper(task, task.depends)
 
-    def get_user_clean_confirmation(self, task_list=None, 
+    def get_user_clean_confirmation(self, task_list=None,
                                     include_internals=False):
         """This method gets user confirmation about cleaning up the workflow"""
         self.logger.info(colors.red(

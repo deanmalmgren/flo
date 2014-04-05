@@ -22,15 +22,10 @@ incorrect results, poor performance, etc.) in the analysis and improve
 them piece by piece after the entire workflow has been written the
 first time.
 
-This package is deliberately intended to help users write small, but
-compact workflow prototypes using whatever tools they prefer (R,
-pandas, scipy, hadoop) but with the explicit goal of encouraging users
-to write small scripts that produce intermediate output.
-
-The goal of this project is to make it easy to quickly *develop* data
-workflows with any tool set you want --- pandas, R, matlab, scipy,
-hadoop, etc. The goal here is not to provide a substitute for these
-tools, but rather to be the glue that sticks them together.
+This package is deliberately designed to help users write small, but
+compact workflow prototypes using whatever tools they prefer --- R,
+pandas, scipy, hadoop. The goal here is not to provide a substitute
+for these tools, but rather to be the glue that sticks them together.
 
 ### quick start
 
@@ -99,13 +94,15 @@ and can optionally contain `alias` and `depends` keys. The order of
 these keys does not matter; the above order is chosen for explanatory
 purposes only.
 
-**`creates`.** The `creates` key defines the resource that is
+#### `creates`
+The `creates` key defines the resource that is
 created. By default, it is interpretted as a path to a file (relative
 paths are interpretted as relative to the `workflow.yaml` file). You
 can also specify a protocol, such as `mysql:database/table` (see
 yet-to-be-implemented #15), for non-file based resources.
 
-**`depends`.** The `depends` key defines the resource(s) on which this task
+##### `depends`
+The `depends` key defines the resource(s) on which this task
 depends. It is common for `depends` to specify many things, including
 data analysis scripts or other tasks from within the
 `workflow.yaml`. Multiple dependencies can be defined in a
@@ -117,11 +114,13 @@ depends:
   - another/task/creates/target.txt
 ```
 
-**`alias`.** The `alias` key specifies an alternative name that can be used to
+#### alias
+The `alias` key specifies an alternative name that can be used to
 specify this task as a `depends` in other parts of the workflow or on
 the command line.
 
-**`command`.** The `command` key defines the command(s) that should be
+##### `command`
+The `command` key defines the command(s) that should be
 executed to produce the resource specified by the `creates` key.  Like
 the `depends` key, multiple steps can be defined in a
 [YAML list](http://en.wikipedia.org/wiki/YAML#Lists) like this:
