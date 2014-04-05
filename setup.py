@@ -35,8 +35,9 @@ setup(
     scripts=scripts,
     packages=[
         'workflow',
-        'workflow.resources',
         'workflow.commands',
+        'workflow.resources',
+        'workflow.tasks',
     ],
     install_requires=dependencies,
     zip_safe=False,
