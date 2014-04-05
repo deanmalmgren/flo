@@ -11,59 +11,17 @@ class Command(BaseCommand, TaskIdMixin):
 
     def inner_execute(self, task_id, force, dry_run):
 
-        # REFACTOR TODO: this function is almost certainly overcommented
-        # and should be broken into separate methods in TaskGraph
-
+        # restrict task graph as necessary for the purposes of running
+        # the workflow
         if task_id is not None:
             self.task_graph = self.task_graph.subgraph_needed_for([task_id])
 
-        # we do this first so we can alert the user as to how long
-        # this workflow will take. 
+        # when the workflow is --force'd, this runs all
+        # tasks. Otherwise, only runs tasks that are out of sync.
         if force:
-            out_of_sync_tasks = list(self.task_graph.iter_graph())
+            self.task_graph.run_all(mock_run=dry_run)
         else:
-            out_of_sync_tasks = self.task_graph.get_out_of_sync_tasks()
-
-        # REFACTOR TODO: maybe separate out timing better? separate
-        # out exceptions into different function? figure out how to
-        # deal with force better so that iter_graph can really give us
-        # just what we want... OR have two methods -- one that
-        # executes EVERYTHING no matter what and another that checks
-        # to see if a task is in sync before it runs.
-
-        if out_of_sync_tasks:
-            self.task_graph.logger.info(
-                self.task_graph.duration_message(out_of_sync_tasks)
-            )
-            for task in self.task_graph.iter_graph(out_of_sync_tasks):
-                # We unfortunately need (?) to re-run in_sync here in case
-                # things change during the course of a run. This is not
-                # ideal but makes it possible to estimate the duration of
-                # a workflow run, which is pretty valuable
-                if not task.is_pseudotask() and (force or not task.in_sync()):
-                    if not dry_run:
-                        try:
-                            task.timed_run()
-                        except (KeyboardInterrupt, ShellError), e:
-                            self.task_graph.save_state(
-                                override_resource_states={task.name: ''},
-                            )
-                            sys.exit(getattr(e, 'exit_code', 1))
-                    elif dry_run:
-                        self.task_graph.logger.info(str(task))
-
-        # if no tasks needed to be executed, then alert the user.
-        else:
-            self.task_graph.logger.info(
-                "No tasks are out of sync in the workflow defined in '%s'" % (
-                    os.path.relpath(self.task_graph.config_path, os.getcwd())
-                )
-            )
-
-        # otherwise, we need to recalculate hashes for everything that is
-        # out of sync
-        if not dry_run:
-            self.task_graph.save_state()
+            self.task_graph.run_all_out_of_sync(mock_run=dry_run)
 
         # mark the self.task_graph as completing successfully to send the
         # correct email message

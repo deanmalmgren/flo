@@ -122,7 +122,7 @@ depends:
 
 The `alias` key specifies an alternative name that can be used to
 specify this task as a `depends` in other parts of the workflow or [on
-the command line](#workflow-run-task-id).
+the command line](#workflow-run-task_id).
 
 ##### command
 

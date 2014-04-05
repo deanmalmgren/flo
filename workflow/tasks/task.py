@@ -169,6 +169,10 @@ class Task(resources.base.BaseResource):
             self.run(self.clean_command())
             self.graph.logger.info("removed %s" % self.creates_message())
 
+    def mock_run(self):
+        """Mock run this task by displaying output as if it were run"""
+        self.graph.logger.info(str(self))
+
     def timed_run(self, command=None):
         """Run the specified task from the root of the workflow"""
 

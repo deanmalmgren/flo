@@ -13,6 +13,7 @@ from .. import resources
 from .. import logger
 from .task import Task
 
+
 class TaskGraph(object):
     """Simple graph implementation of a list of task nodes"""
 
@@ -259,8 +260,11 @@ class TaskGraph(object):
         else:
             return "%.2f" % (duration / 60 / 60 / 24) + " d"
 
-    def duration_message(self, tasks=None, color=colors.blue):
-        tasks = tasks or self.task_list
+    def duration_message(self, tasks, color=colors.blue):
+        if len(tasks) == 0:
+            return "No tasks are out of sync in this workflow (%s)" % (
+                os.path.relpath(self.config_path, os.getcwd())
+            )
         min_duration = 0.0
         for task in tasks:
             min_duration += self.task_durations.get(task.id, 0.0)
@@ -295,6 +299,47 @@ class TaskGraph(object):
         if color:
             msg = color(msg)
         return msg
+
+    def _run_helper(self, starting_tasks, run_test, mock_run):
+        """This is a convenience method that is used to slightly modify the
+        behavior of running a workflow depending on the circumstances.
+        """
+        self.logger.info(self.duration_message(starting_tasks))
+        for task in self.iter_graph(starting_tasks):
+            if run_test(task):
+                if mock_run:
+                    task.mock_run()
+                else:
+                    try:
+                        task.timed_run()
+                    except (KeyboardInterrupt, ShellError), e:
+                        self.save_state(
+                            override_resource_states={task.name: ''},
+                        )
+                        sys.exit(getattr(e, 'exit_code', 1))
+        if not mock_run:
+            self.save_state()
+
+    def run_all(self, mock_run=False):
+        """Execute all tasks in the workflow, regardless of whether they are
+        in sync or not.
+        """
+        starting_tasks = list(task for task in self.iter_graph())
+
+        def run_test(task):
+            return not task.is_pseudotask()
+
+        self._run_helper(starting_tasks, run_test, mock_run)
+
+    def run_all_out_of_sync(self, mock_run=False):
+        """Execute all tasks in the workflow that are out of sync at runtime.
+        """
+        starting_tasks = self.get_out_of_sync_tasks()
+
+        def run_test(task):
+            return not task.is_pseudotask() and not task.in_sync()
+
+        self._run_helper(starting_tasks, run_test, mock_run)
 
     @property
     def abs_state_path(self):
