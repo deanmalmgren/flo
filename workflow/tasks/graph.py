@@ -153,7 +153,7 @@ class TaskGraph(object):
 
     def _dereference_alias_helper(self, name):
         if name is None:
-            return
+            return None
         for task in self.task_list:
             if task.alias == name:
                 return task.creates
@@ -199,10 +199,10 @@ class TaskGraph(object):
             # instantiate the resources associated with this task here
             # to make sure we can resolve aliases if they exist.
             task.depends_resources = resources.get_or_create(
-                self, task.depends
+                self, task.depends_list
             )
             task.creates_resources = resources.get_or_create(
-                self, task.creates
+                self, task.creates_list
             )
 
             # omit creates resources from pseudotasks. this is
@@ -212,11 +212,8 @@ class TaskGraph(object):
                 del self.resource_dict[task.creates]
 
             # link up the dependencies
-            if isinstance(task.depends, (list, tuple)):
-                for dependency in task.depends:
-                    self._link_dependency_helper(task, dependency)
-            else:
-                self._link_dependency_helper(task, task.depends)
+            for dependency in task.depends_list:
+                self._link_dependency_helper(task, dependency)
 
     def get_user_clean_confirmation(self, task_list=None,
                                     include_internals=False):

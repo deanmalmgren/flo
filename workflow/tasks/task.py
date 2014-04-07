@@ -11,6 +11,17 @@ from .. import shell
 from .. import resources
 
 
+def _cast_as_list(obj):
+    if isinstance(obj, (list, tuple)):
+        return obj
+    elif obj is None:
+        return []
+    elif isinstance(obj, (str, unicode)):
+        return [obj]
+    else:
+        raise TypeError("unexpected type passed to _cast_as_list")
+
+
 class Task(resources.base.BaseResource):
 
     def __init__(self, graph, creates=None, depends=None, alias=None,
@@ -72,6 +83,18 @@ class Task(resources.base.BaseResource):
         super(Task, self).__init__(self.graph, 'config:'+self.id)
 
     @property
+    def creates_list(self):
+        return _cast_as_list(self.creates)
+
+    @property
+    def depends_list(self):
+        return _cast_as_list(self.depends)
+
+    @property
+    def command_list(self):
+        return _cast_as_list(self.command)
+
+    @property
     def yaml_data(self):
         out = copy.deepcopy(self._kwargs)
         out.update({
@@ -108,14 +131,11 @@ class Task(resources.base.BaseResource):
         # TODO: when we allow for non-filesystem targets, this will
         # have to change to accomodate
         #
-        # XXXX TODO: use the resources to get at this...
-        all_filenames = [self.creates]
-        if self.is_pseudotask():
-            all_filenames = []
-        if isinstance(self.depends, (list, tuple)):
-            all_filenames.extend(self.depends)
-        elif self.depends is not None:
-            all_filenames.append(self.depends)
+        # XXXX REFACTOR TODO: use the resources to get at this
+        all_filenames = []
+        if not self.is_pseudotask():
+            all_filenames.extend(self.creates_list)
+        all_filenames.extend(self.depends_list)
         return all_filenames
 
     def get_current_state(self):
@@ -157,8 +177,7 @@ class Task(resources.base.BaseResource):
 
     def run(self, command):
         """Run the specified shell command using Fabric-like behavior"""
-        if command is not None:
-            return shell.run(self.root_directory, command)
+        return shell.run(self.root_directory, command)
 
     def clean_command(self):
         return "rm -rf %s" % self.creates
@@ -173,57 +192,36 @@ class Task(resources.base.BaseResource):
         """Mock run this task by displaying output as if it were run"""
         self.graph.logger.info(str(self))
 
-    def timed_run(self, command=None):
+    def timed_run(self):
         """Run the specified task from the root of the workflow"""
 
-        # REFACTOR TODO: separate out the running of a the command
-        # from the timing of the command
+        # useful message about starting this task and what it is
+        # called so users know how to re-call this task if they
+        # notice something fishy during execution.
+        self.graph.logger.info(self.creates_message())
+        start_time = time.time()
 
-        # start of task execution
-        start_time = None
-        if command is None:
-
-            # useful message about starting this task and what it is
-            # called so users know how to re-call this task if they
-            # notice something fishy during execution.
-            self.graph.logger.info(self.creates_message())
-
-            # start a timer so we can keep track of how long this task
-            # executes. Its important that we're timing watch time, not
-            # CPU time
-            start_time = time.time()
-
-        # execute a sequence of commands by recursively calling this
-        # method
-        #
-        # REFACTOR TODO: either (i) make _execute_helper method OR force
-        # self.command to ALWAYS be a list
-        command = command or self.command
-        if isinstance(command, (list, tuple)):
-            for cmd in command:
-                self.timed_run(cmd)
-
-        # if its not a list or a tuple, then this string should be
-        # executed. Update the user on our progress so far, be sure to
-        # change to the root directory of the workflow, and execute
-        # the command. This takes inspiration from how
-        # fabric.operations.local works http://bit.ly/1dQEgjl
-        else:
-            self.graph.logger.info(self.command_message(command=command))
+        # run each command for this task
+        for command in self.command_list:
+            self.graph.logger.info(self.command_message(command))
             self.run(command)
 
         # stop the clock and alert the user to the clock time spent
         # running the task
-        if start_time:
-            self.duration = time.time() - start_time
-            self.graph.logger.info(self.duration_message())
+        self.duration = time.time() - start_time
+        self.graph.logger.info(self.duration_message())
 
-            # store the duration on the graph object
-            self.graph.task_durations[self.id] = self.duration
+        # store the duration on the graph object
+        self.graph.task_durations[self.id] = self.duration
+
+    def _render_template_helper(self, template_str):
+        env = jinja2.Environment()
+        template_obj = env.from_string(template_str)
+        return template_obj.render(self.attrs)
 
     def render_template(self, template):
-        """Render a `template` using self.attrs as a template
-        context. `template` can either be a list or a string."""
+        """Render a `template` using self.attrs as a template context.
+        """
 
         if template is None:
             return None
@@ -231,12 +229,9 @@ class Task(resources.base.BaseResource):
         # if template is a list, make sure to render each element of
         # the list
         if isinstance(template, (list, tuple)):
-            return [self.render_template(ts) for ts in template]
-
-        # render the template as if its a jinja template
-        env = jinja2.Environment()
-        template_obj = env.from_string(template)
-        return template_obj.render(self.attrs)
+            return [self._render_template_helper(t) for t in template]
+        else:
+            return self._render_template_helper(template)
 
     def render_command_template(self):
         """Uses jinja template syntax to render the command from the other
@@ -260,24 +255,15 @@ class Task(resources.base.BaseResource):
             msg = color(msg)
         return msg
 
-    def command_message(self, command=None, color=colors.bold_white,
+    def command_message(self, command, color=colors.bold_white,
                         pre="|-> "):
-        command = command or self.command
-        if isinstance(command, (list, tuple)):
-            msg = []
-            for subcommand in command:
-                msg.append(self.command_message(command=subcommand,
-                                                color=color, pre=pre))
-            return '\n'.join(msg)
-        if command is None:
-            return ''  # no command message for pseudotasks
         msg = pre + command
         if color:
             msg = color(msg)
         return msg
 
     def __repr__(self):
-        return '\n'.join([
-            self.creates_message(),
-            self.command_message()
-        ])
+        return '\n'.join(
+            [self.creates_message()] +
+            [self.command_message(command=command) for command in self.command]
+        )
