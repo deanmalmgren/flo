@@ -401,7 +401,8 @@ the roadmap, but if you have any suggestions for other ideas, please
 
 ### developing
 
-1. [Fork](fork) and clone the project.
+1. [Fork](https://github.com/deanmalmgren/data-workflow/fork) and
+   clone the project.
 
    ```bash
    git clone https://github.com/YOUR-USERNAME/data-workflow.git
