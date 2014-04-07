@@ -24,13 +24,12 @@ def _cast_as_list(obj):
 
 class Task(resources.base.BaseResource):
 
-    def __init__(self, graph, creates=None, depends=None, alias=None,
+    def __init__(self, graph, creates=None, depends=None,
                  command=None, **kwargs):
         self.graph = graph
         self._creates = creates
         self._depends = depends
         self._command = command
-        self._alias = alias
         self._kwargs = copy.deepcopy(kwargs)
 
         # quick type checking to make sure the tasks in the
@@ -49,14 +48,12 @@ class Task(resources.base.BaseResource):
         # https://github.com/deanmalmgren/data-workflow/issues/33
         self.creates = self.render_template(self._creates)
         self.depends = self.render_template(self._depends)
-        self.alias = self.render_template(self._alias)
 
         # update the attrs to reflect any changes from the template
         # rendering from global variables
         self.attrs.update({
             'creates': self.creates,
             'depends': self.depends,
-            'alias': self.alias,
         })
 
         # save the original command strings in _command for checking
@@ -101,14 +98,13 @@ class Task(resources.base.BaseResource):
             "creates": self._creates,
             "depends": self._depends,
             "command": self._command,
-            "alias": self._alias,
         })
         return out
 
     @property
     def id(self):
         """Canonical way to identify this Task"""
-        return self.alias or self.creates
+        return self.creates
 
     @property
     def root_directory(self):
@@ -144,8 +140,7 @@ class Task(resources.base.BaseResource):
         # write the data for this task to a stream so that we can use
         # the machinery in self.get_stream_state to calculate the
         # state
-        msg = self.creates + str(self.depends) + str(self._command) + \
-            str(self.alias)
+        msg = self.creates + str(self.depends) + str(self._command)
         keys = self.attrs.keys()
         keys.sort()
         for k in keys:
@@ -250,8 +245,6 @@ class Task(resources.base.BaseResource):
 
     def creates_message(self, color=colors.green):
         msg = self.creates
-        if self.alias:
-            msg += " (%s)" % self.alias
         if color:
             msg = color(msg)
         return msg

@@ -87,12 +87,11 @@ in `workflow.yaml` with something like this:
 ---
 creates: path/to/some/output/file.txt
 depends: path/to/some/script.py
-alias: awesome
 command: python {{depends}} > {{creates}}
 ```
 
 Every task YAML object must have a [`creates`](#creates) key and can
-optionally contain [`command`](#command), [`alias`](#alias) and
+optionally contain [`command`](#command) and
 [`depends`](#depends) keys. The order of these keys does not matter;
 the above order is chosen for explanatory purposes only.
 
@@ -117,12 +116,6 @@ depends:
   - path/to/some/script.py
   - another/task/creates/target.txt
 ```
-
-##### alias
-
-The `alias` key specifies an alternative name that can be used to
-specify this task as a `depends` in other parts of the workflow or [on
-the command line](#workflow-run-task_id).
 
 ##### command
 
@@ -271,7 +264,7 @@ will run that task. For reference, the hashes of all of the `creates`,
 
 Oftentimes we do not want to run the entire workflow, but only a
 particular component of it. Like GNU make, you can specify a
-particular task (either by its `alias` or its `creates`) on the
+particular task by its `creates` value on the
 command line like this:
 
 ```bash
