@@ -130,12 +130,13 @@ class Task(resources.base.BaseResource):
         """
         # TODO: when we allow for non-filesystem targets, this will
         # have to change to accomodate
-        #
-        # XXXX REFACTOR TODO: use the resources to get at this
-        all_filenames = []
+        resources = []
         if not self.is_pseudotask():
-            all_filenames.extend(self.creates_list)
-        all_filenames.extend(self.depends_list)
+            resources.extend(self.creates_resources)
+        resources.extend(self.depends_resources)
+        all_filenames = set()
+        for resource in resources:
+            all_filenames.add(resource.get_filename())
         return all_filenames
 
     def get_current_state(self):

@@ -40,3 +40,6 @@ class FileSystem(BaseResource):
                 "resource "
                 "https://github.com/deanmalmgren/data-workflow/issues"
             ))
+
+    def get_filename(self):
+        return self.name

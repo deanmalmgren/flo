@@ -78,3 +78,15 @@ class BaseResource(object):
         is in_sync.
         """
         return self.get_previous_state() == self.get_current_state()
+
+    def get_filename(self):
+        """This gets a filename for a (possibly temporary) storage location
+        for a resource on disk. In situations where the resource is
+        already on disk, this is very simple. In situations where the
+        resource is not natively on disk (e.g., a database or a remote
+        database), this method should create the corresponding
+        resource on the local disk.
+        """
+        raise NotImplementedError(
+            "Must implement get_filename for child classes"
+        )
