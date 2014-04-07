@@ -45,6 +45,11 @@ class TaskIdMixin(object):
             metavar='TASK_ID',
             type=str,
             choices=available_tasks,
-            nargs='?',  # '*', this isn't working for some reason
+            nargs='?',
             help=help_text,
         )
+        # TODO: using `nargs='*'` does not work with `choices`
+        # specified for some reason. For now, electing to use
+        # `choices` and nargs='?'` so that command line autocomplete
+        # works. Also tried to use `nargs=argcomplete.REMAINDER` and
+        # `action='append'` but neither of these options worked either.
