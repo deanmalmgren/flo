@@ -56,7 +56,6 @@ class TaskGraph(object):
         # add tasks and load all dependencies between tasks
         for task_kwargs in task_kwargs_list:
             task = Task(self, **task_kwargs)
-        self._dereference_depends_aliases()
         self._link_dependencies()
         self._load_state()
 
@@ -122,16 +121,9 @@ class TaskGraph(object):
     def add(self, task):
         """Connect the task to this TaskGraph instance. This stores the task
         in the TaskGraph.task_list and puts it in the
-        TaskGraph.task_dict, keyed by task.creates and task.alias (if
-        it exists).
+        TaskGraph.task_dict, keyed by task.creates.
         """
         self.task_list.append(task)
-        if task.alias is not None:
-            if task.alias in self.task_dict:
-                raise NonUniqueTask(
-                    "task `alias` '%s' is not unique" % task.alias
-                )
-            self.task_dict[task.alias] = task
         if task.creates in self.task_dict:
             raise NonUniqueTask(
                 "task `creates` '%s' is not unique" % task.creates
@@ -150,28 +142,6 @@ class TaskGraph(object):
                              self.iter_graph(tasks, downstream=False)]
         subgraph = TaskGraph(self.config_path, tasks_kwargs_list)
         return subgraph
-
-    def _dereference_alias_helper(self, name):
-        if name is None:
-            return None
-        for task in self.task_list:
-            if task.alias == name:
-                return task.creates
-
-    def _dereference_depends_aliases(self):
-        """This converts every alias used in a depends statement into the
-        corresponding `creates` element in that task declaration.
-        """
-        for task in self.task_list:
-            if isinstance(task.depends, (list, tuple)):
-                for i, d in enumerate(task.depends):
-                    dd = self._dereference_alias_helper(d)
-                    if dd is not None:
-                        task.depends[i] = dd
-            else:
-                dd = self._dereference_alias_helper(task.depends)
-                if dd is not None:
-                    task.depends = dd
 
     def _link_dependency_helper(self, task, dependency):
         if dependency is not None:
@@ -197,7 +167,6 @@ class TaskGraph(object):
         for task in self.task_list:
 
             # instantiate the resources associated with this task here
-            # to make sure we can resolve aliases if they exist.
             task.depends_resources = resources.get_or_create(
                 self, task.depends_list
             )
