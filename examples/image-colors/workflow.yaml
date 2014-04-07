@@ -1,0 +1,21 @@
+# download two different datasets containing images
+---
+creates: data/abstract.zip
+command: 
+  - mkdir -p $(dirname {{creates}})
+  - curl http://web.student.tuwien.ac.at/~e0326272/testImages_abstract.zip -o {{creates}}
+---
+creates: data/artphoto.zip
+command: 
+  - mkdir -p $(dirname {{creates}})
+  - curl http://web.student.tuwien.ac.at/~e0326272/testImages_artphoto.zip -o {{creates}}
+
+# unzip the images into a common directory
+---
+creates: data/img
+depends:
+  - data/abstract.zip
+  - data/artphoto.zip
+command: 
+  - mkdir -p {{creates}}
+  - for archive in {{depends|join(' ')}}; do unzip -d {{creates}} $archive; done

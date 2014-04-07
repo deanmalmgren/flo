@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sudo apt-get install -y curl
+sudo apt-get install -y curl unzip
 
 # these are technically in the examples/REQUIREMENTS, too, but
 # installing dependencies is a bit of a pain in the ass so use this to
