@@ -1,29 +1,21 @@
 from . import base
 from .file_system import FileSystem
 
-def get_or_create(graph, candidate):
+
+def get_or_create(graph, candidate_list):
     """This is a factory function that instantiates resources from a
-    candidate. The candidate can either be a string or a list of
-    strings.
+    candidate_list. Each candidate in the candidate_list must be a
+    string.
     """
-
     resources = []
-    if isinstance(candidate, (list, tuple)):
-        for c in candidate:
-            resources.extend(get_or_create(graph, c))
-    elif candidate is not None:
+    for candidate in candidate_list:
+        if candidate is not None:
 
-        # check if resource has already been created for this graph
-        # and, if not, create it
-        try:
-            resource = graph.resource_dict[candidate]
-        except KeyError:
-            # TODO: this is where we can differentiate different
-            # protocols, but for now, everything is a FileSystem thing
-            # that gets passed to this method
-            resource = FileSystem(graph, candidate)
-
-        resources.append(resource)
-
+            # check if resource has already been created for this graph
+            # and, if not, create it
+            try:
+                resource = graph.resource_dict[candidate]
+            except KeyError:
+                resource = FileSystem(graph, candidate)
+            resources.append(resource)
     return resources
-

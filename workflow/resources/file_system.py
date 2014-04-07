@@ -3,36 +3,43 @@ import hashlib
 
 from .base import BaseResource
 
+
 class FileSystem(BaseResource):
     """Evaluate the state of resources on the file system.
     """
 
-    @property
-    def current_state(self):
-        state = None
-
-        # for filesystem protocols, dereference any soft links that
-        # the resource may point to and calculate the state from
-        resource_path = os.path.realpath(
+    def __init__(self, *args, **kwargs):
+        super(FileSystem, self).__init__(*args, **kwargs)
+        self.resource_path = os.path.realpath(
             os.path.join(self.root_directory, self.name)
         )
-        if not os.path.exists(resource_path):
-            return state
 
-        if os.path.isfile(resource_path):
-            with open(resource_path) as stream:
-                state = self._get_stream_state(stream)
-        elif os.path.isdir(resource_path):
-            state_hash = hashlib.sha1()
-            for root, directories, filenames in os.walk(resource_path):
-                for filename in filenames:
-                    with open(os.path.join(root, filename)) as stream:
-                        state_hash.update(self._get_stream_state(stream))
-            state = state_hash.hexdigest()
+    def file_state(self, resource_path=None):
+        with open(resource_path or self.resource_path) as stream:
+            state = self.get_stream_state(stream)
+        return state
+
+    def directory_state(self):
+        state_hash = hashlib.sha1()
+        for root, directories, filenames in os.walk(self.resource_path):
+            for filename in filenames:
+                abs_filename = os.path.join(root, filename)
+                state_hash.update(self.file_state(abs_filename))
+        return state_hash.hexdigest()
+
+    def get_current_state(self):
+        if not os.path.exists(self.resource_path):
+            return None
+        elif os.path.isfile(self.resource_path):
+            return self.file_state()
+        elif os.path.isdir(self.resource_path):
+            return self.directory_state()
         else:
             raise NotImplementedError((
                 "file a feature request to support this type of "
                 "resource "
                 "https://github.com/deanmalmgren/data-workflow/issues"
             ))
-        return state
+
+    def get_filename(self):
+        return self.name

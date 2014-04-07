@@ -22,15 +22,11 @@ incorrect results, poor performance, etc.) in the analysis and improve
 them piece by piece after the entire workflow has been written the
 first time.
 
-This package is deliberately intended to help users write small, but
-compact workflow prototypes using whatever tools they prefer (R,
-pandas, scipy, hadoop) but with the explicit goal of encouraging users
-to write small scripts that produce intermediate output.
+This package is deliberately designed to help users write small, but
+compact workflow prototypes using whatever tools they prefer --- R,
+pandas, scipy, hadoop. The goal here is not to provide a substitute
+for these tools, but rather to be the glue that sticks them together.
 
-The goal of this project is to make it easy to quickly *develop* data
-workflows with any tool set you want --- pandas, R, matlab, scipy,
-hadoop, etc. The goal here is not to provide a substitute for these
-tools, but rather to be the glue that sticks them together.
 
 ### quick start
 
@@ -80,6 +76,7 @@ tools, but rather to be the glue that sticks them together.
    confidence that the user will not ruin previous results or start a
    simulation that takes a long time.
 
+
 ### workflow.yaml specification
 
 Individual analysis tasks are defined as
@@ -94,18 +91,22 @@ alias: awesome
 command: python {{depends}} > {{creates}}
 ```
 
-Every task YAML object must have a `creates` key and a `command` key
-and can optionally contain `alias` and `depends` keys. The order of
-these keys does not matter; the above order is chosen for explanatory
-purposes only.
+Every task YAML object must have a [`creates`](#creates) key and can
+optionally contain [`command`](#command), [`alias`](#alias) and
+[`depends`](#depends) keys. The order of these keys does not matter;
+the above order is chosen for explanatory purposes only.
 
-**`creates`.** The `creates` key defines the resource that is
-created. By default, it is interpretted as a path to a file (relative
-paths are interpretted as relative to the `workflow.yaml` file). You
-can also specify a protocol, such as `mysql:database/table` (see
-yet-to-be-implemented #15), for non-file based resources.
+##### creates
 
-**`depends`.** The `depends` key defines the resource(s) on which this task
+The `creates` key defines the resource that is created. By default, it
+is interpretted as a path to a file (relative paths are interpretted
+as relative to the `workflow.yaml` file). You can also specify a
+protocol, such as `mysql:database/table` (see yet-to-be-implemented #15),
+for non-file based resources.
+
+##### depends
+
+The `depends` key defines the resource(s) on which this task
 depends. It is common for `depends` to specify many things, including
 data analysis scripts or other tasks from within the
 `workflow.yaml`. Multiple dependencies can be defined in a
@@ -117,13 +118,17 @@ depends:
   - another/task/creates/target.txt
 ```
 
-**`alias`.** The `alias` key specifies an alternative name that can be used to
-specify this task as a `depends` in other parts of the workflow or on
-the command line.
+##### alias
 
-**`command`.** The `command` key defines the command(s) that should be
-executed to produce the resource specified by the `creates` key.  Like
-the `depends` key, multiple steps can be defined in a
+The `alias` key specifies an alternative name that can be used to
+specify this task as a `depends` in other parts of the workflow or [on
+the command line](#workflow-run-task_id).
+
+##### command
+
+The `command` key defines the command(s) that should be executed to
+produce the resource specified by the `creates` key.  Like the
+`depends` key, multiple steps can be defined in a
 [YAML list](http://en.wikipedia.org/wiki/YAML#Lists) like this:
 
 ```yaml
@@ -144,7 +149,9 @@ depends:
   - path/to/figure/c.png # refers to another task in workflow.yaml
 ```
 
-**templating variables.** Importantly, the `command` is rendered as a
+##### templating variables
+
+Importantly, the `command` is rendered as a
 [jinja template](http://jinja.pocoo.org/) to avoid duplication of
 information that is already defined in that task. Its quite common to
 use `{{depends}}` and `{{creates}}` in the `command` specification,
@@ -212,6 +219,7 @@ There are several [examples](examples/) for more inspiration on how
 you could use the workflow.yaml specification. If you have suggestions
 for other ideas, please [add them](issues)!
 
+
 ### command line interface
 
 This package ships with the `workflow` command, which embodies the
@@ -220,7 +228,11 @@ run from the directory that contains `workflow.yaml` or any of its
 child directories. Output has been formatted to be as useful as
 possible, including the task names that are run, the commands that are
 run, and how long each task takes. For convenience, this information
-is also stored in `.workflow/workflow.log`.
+is also stored in `.workflow/workflow.log`. Here, we elaborate on a
+few key features of `workflow`; see `workflow --help` for details
+about all available functionality,
+
+##### workflow run
 
 By default, the `workflow run` command will execute the entire
 workflow, or at least the portion of it that is "out of sync" since
@@ -255,10 +267,12 @@ itself has changed since the last time that task was run, `workflow`
 will run that task. For reference, the hashes of all of the `creates`,
 `depends`, and workflow task definitions are in `.workflow/state.csv`.
 
-**specify a particular task.** Oftentimes we do not want to run the
-entire workflow, but only a particular component of it. Like GNU make,
-you can specify a particular task (either by its `alias` or its
-`creates`) on the command line like this:
+##### workflow run task_id
+
+Oftentimes we do not want to run the entire workflow, but only a
+particular component of it. Like GNU make, you can specify a
+particular task (either by its `alias` or its `creates`) on the
+command line like this:
 
 ```bash
 workflow run path/to/some/output/file.txt
@@ -268,13 +282,15 @@ This limits `workflow` to only executing the task defined in
 `path/to/some/output/file.txt` and all of its recursive upstream
 dependencies.
 
-**`workflow run --dry-run`.** While [we don't recommend it](#op-ed),
-its not uncommon to get "in the zone" and make several edits to
-analysis scripts before re-running your workflow. Because we're human,
-its easy to incorrectly remember the files you edited and how they may
-affect re-running the workflow. To help, the `--dry-run` command line
-option lets you see which commands will be run and approximately how
-much time it should take (!!!).
+##### workflow run --dry-run
+
+While [we don't recommend it](#op-ed), its not uncommon to get "in the
+zone" and make several edits to analysis scripts before re-running
+your workflow. Because we're human, its easy to incorrectly remember
+the files you edited and how they may affect re-running the
+workflow. To help, the `--dry-run` command line option lets you see
+which commands will be run and approximately how much time it should
+take (!!!).
 
 ```bash
 workflow run
@@ -286,9 +302,10 @@ workflow run --dry-run     # don't run anything, just report what would be done
 For reference, `workflow` stores the duration of each task in
 `.workflow/duration.csv`.
 
-**`workflow run --force`**. Sometimes it is convenient to rerun an
-entire workflow, regardless of the current status of the files that
-were generated.
+##### workflow run --force
+
+Sometimes it is convenient to rerun an entire workflow, regardless of
+the current status of the files that were generated.
 
 ```bash
 workflow run
@@ -298,46 +315,43 @@ echo "Screw it, lets just redo the entire analysis"
 workflow run --force
 ```
 
-**`workflow run --export`.** Sometimes you just want a shell script,
-plain and simple. The `--export` command line option makes it easy to
-quickly export the sequence of steps that are specified in your
-workflow without running into conflicts.
+##### workflow run --notify
 
-```bash
-workflow run --export      # prints out sequence of shell commands
-```
-
-**`workflow run --notify`.** For long-running workflows, it is
-convenient to be alerted when the entire workflow completes. The
-`--notify` command line option makes it possible to have the last 100
-lines of the `.workflow/workflow.log` sent to an email address
-specified on the command line.
+For long-running workflows, it is convenient to be alerted when the
+entire workflow completes. The `--notify` command line option makes it
+possible to have the last 100 lines of the `.workflow/workflow.log`
+sent to an email address specified on the command line.
 
 ```bash
 workflow run --notify j.doe@example.com
 ```
 
-**`workflow clean`**. Sometimes you want to start with a clean
-slate. Perhaps the data you originally started with is dated or you
-want to be confident a workflow properly runs from start to finish
-before inviting collaborators. Whatever the case, the `workflow clean`
-command can be useful for removing all `creates` targets that are
-defined in `workflow.yaml`. With the `--force` command line option,
-you can remove all files without having to confirm that you want to
-remove them. If you just want to remove a particular target, you can
-use `workflow clean task_id` to only remove that `creates` target.
+##### workflow clean
+
+Sometimes you want to start with a clean slate. Perhaps the data you
+originally started with is dated or you want to be confident a
+workflow properly runs from start to finish before inviting
+collaborators. Whatever the case, the `workflow clean` command can be
+useful for removing all `creates` targets that are defined in
+`workflow.yaml`. With the `--force` command line option, you can
+remove all files without having to confirm that you want to remove
+them. If you just want to remove a particular target, you can use
+`workflow clean task_id` to only remove that `creates` target.
 
 ```bash
 workflow clean              # asks user if they want to remove `creates` results
 workflow clean --force      # removes all `creates` targets without confirmation
+workflow clean a/task       # only remove the a/task target
 ```
 
-**`workflow archive`.** Before removing or totally redoing an
-analysis, I've often found it useful to backup my results and compare
-the differences later. The `workflow archive` command makes it easy to
-quickly backup an entire workflow (including generated `creates`
-targets, source code specified in `depends`, and the underlying
-`workflow.yaml`) and compare it to previous versions.
+##### workflow archive
+
+Before removing or totally redoing an analysis, I've often found it
+useful to backup my results and compare the differences later. The
+`workflow archive` command makes it easy to quickly backup an entire
+workflow (including generated `creates` targets, source code specified
+in `depends`, and the underlying `workflow.yaml`) and compare it to
+previous versions.
 
 ```bash
 workflow archive            # store archive in .workflow/archives/*.tar.bz2
@@ -349,16 +363,16 @@ echo 'oh crap, this sequence of changes was a mistake'
 workflow archive --restore  # uncompresses archive
 ```
 
-**autocomplete.** Autocompletion of available options with workflow is
-enabled by @kislyuk's amazing
+##### autocomplete
+
+Autocompletion of available options with workflow is enabled by
+@kislyuk's amazing
 [autocomplete](https://github.com/kislyuk/argcomplete) package. Follow
 instructions to
 [enable global autocomplete](https://github.com/kislyuk/argcomplete#activating-global-completion)
 and you should be all set. This is also configured in the
 [virtual machine provisioning](blob/master/provision/development.sh#L17).
 
-**more info.** For more details about these and other options, see
-`workflow --help`.
 
 ### design goals
 

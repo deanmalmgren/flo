@@ -7,6 +7,7 @@ import threading
 
 from . import exceptions
 
+
 def log_output(stream):
     # this function logs the output from the subprocess'ed command.
     #
@@ -18,6 +19,7 @@ def log_output(stream):
         logger.info(line.rstrip('\n'))
     stream.close()
 
+
 def run(directory, command):
     """Run the specified shell command using Fabric-like behavior."""
 
@@ -26,7 +28,7 @@ def run(directory, command):
     # simultaneously
     wrapped_command = "cd %s && %s" % (directory, command)
     pipe = subprocess.Popen(
-        wrapped_command, shell=True, 
+        wrapped_command, shell=True,
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
     )
 
