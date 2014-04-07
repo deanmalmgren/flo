@@ -7,6 +7,8 @@ import datetime
 import glob
 from distutils.util import strtobool
 
+import networkx as nx
+
 from ..exceptions import InvalidTaskDefinition, NonUniqueTask, ShellError
 from .. import colors
 from .. import shell
@@ -138,18 +140,38 @@ class TaskGraph(object):
             )
         self.task_dict[task.creates] = task
 
-    def subgraph_needed_for(self, task_ids):
-        """Find the subgraph of all dependencies to run these tasks"""
-        if not task_ids:
-            return self
+    def subgraph_needed_for(self, start_at, end_at):
+        """Find the subgraph of all dependencies to run these tasks. Returns a
+        new graph.
 
-        # instantiate a new graph instance from the original data from
-        # the tasks of self
-        tasks = map(self.task_dict.get, task_ids)
-        tasks_kwargs_list = [task.yaml_data for task in
-                             self.iter_graph(tasks, downstream=False)]
+        """
+        assert start_at or end_at, "start and end are both False"
+        start, end = map(self.task_dict.get, [start_at, end_at])
+        node = start or end
+        if start:
+            downstream = True
+        elif end:
+            downstream = False
+
+        if None in [start,end]:
+            tasks = self.iter_graph([node], downstream=downstream)
+        else:
+            graph = self.get_networkx_graph()
+            tasks = set()
+            for path in nx.all_simple_paths(graph, start, end):
+                tasks.update(path)
+
+        tasks_kwargs_list = [task.yaml_data for task in tasks]
         subgraph = TaskGraph(self.config_path, tasks_kwargs_list)
         return subgraph
+        
+    def get_networkx_graph(self):
+        graph = nx.DiGraph()
+        graph.add_nodes_from(self.iter_graph())
+        for node in graph:
+            for child in node.downstream_tasks:
+                graph.add_edge(node,child)
+        return graph
 
     def _dereference_alias_helper(self, name):
         if name is None:
