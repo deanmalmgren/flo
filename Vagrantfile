@@ -33,7 +33,7 @@ Vagrant.configure("2") do |config|
   def provision_script(config, script_path)
     config.vm.provision "shell" do |s|
       s.path = script_path
-      s.args = ["/vagrant"]
+      s.args = "/vagrant"
     end
   end
 
