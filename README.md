@@ -282,6 +282,26 @@ This limits `workflow` to only executing the task defined in
 `path/to/some/output/file.txt` and all of its recursive upstream
 dependencies.
 
+##### workflow run --start-at=task_id
+
+Other times we do not want to run the entire workflow, but run
+everything after a specific component. Like GNU make, you can specify
+a particular task (either by its `alias` or its `creates`) on the
+command line like this:
+
+```bash
+workflow run --start-at=path/to/some/file.txt
+```
+
+This limits `workflow` to only executing the task defined in
+`path/to/some/file.txt` and all of its recursive _down_stream
+dependencies. This can be combined with `run task_id` to only all
+tasks between two specified tasks like this:
+
+```bash
+workflow run --start-at=path/to/some/file.txt path/to/some/output/file.txt
+```
+
 ##### workflow run --dry-run
 
 While [we don't recommend it](#op-ed), its not uncommon to get "in the
