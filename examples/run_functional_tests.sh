@@ -60,5 +60,8 @@ validate_example () {
 validate_example hello-world fb8915998f1095695ec34bc579bb41e6
 validate_example model-correlations c07223b877e49ff8bb4559c2829cdd47
 
+cd ..
+python test_start_at.py
+
 # exit with the sum of the status
 exit ${exit_code}
