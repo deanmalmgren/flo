@@ -294,7 +294,7 @@ workflow run --start-at=path/to/some/file.txt
 ```
 
 This limits `workflow` to only executing the task defined in
-`path/to/some/file.txt` and all of its recursive __down__ stream
+`path/to/some/file.txt` and all of its recursive **downstream**
 dependencies. This can be combined with `run task_id` to only all
 tasks between two specified tasks like this:
 
