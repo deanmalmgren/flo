@@ -68,6 +68,11 @@ class TaskGraph(object):
         on anything.
         http://en.wikipedia.org/wiki/Breadth-first_search
         """
+
+        # TODO: if we want to keep start_at functionality, then
+        # consider integrating NetworkXGraph object throughout, and
+        # get rid of this method. (make Graph extend NetworkXGraph)
+
         if downstream:
             tasks = tasks or self.get_source_tasks()
             popmethod = 'popleft'
@@ -143,17 +148,15 @@ class TaskGraph(object):
     def subgraph_needed_for(self, start_at, end_at):
         """Find the subgraph of all dependencies to run these tasks. Returns a
         new graph.
-
         """
-        assert start_at or end_at, "start and end are both False"
+        assert start_at or end_at, "start_at and end_at are both False"
         start, end = map(self.task_dict.get, [start_at, end_at])
-        node = start or end
-        if start:
-            downstream = True
-        elif end:
-            downstream = False
-
-        if None in [start,end]:
+        if None in [start, end]:
+            if start:
+                downstream = True
+            elif end:
+                downstream = False
+            node = start or end
             tasks = self.iter_graph([node], downstream=downstream)
         else:
             graph = self.get_networkx_graph()
@@ -164,13 +167,13 @@ class TaskGraph(object):
         tasks_kwargs_list = [task.yaml_data for task in tasks]
         subgraph = TaskGraph(self.config_path, tasks_kwargs_list)
         return subgraph
-        
+
     def get_networkx_graph(self):
         graph = nx.DiGraph()
         graph.add_nodes_from(self.iter_graph())
         for node in graph:
             for child in node.downstream_tasks:
-                graph.add_edge(node,child)
+                graph.add_edge(node, child)
         return graph
 
     def _dereference_alias_helper(self, name):

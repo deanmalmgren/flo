@@ -266,6 +266,6 @@ class Task(resources.base.BaseResource):
     def __repr__(self):
         return '\n'.join(
             [self.creates_message()] +
-            [self.command_message(command=command) 
+            [self.command_message(command=command)
              for command in self.command_list]
         )

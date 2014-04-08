@@ -13,7 +13,7 @@ class Command(BaseCommand, TaskIdMixin):
         # restrict task graph as necessary for the purposes of running
         # the workflow
         if task_id is not None or start_at is not None:
-            self.task_graph = self.task_graph.subgraph_needed_for(start_at, 
+            self.task_graph = self.task_graph.subgraph_needed_for(start_at,
                                                                   task_id)
         # when the workflow is --force'd, this runs all
         # tasks. Otherwise, only runs tasks that are out of sync.
@@ -72,7 +72,6 @@ class Command(BaseCommand, TaskIdMixin):
             type=str,
             metavar='TASK_ID',
             choices=available_tasks,
-            nargs=1,
             help=(
                 'Specify a task to start from (run everything downstream, '
                 'ignore everything upstream).'
