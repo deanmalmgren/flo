@@ -3,7 +3,7 @@ from base.BaseCommand.
 """
 import os
 import argparse
-import pkgutil
+import glob
 from importlib import import_module
 
 from ..exceptions import CommandLineException
@@ -15,7 +15,8 @@ def _iter_command_cls():
     class that inherits from BaseCommand.
     """
     this_directory = os.path.dirname(os.path.abspath(__file__))
-    for dummy, module_name, dummy in pkgutil.iter_modules([this_directory]):
+    for python_file in glob.glob(os.path.join(this_directory, "*.py")):
+        module_name, ext = os.path.splitext(os.path.basename(python_file))
         module = import_module("."+module_name, package=__package__)
         command_cls = getattr(module, "Command", None)
         if command_cls is not None and issubclass(command_cls, BaseCommand):
