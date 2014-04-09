@@ -1,0 +1,7 @@
+# random shell commands that are used in various examples
+curl
+unzip
+
+# Quick 'n dirty way of installing numpy and matplotlib dependencies
+python-numpy
+python-matplotlib

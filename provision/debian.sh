@@ -1,8 +1,9 @@
 #!/bin/bash
 
-sudo apt-get install -y curl unzip
+# get the base directory name of this file
+# http://stackoverflow.com/a/11114547/564709
+sudo apt-get install -y realpath
+base=$(dirname $(realpath $0))/..
 
-# these are technically in the examples/REQUIREMENTS, too, but
-# installing dependencies is a bit of a pain in the ass so use this to
-# get all the dependencies first before rebuilding latest using pip.
-sudo apt-get install -y python-numpy python-matplotlib
+# install all of the dependencies required in the examples
+sed 's/\(.*\)\#.*/\1/' < $base/examples/DEBIAN | xargs sudo apt-get install -y
