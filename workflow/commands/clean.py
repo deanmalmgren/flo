@@ -8,6 +8,7 @@ class Command(BaseCommand, TaskIdMixin):
     )
 
     def execute(self, task_id=None, force=False, include_internals=False):
+        super(Command, self).execute()
         kwargs = {
             'include_internals': include_internals,
         }

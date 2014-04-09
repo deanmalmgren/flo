@@ -29,6 +29,7 @@ class Command(BaseCommand, TaskIdMixin):
 
     def execute(self, task_id=None, force=False, dry_run=False,
                 notify_emails=None):
+        super(Command, self).execute()
         try:
             self.inner_execute(task_id, force, dry_run)
         except CommandLineException, e:

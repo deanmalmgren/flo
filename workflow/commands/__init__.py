@@ -5,7 +5,6 @@ import os
 import argparse
 import glob
 from importlib import import_module
-import time
 
 from ..exceptions import CommandLineException
 from .base import BaseCommand
@@ -15,6 +14,7 @@ from . import run, clean, archive
 # imported these modules dynamically but this is rather slow for
 # autocompletion
 COMMAND_MODULES = [run, clean, archive]
+
 
 def get_command_line_parser():
     """Public function for creating a parser to execute all of the commands
