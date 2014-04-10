@@ -4,7 +4,7 @@ import glob
 from .base import BaseCommand
 from ..parser import find_config_path
 from ..tasks.graph import TaskGraph
-
+from ..exceptions import ConfigurationNotFound
 
 class Command(BaseCommand):
     help_text = "Create and restore backup archives of workflows."
@@ -31,13 +31,17 @@ class Command(BaseCommand):
     def add_command_line_options(self):
         self.option_parser.add_argument(
             '--restore',
+            metavar='ARCHIVE_PATH',
             choices=self.get_available_archives(),
             default=False,
             nargs='?',
-            help="Restore the state of the workflow."
+            help=(
+                "Restore the state of the workflow. "
+                "Tab complete to view available archives."
+            ),
         )
         self.option_parser.add_argument(
             '--exclude-internals',
             action="store_true",
-            help="exclude internals in the .workflow/ directory from archive",
+            help="Exclude internals in the .workflow/ directory from archive",
         )

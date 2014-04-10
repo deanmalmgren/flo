@@ -1,6 +1,7 @@
 """Every workflow subcommand must have a Command class that inherits
 from base.BaseCommand.
 """
+import sys
 import os
 import argparse
 import glob
@@ -42,4 +43,8 @@ def run_subcommand(args):
     subcommand parser.
     """
     command = args.__dict__.pop("command")
-    command.execute(**args.__dict__)
+    try:
+        command.execute(**args.__dict__)
+    except CommandLineException, e:
+        print(e)
+        sys.exit(getattr(e, 'exit_code', 1))

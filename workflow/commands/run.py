@@ -33,8 +33,7 @@ class Command(BaseCommand, TaskIdMixin):
         try:
             self.inner_execute(task_id, force, dry_run)
         except CommandLineException, e:
-            print(e)
-            sys.exit(getattr(e, 'exit_code', 1))
+            raise
         finally:
             if notify_emails:
                 notify(*notify_emails)

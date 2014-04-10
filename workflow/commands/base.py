@@ -24,10 +24,7 @@ class BaseCommand(object):
         pass
 
     def _init_task_graph(self):
-        try:
-            self.task_graph = load_task_graph()
-        except ConfigurationNotFound:
-            self.task_graph = None
+        self.task_graph = load_task_graph()
 
     def execute(self, *args, **kwargs):
         self._init_task_graph()
@@ -45,7 +42,10 @@ class TaskKwargsListMixin(object):
     # local cache that is loaded once and inherited by all subclasses.
     @property
     def task_kwargs_list(self):
-        return get_task_kwargs_list()
+        try:
+            return get_task_kwargs_list()
+        except ConfigurationNotFound:
+            return []
 
 
 class TaskIdMixin(TaskKwargsListMixin):
