@@ -51,6 +51,7 @@ validate_example () {
         red "     test checksum=${test_checksum}"
         exit_code=$(expr ${exit_code} + 1)
     fi
+    cd $BASEDIR
 }
 
 # run a few examples to make sure the checksums match what they are
@@ -59,6 +60,9 @@ validate_example () {
 # correct checksum is
 validate_example hello-world fb8915998f1095695ec34bc579bb41e6
 validate_example model-correlations c07223b877e49ff8bb4559c2829cdd47
+
+# this runs specific tests for the --start-at option
+python test_start_at.py
 
 # exit with the sum of the status
 exit ${exit_code}

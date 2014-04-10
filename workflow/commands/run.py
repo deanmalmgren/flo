@@ -9,13 +9,12 @@ from .base import BaseCommand, TaskIdMixin
 class Command(BaseCommand, TaskIdMixin):
     help_text = "Run the task workflow."
 
-    def inner_execute(self, task_id, force, dry_run):
-
+    def inner_execute(self, task_id, force, dry_run, start_at):
         # restrict task graph as necessary for the purposes of running
         # the workflow
-        if task_id is not None:
-            self.task_graph = self.task_graph.subgraph_needed_for([task_id])
-
+        if task_id is not None or start_at is not None:
+            self.task_graph = self.task_graph.subgraph_needed_for(start_at,
+                                                                  task_id)
         # when the workflow is --force'd, this runs all
         # tasks. Otherwise, only runs tasks that are out of sync.
         if force:
@@ -28,10 +27,10 @@ class Command(BaseCommand, TaskIdMixin):
         self.task_graph.successful = True
 
     def execute(self, task_id=None, force=False, dry_run=False,
-                notify_emails=None):
+                notify_emails=None, start_at=None):
         super(Command, self).execute()
         try:
-            self.inner_execute(task_id, force, dry_run)
+            self.inner_execute(task_id, force, dry_run, start_at)
         except CommandLineException, e:
             raise
         finally:
@@ -64,3 +63,17 @@ class Command(BaseCommand, TaskIdMixin):
             help='Specify an email address to notify on completion.',
         )
         self.add_task_id_option('Specify a particular task to run.')
+
+        available_tasks = []
+        if self.task_graph:
+            available_tasks = self.task_graph.get_task_ids()
+        self.option_parser.add_argument(
+            '--start-at',
+            type=str,
+            metavar='TASK_ID',
+            choices=available_tasks,
+            help=(
+                'Specify a task to start from (run everything downstream, '
+                'ignore everything upstream).'
+            ),
+        )
