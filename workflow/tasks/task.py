@@ -68,9 +68,11 @@ class Task(resources.base.BaseResource):
         self.graph.add(self)
 
         # this is used to store resources that are associated with
-        # this task. This is set up in TaskGraph._link_dependencies
+        # this task. These data structures are managed within
+        # BaseResource
         self.depends_resources = []
         self.creates_resources = []
+        resources.add_to_task(self)
 
         # create some data structures for storing the set of tasks on
         # which this task depends (upstream_tasks) on what depends on

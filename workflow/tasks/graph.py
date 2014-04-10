@@ -169,47 +169,25 @@ class TaskGraph(object):
                 if dd is not None:
                     task.depends = dd
 
-    def _link_dependency_helper(self, task, dependency):
-        if dependency is not None:
-            dependent_task = self.task_dict.get(dependency, None)
-
-            # if dependent_task is None, make sure it exists on the
-            # filesystem otherwise this Task is not properly defined
-            if dependent_task is None:
-                filename = os.path.join(self.root_directory, dependency)
-                if not os.path.exists(filename):
-                    raise InvalidTaskDefinition(
-                        "Unknown `depends` declaration '%s'" % dependency
-                    )
-                return
-
-            # now add the task dependency
-            task.add_task_dependency(dependent_task)
-
     def _link_dependencies(self):
         """Iterate over all tasks and make connections between tasks based on
         their dependencies.
         """
         for task in self.task_list:
+            for resource in task.depends_resources:
+                if isinstance(resource.creates_task, Task):
+                    task.add_task_dependency(resource.creates_task)
 
-            # instantiate the resources associated with this task here
-            # to make sure we can resolve aliases if they exist.
-            task.depends_resources = resources.get_or_create(
-                self, task.depends_list
-            )
-            task.creates_resources = resources.get_or_create(
-                self, task.creates_list
-            )
-
-            # omit creates resources from pseudotasks. this is
-            # getting sloppy. should probably do this within a task?
-            if task.is_pseudotask():
-                task.creates_resources = []
-                del self.resource_dict[task.creates]
-
-            # link up the dependencies
-            for dependency in task.depends_list:
-                self._link_dependency_helper(task, dependency)
+        # # REGEX TODO: check to make sure that all creates and depends
+        # # statements either (i) refer to other tasks or (ii) refer to
+        # # a file on the filesystem.
+        # if dependent_task is None:
+        #     filename = os.path.join(self.root_directory, dependency)
+        #     if not os.path.exists(filename):
+        #         raise InvalidTaskDefinition(
+        #             "Unknown `depends` declaration '%s'" % dependency
+        #         )
+        #     return
 
     def get_user_clean_confirmation(self, task_list=None,
                                     include_internals=False):
