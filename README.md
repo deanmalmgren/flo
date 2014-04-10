@@ -285,9 +285,7 @@ dependencies.
 ##### workflow run --start-at=task_id
 
 Other times we do not want to run the entire workflow, but run
-everything after a specific component. Like GNU make, you can specify
-a particular task (either by its `alias` or its `creates`) on the
-command line like this:
+everything after a specific component. We can do that like this:
 
 ```bash
 workflow run --start-at=path/to/some/file.txt
