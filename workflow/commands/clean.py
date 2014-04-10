@@ -3,11 +3,12 @@ from .base import BaseCommand, TaskIdMixin
 
 class Command(BaseCommand, TaskIdMixin):
     help_text = (
-        "Remove all `creates` targets defined in workflow. If a `task_id` is"
+        "Remove all `creates` targets defined in workflow. If a `task_id` is "
         "specified, only remove that target."
     )
 
     def execute(self, task_id=None, force=False, include_internals=False):
+        super(Command, self).execute()
         kwargs = {
             'include_internals': include_internals,
         }

@@ -1,4 +1,4 @@
-from ..parser import load_task_graph
+from ..parser import load_task_graph, get_task_kwargs_list
 from ..exceptions import ConfigurationNotFound
 
 
@@ -6,11 +6,6 @@ class BaseCommand(object):
     help_text = ''
 
     def __init__(self, subcommand_creator):
-
-        try:
-            self.task_graph = load_task_graph()
-        except ConfigurationNotFound:
-            self.task_graph = None
 
         # set up the subcommand options
         self.subcommand_creator = subcommand_creator
@@ -28,23 +23,52 @@ class BaseCommand(object):
     def add_command_line_options(options):
         pass
 
+    def _init_task_graph(self):
+        try:
+            self.task_graph = load_task_graph()
+        except ConfigurationNotFound:
+            self.task_graph = None
+
     def execute(self, *args, **kwargs):
-        raise NotImplementedError("must be overwritten by base classes")
+        self._init_task_graph()
 
 
-class TaskIdMixin(object):
+class TaskKwargsListMixin(object):
+    """Any Command that uses workflow.yaml to influence available command
+    line options should inherit from this class so that we only read and
+    parse the workflow.yaml file *once*.
+    """
+
+    # this is a performance optimization to make it possible to use
+    # the workflow.yaml file to inform useful *and responsive* tab
+    # completion on the command line _task_kwargs_list is used as a
+    # local cache that is loaded once and inherited by all subclasses.
+    @property
+    def task_kwargs_list(self):
+        return get_task_kwargs_list()
+
+
+class TaskIdMixin(TaskKwargsListMixin):
+
+    @property
+    def available_task_ids(self):
+        task_ids = []
+        for task_kwargs in self.task_kwargs_list:
+            task_id = task_kwargs.get('alias') or task_kwargs.get('creates')
+            task_ids.append(task_id)
+        task_ids.sort()
+        return task_ids
+
     def add_task_id_option(self, help_text):
         """This method streamlines the addition of adding a task_id option to
         the command line parser.
         """
-        available_tasks = []
-        if self.task_graph:
-            available_tasks = self.task_graph.get_task_ids()
+        help_text += " Tab complete to view options."
         self.option_parser.add_argument(
             'task_id',
             metavar='TASK_ID',
             type=str,
-            choices=available_tasks,
+            choices=self.available_task_ids,
             nargs='?',
             help=help_text,
         )

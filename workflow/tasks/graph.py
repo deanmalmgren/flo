@@ -115,10 +115,6 @@ class TaskGraph(object):
                 out_of_sync_tasks.append(task)
         return out_of_sync_tasks
 
-    def get_task_ids(self):
-        """Get the list of all task ids"""
-        return [task.id for task in self.task_list]
-
     def add(self, task):
         """Connect the task to this TaskGraph instance. This stores the task
         in the TaskGraph.task_list and puts it in the
@@ -465,15 +461,3 @@ class TaskGraph(object):
         command = "tar xjf %s" % archive_name
         self.logger.info(colors.bold_white(command))
         shell.run(self.root_directory, command)
-
-    def get_available_archives(self):
-        """Method to list all of the available archives"""
-        available_archives = self.get_abs_available_archives()
-        return [os.path.relpath(a, self.root_directory)
-                for a in available_archives]
-
-    def get_abs_available_archives(self):
-        """Method to list all of the available archives"""
-        available_archives = glob.glob(os.path.join(self.abs_archive_dir, '*'))
-        available_archives.sort()
-        return available_archives

@@ -3,23 +3,17 @@ from base.BaseCommand.
 """
 import os
 import argparse
-import pkgutil
+import glob
 from importlib import import_module
 
 from ..exceptions import CommandLineException
 from .base import BaseCommand
+from . import run, clean, archive
 
-
-def _iter_command_cls():
-    """Dynamically find all modules in this directory with a Command
-    class that inherits from BaseCommand.
-    """
-    this_directory = os.path.dirname(os.path.abspath(__file__))
-    for dummy, module_name, dummy in pkgutil.iter_modules([this_directory]):
-        module = import_module("."+module_name, package=__package__)
-        command_cls = getattr(module, "Command", None)
-        if command_cls is not None and issubclass(command_cls, BaseCommand):
-            yield command_cls
+# NOTE: as of commit 54297065861b95922f1d26b892a63da33052a138, we
+# imported these modules dynamically but this is rather slow for
+# autocompletion
+COMMAND_MODULES = [run, clean, archive]
 
 
 def get_command_line_parser():
@@ -32,8 +26,8 @@ def get_command_line_parser():
     subcommand_creator = command_line_parser.add_subparsers(
         title='SUBCOMMANDS',
     )
-    for command_cls in _iter_command_cls():
-        command = command_cls(subcommand_creator)
+    for command_module in COMMAND_MODULES:
+        command = command_module.Command(subcommand_creator)
 
         # this sets a default value for the command "option" so
         # that, when this Command is selected by argparse from the

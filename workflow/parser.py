@@ -18,8 +18,10 @@ from . import tasks
 CONFIG_FILENAME = "workflow.yaml"
 TASKS_KEY = 'tasks'
 
-# this is a global cache of the workflow task_graph object so we
-# aren't creating a bunch of these when we run the workflow
+# these variables are used as a global cache to only parse the yaml
+# into python objects and create a TaskGraph instance *once* in the
+# entire workflow
+_task_kwargs_list = None
 _task_graph = None
 
 
@@ -67,6 +69,22 @@ def config_yaml2task_kwargs_list(config_yaml):
     return task_kwargs_list
 
 
+def get_task_kwargs_list():
+    """Get a list of dictionaries that are read from the workflow.yaml
+    file and collapse the global variables into each task.
+    """
+    global _task_kwargs_list
+    if _task_kwargs_list is None:
+        # get workflow configuration file
+        config_path = find_config_path()
+
+        # load the data
+        with open(config_path) as stream:
+            config_yaml = yaml.load_all(stream.read())
+        _task_kwargs_list = config_yaml2task_kwargs_list(config_yaml)
+    return _task_kwargs_list
+
+
 def load_task_graph():
     """Load the task graph from the configuration file located at
     config_path
@@ -75,15 +93,7 @@ def load_task_graph():
     if _task_graph is not None:
         return _task_graph
 
-    # get workflow configuration file
-    config_path = find_config_path()
-
-    # load the data
-    with open(config_path) as stream:
-        config_yaml = yaml.load_all(stream.read())
-    task_kwargs_list = config_yaml2task_kwargs_list(config_yaml)
-
     # convert each task_kwargs into a Task object and add it to the
     # TaskGraph
-    _task_graph = tasks.TaskGraph(config_path, task_kwargs_list)
+    _task_graph = tasks.TaskGraph(find_config_path(), get_task_kwargs_list())
     return _task_graph
