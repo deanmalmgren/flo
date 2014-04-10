@@ -54,9 +54,8 @@ class TaskIdMixin(TaskKwargsListMixin):
     def available_task_ids(self):
         task_ids = []
         for task_kwargs in self.task_kwargs_list:
-            if task_kwargs.get('alias'):
-                task_ids.append(task_kwargs.get('alias'))
-            task_ids.append(task_kwargs.get('creates'))
+            task_id = task_kwargs.get('alias') or task_kwargs.get('creates')
+            task_ids.append(task_id)
         task_ids.sort()
         return task_ids
 
@@ -64,6 +63,7 @@ class TaskIdMixin(TaskKwargsListMixin):
         """This method streamlines the addition of adding a task_id option to
         the command line parser.
         """
+        help_text += " Tab complete to view options."
         self.option_parser.add_argument(
             'task_id',
             metavar='TASK_ID',

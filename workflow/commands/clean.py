@@ -3,7 +3,7 @@ from .base import BaseCommand, TaskIdMixin
 
 class Command(BaseCommand, TaskIdMixin):
     help_text = (
-        "Remove all `creates` targets defined in workflow. If a `task_id` is"
+        "Remove all `creates` targets defined in workflow. If a `task_id` is "
         "specified, only remove that target."
     )
 
