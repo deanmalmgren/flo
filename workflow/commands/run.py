@@ -1,5 +1,6 @@
 import os
 import sys
+import re
 
 from ..exceptions import ShellError, CommandLineException
 from ..notify import notify
@@ -63,4 +64,27 @@ class Command(BaseCommand, TaskIdMixin):
             nargs=1,
             help='Specify an email address to notify on completion.',
         )
+        self.add_regexp_options()
         self.add_task_id_option('Specify a particular task to run.')
+
+    def add_regexp_options(self):
+        group = self.option_parser.add_argument_group(
+            'Regular expression completion options'
+        )
+        for task_kwargs in self.task_kwargs_list:
+            depends = task_kwargs.get('depends')
+            if isinstance(depends, (str, unicode)):
+                self.add_regexp_options_helper(group, depends)
+            elif isinstance(depends, (list, tuple)):
+                for d in depends:
+                    self.add_regexp_options_helper(group, d)
+
+    def add_regexp_options_helper(self, group, resource):
+        resource_regexp = re.compile(resource)
+        for regexp_option in resource_regexp.groupindex:
+            group.add_argument(
+                '--' + regexp_option.replace('_', '-'),
+                type=str,
+                nargs="?",
+                help='Specify particular regexp match for <%s>' % regexp_option,
+            )
