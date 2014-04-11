@@ -10,7 +10,10 @@ from .base import BaseCommand, TaskIdMixin
 class Command(BaseCommand, TaskIdMixin):
     help_text = "Run the task workflow."
 
-    def inner_execute(self, task_id, force, dry_run):
+    def inner_execute(self, task_id, force, dry_run, **kwargs):
+
+        # REGEXP TODO: limit task graph somehow when regexp kwargs are
+        # passed?
 
         # restrict task graph as necessary for the purposes of running
         # the workflow
@@ -29,10 +32,10 @@ class Command(BaseCommand, TaskIdMixin):
         self.task_graph.successful = True
 
     def execute(self, task_id=None, force=False, dry_run=False,
-                notify_emails=None):
+                notify_emails=None, **kwargs):
         super(Command, self).execute()
         try:
-            self.inner_execute(task_id, force, dry_run)
+            self.inner_execute(task_id, force, dry_run, **kwargs)
         except CommandLineException, e:
             raise
         finally:
