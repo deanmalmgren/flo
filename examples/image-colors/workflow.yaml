@@ -27,11 +27,11 @@ command:
 # one file at a time.
 ---
 alias: data/rgb
-creates: "{{alias}}/{{subdirectory}}/{{rootname}}.dat"
+creates: "data/rgb/{{subdirectory}}/{{rootname}}.dat"
 depends:
   - src/calculate_pixel_rgb.py
   - data/img/(?P<subdirectory>\w+)/(?P<rootname>\w+).jpg
   - data/img
 command:
-  - mkdir {{alias}}
+  - mkdir -p {{alias}}
   - python {{depends|join(' ')}} > {{creates}}
