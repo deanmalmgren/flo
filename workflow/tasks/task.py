@@ -2,6 +2,7 @@ import os
 import time
 import StringIO
 import copy
+import re
 
 import jinja2
 
@@ -44,12 +45,16 @@ class Task(resources.base.BaseResource):
         # purposes below
         self.attrs = kwargs
 
-        # render the creates and depends templates as necessary. this
-        # is to address issue #33
-        # https://github.com/deanmalmgren/data-workflow/issues/33
+        # render the creates and depends templates as necessary so
+        # that global variables can be used in the `creates` and
+        # `depends` declarations (#33).
+        self.alias = self.render_template(self._alias)
+        if self.depends_contains_regexp() and self.alias is None:
+            raise InvalidTaskDefinition(
+                "tasks with regexp in `depends` must define an `alias`"
+            )
         self.creates = self.render_template(self._creates)
         self.depends = self.render_template(self._depends)
-        self.alias = self.render_template(self._alias)
 
         # update the attrs to reflect any changes from the template
         # rendering from global variables
@@ -58,11 +63,6 @@ class Task(resources.base.BaseResource):
             'depends': self.depends,
             'alias': self.alias,
         })
-
-        # save the original command strings in _command for checking
-        # the state of this command and render the jinja template for
-        # the command
-        self.command = self.render_command_template()
 
         # add this task to the task graph
         self.graph.add(self)
@@ -119,6 +119,13 @@ class Task(resources.base.BaseResource):
         """
         return self.graph.root_directory
 
+    def depends_contains_regexp(self):
+        for depends in _cast_as_list(self._depends):
+            depends_regexp = re.compile(depends)
+            if depends_regexp.groupindex:
+                return True
+        return False
+
     def add_task_dependency(self, depends_on):
         self.upstream_tasks.add(depends_on)
         depends_on.downstream_tasks.add(self)
@@ -146,8 +153,8 @@ class Task(resources.base.BaseResource):
         # write the data for this task to a stream so that we can use
         # the machinery in self.get_stream_state to calculate the
         # state
-        msg = self.creates + str(self.depends) + str(self._command) + \
-            str(self.alias)
+        msg = self._creates + str(self._depends) + str(self._command) + \
+            str(self._alias)
         keys = self.attrs.keys()
         keys.sort()
         for k in keys:
@@ -197,6 +204,9 @@ class Task(resources.base.BaseResource):
 
     def timed_run(self):
         """Run the specified task from the root of the workflow"""
+
+        # render the command template now
+        self.command = self.render_command_template()
 
         # useful message about starting this task and what it is
         # called so users know how to re-call this task if they
