@@ -7,5 +7,6 @@ Pillow
 numpy>=1.4
 matplotlib
 
-# this is used for testing
+# these is used for testing
 pep8
+fabric
