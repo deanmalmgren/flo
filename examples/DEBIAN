@@ -5,3 +5,14 @@ unzip
 # Quick 'n dirty way of installing numpy and matplotlib dependencies
 python-numpy
 python-matplotlib
+
+# Pillow dependencies
+libtiff4-dev
+libjpeg8-dev
+zlib1g-dev
+libfreetype6-dev
+liblcms2-dev
+libwebp-dev
+tcl8.5-dev
+tk8.5-dev
+python-tk

@@ -68,9 +68,11 @@ class Task(resources.base.BaseResource):
         self.graph.add(self)
 
         # this is used to store resources that are associated with
-        # this task. This is set up in TaskGraph._link_dependencies
+        # this task. These data structures are managed within
+        # BaseResource
         self.depends_resources = []
         self.creates_resources = []
+        resources.add_to_task(self)
 
         # create some data structures for storing the set of tasks on
         # which this task depends (upstream_tasks) on what depends on
@@ -80,7 +82,7 @@ class Task(resources.base.BaseResource):
 
         # call the BaseResource.__init__ to get this to behave like an
         # resource here, too
-        super(Task, self).__init__(self.graph, 'config:'+self.id)
+        super(Task, self).__init__(self.graph, self.config_resource_id)
 
     @property
     def creates_list(self):
@@ -111,31 +113,68 @@ class Task(resources.base.BaseResource):
         return self.alias or self.creates
 
     @property
+    def config_resource_id(self):
+        """Canonical way to identify the resource id associated with this Task
+        """
+        return 'config:'+self.id
+
+    @property
     def root_directory(self):
         """Easy access to the graph's root_directory, which is stored once for
         every task
         """
         return self.graph.root_directory
 
+    def iter_resources(self):
+        if not self.is_pseudotask():
+            for resource in self.creates_resources:
+                yield resource
+        for resource in self.depends_resources:
+            yield resource
+
     def add_task_dependency(self, depends_on):
         self.upstream_tasks.add(depends_on)
         depends_on.downstream_tasks.add(self)
+
+    def substitute_dependencies(self):
+        """Substitute this task's dependencies into its upstream and
+        downstream tasks. This is useful when a Task is being removed
+        from the TaskGraph but its dependencies should be preserved
+        for the remaining tasks in the TaskGraph.
+        """
+        for downstream_task in self.downstream_tasks:
+            downstream_task.upstream_tasks.remove(self)
+            downstream_task.upstream_tasks.update(self.upstream_tasks)
+        for upstream_task in self.upstream_tasks:
+            upstream_task.downstream_tasks.remove(self)
+            upstream_task.downstream_tasks.update(self.downstream_tasks)
+
+    def disconnect_resources(self):
+        """Disconnect this task from all resources. This is useful when a Task
+        is being removed from the TaskGraph and we do not want the
+        Task's sync status affected.
+        """
+        for resource in self.depends_resources:
+            resource.depends_tasks.remove(self)
+            if len(resource.depends_tasks) == 0:
+                resource.delete()
+        for resource in self.creates_resources:
+            if resource.creates_task == self:
+                resource.delete()
+        self.graph.resource_dict.pop(self.config_resource_id)
 
     def reset_task_dependencies(self):
         self.upstream_tasks.clear()
         self.downstream_tasks.clear()
 
     def get_all_filenames(self):
+
         """Identify the set of all filenames that pertain to this task
         """
         # TODO: when we allow for non-filesystem targets, this will
         # have to change to accomodate
-        resources = []
-        if not self.is_pseudotask():
-            resources.extend(self.creates_resources)
-        resources.extend(self.depends_resources)
         all_filenames = set()
-        for resource in resources:
+        for resource in self.iter_resources():
             all_filenames.add(resource.get_filename())
         return all_filenames
 

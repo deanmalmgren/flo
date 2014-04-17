@@ -25,8 +25,32 @@ class BaseResource(object):
             )
         self.graph.resource_dict[name] = self
 
+        # these are data structures that are used to track tasks that
+        # have dependencies through this resource
+        self.creates_task = None
+        self.depends_tasks = []
+
     def __repr__(self):
         return self.name + ':' + str(id(self))
+
+    def add_creates_task(self, task):
+        if self.creates_task is not None:
+            msg = "Resource '%s' is created by more than one task" % self.name
+            raise NonUniqueTask(msg)
+        self.creates_task = task
+        task.creates_resources.append(self)
+
+    def add_depends_task(self, task):
+        self.depends_tasks.append(task)
+        task.depends_resources.append(self)
+
+    def delete(self):
+        self.graph.resource_dict.pop(self.name)
+        if self.creates_task:
+            self.creates_task.creates_resources.remove(self)
+        for task in self.depends_tasks:
+            task.depends_resources.remove(self)
+        del self
 
     @property
     def root_directory(self):

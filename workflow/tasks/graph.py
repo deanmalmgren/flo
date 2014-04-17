@@ -141,6 +141,28 @@ class TaskGraph(object):
             )
         self.task_dict[task.creates] = task
 
+    def remove_node_substituting_dependencies(self, task_id):
+        """Remove the Task associated with task_id and substitute its
+        downstream dependencies with task_id's dependencies
+        """
+        # remove this element from the TaskGraph
+        task = self.task_dict.pop(task_id)
+        self.task_list.remove(task)
+        if task_id in self.task_durations:
+            self.task_durations.pop(task_id)
+
+        # remove this task's resources if they are not specified in
+        # other tasks
+        task.disconnect_resources()
+
+        # substitute its dependencies so that its upstream and
+        # downstream nodes in the task graph know the proper execution
+        # order
+        task.substitute_dependencies()
+
+        # for good measure
+        del task
+
     def subgraph_needed_for(self, start_at, end_at):
         """Find the subgraph of all dependencies to run these tasks. Returns a
         new graph.
@@ -194,47 +216,14 @@ class TaskGraph(object):
                 if dd is not None:
                     task.depends = dd
 
-    def _link_dependency_helper(self, task, dependency):
-        if dependency is not None:
-            dependent_task = self.task_dict.get(dependency, None)
-
-            # if dependent_task is None, make sure it exists on the
-            # filesystem otherwise this Task is not properly defined
-            if dependent_task is None:
-                filename = os.path.join(self.root_directory, dependency)
-                if not os.path.exists(filename):
-                    raise InvalidTaskDefinition(
-                        "Unknown `depends` declaration '%s'" % dependency
-                    )
-                return
-
-            # now add the task dependency
-            task.add_task_dependency(dependent_task)
-
     def _link_dependencies(self):
         """Iterate over all tasks and make connections between tasks based on
         their dependencies.
         """
         for task in self.task_list:
-
-            # instantiate the resources associated with this task here
-            # to make sure we can resolve aliases if they exist.
-            task.depends_resources = resources.get_or_create(
-                self, task.depends_list
-            )
-            task.creates_resources = resources.get_or_create(
-                self, task.creates_list
-            )
-
-            # omit creates resources from pseudotasks. this is
-            # getting sloppy. should probably do this within a task?
-            if task.is_pseudotask():
-                task.creates_resources = []
-                del self.resource_dict[task.creates]
-
-            # link up the dependencies
-            for dependency in task.depends_list:
-                self._link_dependency_helper(task, dependency)
+            for resource in task.depends_resources:
+                if isinstance(resource.creates_task, Task):
+                    task.add_task_dependency(resource.creates_task)
 
     def get_user_clean_confirmation(self, task_list=None,
                                     include_internals=False):
