@@ -63,15 +63,11 @@ class Command(BaseCommand, TaskIdMixin):
             help='Specify an email address to notify on completion.',
         )
         self.add_task_id_option('Specify a particular task to run.')
-
-        available_tasks = []
-        if self.task_graph:
-            available_tasks = self.task_graph.get_task_ids()
         self.option_parser.add_argument(
             '--start-at',
             type=str,
             metavar='TASK_ID',
-            choices=available_tasks,
+            choices=self.available_task_ids,
             help=(
                 'Specify a task to start from (run everything downstream, '
                 'ignore everything upstream).'
