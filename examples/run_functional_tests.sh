@@ -63,7 +63,7 @@ validate_example model-correlations c07223b877e49ff8bb4559c2829cdd47
 
 # this runs specific tests for the --start-at option
 python test_start_at.py
-exit_code=$(expr ${exit_code} + 1)
+exit_code=$(expr ${exit_code} + $?)
 
 # test the --skip option to make sure everything works properly by
 # modifying a specific task that would otherwise branch to other tasks
