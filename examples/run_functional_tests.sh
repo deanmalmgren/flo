@@ -63,6 +63,22 @@ validate_example model-correlations c07223b877e49ff8bb4559c2829cdd47
 
 # this runs specific tests for the --start-at option
 python test_start_at.py
+exit_code=$(expr ${exit_code} + 1)
+
+# test the --skip option to make sure everything works properly by
+# modifying a specific task that would otherwise branch to other tasks
+# and make sure that skipping it does not trigger the workflow to run
+cd $BASEDIR/model-correlations
+workflow run -f
+sed -i 's/\+1/+2/g' workflow.yaml
+workflow run --skip data/x_y.dat
+grep "No tasks are out of sync" .workflow/workflow.log > /dev/null
+exit_code=$(expr ${exit_code} + $?)
+workflow run
+grep "|-> cut " .workflow/workflow.log > /dev/null
+exit_code=$(expr ${exit_code} + $?)
+sed -i 's/\+2/+1/g' workflow.yaml
+cd $BASEDIR
 
 # exit with the sum of the status
 exit ${exit_code}
