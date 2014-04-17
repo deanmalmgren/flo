@@ -9,7 +9,7 @@ from .base import BaseCommand, TaskIdMixin
 class Command(BaseCommand, TaskIdMixin):
     help_text = "Run the task workflow."
 
-    def inner_execute(self, task_id, force, dry_run, start_at):
+    def inner_execute(self, task_id, force, dry_run, start_at, skip):
         # restrict task graph as necessary for the purposes of running
         # the workflow
         if task_id is not None or start_at is not None:
@@ -27,10 +27,10 @@ class Command(BaseCommand, TaskIdMixin):
         self.task_graph.successful = True
 
     def execute(self, task_id=None, force=False, dry_run=False,
-                notify_emails=None, start_at=None):
+                notify_emails=None, start_at=None, skip=None):
         super(Command, self).execute()
         try:
-            self.inner_execute(task_id, force, dry_run, start_at)
+            self.inner_execute(task_id, force, dry_run, start_at, skip)
         except CommandLineException, e:
             raise
         finally:
@@ -72,4 +72,11 @@ class Command(BaseCommand, TaskIdMixin):
                 'Specify a task to start from (run everything downstream, '
                 'ignore everything upstream).'
             ),
+        )
+        self.option_parser.add_argument(
+            '--skip',
+            type=str,
+            metavar='TASK_ID',
+            choices=self.available_task_ids,
+            help='Skip the specified task and ignore whether it is in sync.',
         )
