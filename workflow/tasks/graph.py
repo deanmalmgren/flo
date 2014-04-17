@@ -148,7 +148,7 @@ class TaskGraph(object):
         # remove this element from the TaskGraph
         task = self.task_dict.pop(task_id)
         self.task_list.remove(task)
-        if self.task_durations.has_key(task_id):
+        if task_id in self.task_durations:
             self.task_durations.pop(task_id)
 
         # remove this task's resources if they are not specified in
