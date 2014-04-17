@@ -23,7 +23,7 @@ def get_or_create(task, candidate_list, creates_or_depends):
             # bind the task to the appropriate data structure
             # depending on whether this task creates this resource or
             # depends on this resource.
-            if creates_or_depends=='creates':
+            if creates_or_depends == 'creates':
                 resource.add_creates_task(task)
             else:
                 resource.add_depends_task(task)

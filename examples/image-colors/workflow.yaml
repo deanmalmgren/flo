@@ -34,5 +34,5 @@ depends:
   - data/img/(?P<subdirectory>\w+)/(?P<rootname>\w+).jpg
   - data/img
 command:
-  - mkdir -p {{alias}}
+  - mkdir -p $(dirname {{creates}})
   - python {{depends|join(' ')}} > {{creates}}

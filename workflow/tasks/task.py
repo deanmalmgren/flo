@@ -132,11 +132,14 @@ class Task(resources.base.BaseResource):
         """If this Task has a `depends` that contains a regular expression,
         iterate over all matches and return the corresponding yaml_data.
         """
+        # clone the yaml_data from self and make sure to add self as a
+        # dependency
         yaml_data = self.yaml_data
+        yaml_data['depends'] = _cast_as_list(yaml_data['depends'])
+        yaml_data['depends'].append(self.creates) #yaml_data['creates'])
 
         # for each depends with a regexp, find matching files on
         # the filesystem
-        yaml_data['depends'] = _cast_as_list(yaml_data['depends'])
         regexp_indices = []
         regexp_matches = []
         for i, depends in enumerate(yaml_data['depends']):
@@ -243,7 +246,7 @@ class Task(resources.base.BaseResource):
         # if this contains a regular expression, need to get out of
         # this phase
         if self.depends_contains_regexp():
-            self.graph.expand_regexp_task(self)
+            self.graph.clone_regexp_task(self)
             return
 
         # useful message about starting this task and what it is

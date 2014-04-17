@@ -62,20 +62,19 @@ class TaskGraph(object):
             self._link_dependencies(task)
         self._load_state()
 
-    def expand_regexp_task(self, task):
+    def clone_regexp_task(self, task):
         """Expand `task` to add Tasks to graph that match regular expressions
         specified in task.depends.
         """
+
         for new_task_kwargs in task.iter_regexp_yaml_data():
             new_task = Task(self, **new_task_kwargs)
 
             # make sure new_task is properly linked to all of the
             # task's upstream and downstream dependencies
             self._dereference_depends_aliases(new_task)
+            
             self._link_dependencies(new_task)
-
-            # REGEX TODO make sure new_task's resources are properly
-            # setup
 
     def iter_graph(self, tasks=None, downstream=True):
         """Iterate over graph with breadth-first search of task dependencies,
