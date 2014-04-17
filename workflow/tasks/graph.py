@@ -141,6 +141,28 @@ class TaskGraph(object):
             )
         self.task_dict[task.creates] = task
 
+    def remove_node_substituting_dependencies(self, task_id):
+        """Remove the Task associated with task_id and substitute its
+        downstream dependencies with task_id's dependencies
+        """
+        # remove this element from the TaskGraph
+        task = self.task_dict.pop(task_id)
+        self.task_list.remove(task)
+        if self.task_durations.has_key(task_id):
+            self.task_durations.pop(task_id)
+
+        # remove this task's resources if they are not specified in
+        # other tasks
+        task.disconnect_resources()
+
+        # substitute its dependencies so that its upstream and
+        # downstream nodes in the task graph know the proper execution
+        # order
+        task.substitute_dependencies()
+
+        # for good measure
+        del task
+
     def subgraph_needed_for(self, start_at, end_at):
         """Find the subgraph of all dependencies to run these tasks. Returns a
         new graph.
@@ -202,17 +224,6 @@ class TaskGraph(object):
             for resource in task.depends_resources:
                 if isinstance(resource.creates_task, Task):
                     task.add_task_dependency(resource.creates_task)
-
-        # # REGEX TODO: check to make sure that all creates and depends
-        # # statements either (i) refer to other tasks or (ii) refer to
-        # # a file on the filesystem.
-        # if dependent_task is None:
-        #     filename = os.path.join(self.root_directory, dependency)
-        #     if not os.path.exists(filename):
-        #         raise InvalidTaskDefinition(
-        #             "Unknown `depends` declaration '%s'" % dependency
-        #         )
-        #     return
 
     def get_user_clean_confirmation(self, task_list=None,
                                     include_internals=False):

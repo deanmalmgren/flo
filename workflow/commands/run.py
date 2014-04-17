@@ -15,6 +15,13 @@ class Command(BaseCommand, TaskIdMixin):
         if task_id is not None or start_at is not None:
             self.task_graph = self.task_graph.subgraph_needed_for(start_at,
                                                                   task_id)
+
+        # if we are skipping a task, remove it from the task graph to
+        # take it out of execution flow and avoid updating its status
+        # in .workflow/state.csv
+        if skip:
+            self.task_graph.remove_node_substituting_dependencies(skip)
+
         # when the workflow is --force'd, this runs all
         # tasks. Otherwise, only runs tasks that are out of sync.
         if force:

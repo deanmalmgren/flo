@@ -44,6 +44,14 @@ class BaseResource(object):
         self.depends_tasks.append(task)
         task.depends_resources.append(self)
 
+    def delete(self):
+        self.graph.resource_dict.pop(self.name)
+        if self.creates_task:
+            self.creates_task.creates_resources.remove(self)
+        for task in self.depends_tasks:
+            task.depends_resources.remove(self)
+        del self
+
     @property
     def root_directory(self):
         """Easy access to the graph's root_directory, which is stored once for
