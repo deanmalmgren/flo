@@ -6,6 +6,7 @@ from ..parser import find_config_path
 from ..tasks.graph import TaskGraph
 from ..exceptions import ConfigurationNotFound
 
+
 class Command(BaseCommand):
     help_text = "Create and restore backup archives of workflows."
 
