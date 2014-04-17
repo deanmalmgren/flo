@@ -76,19 +76,17 @@ class TaskGraph(object):
             updownstream = 'upstream_tasks'
         horizon = collections.deque(tasks)
         done, horizon_set = set(), set(tasks)
-        task_order = []
         popmethod = getattr(horizon, popmethod)
         while horizon:
             task = popmethod()
             horizon_set.discard(task)
             done.add(task)
-            task_order.append(task)
+            yield task
             updownset = getattr(task, updownstream)
             for task in updownset.difference(done):
                 if task not in horizon_set:
                     horizon.append(task)
                     horizon_set.add(task)
-        return task_order
 
     def get_source_tasks(self):
         """Get the set of tasks that do not depend on anything else.
