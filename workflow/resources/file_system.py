@@ -10,6 +10,9 @@ class FileSystem(BaseResource):
 
     def __init__(self, *args, **kwargs):
         super(FileSystem, self).__init__(*args, **kwargs)
+        # REGEXP TODO: make sure this is *not* an absolute path. these
+        # are assumed to be relative paths by the
+        # resources.find_regexp_matches function
         self.resource_path = os.path.realpath(
             os.path.join(self.root_directory, self.name)
         )

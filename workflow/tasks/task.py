@@ -3,6 +3,7 @@ import time
 import StringIO
 import copy
 import re
+import itertools
 
 import jinja2
 
@@ -21,6 +22,11 @@ def _cast_as_list(obj):
         return [obj]
     else:
         raise TypeError("unexpected type passed to _cast_as_list")
+
+
+def _is_regexp(s):
+    r = re.compile(s)
+    return bool(r.groupindex)
 
 
 class Task(resources.base.BaseResource):
@@ -63,6 +69,9 @@ class Task(resources.base.BaseResource):
             'depends': self.depends,
             'alias': self.alias,
         })
+
+        # render the command template
+        self.command = self.render_command_template()
 
         # add this task to the task graph
         self.graph.add(self)
@@ -119,12 +128,38 @@ class Task(resources.base.BaseResource):
         """
         return self.graph.root_directory
 
+    def iter_regexp_yaml_data(self):
+        """If this Task has a `depends` that contains a regular expression,
+        iterate over all matches and return the corresponding yaml_data.
+        """
+        yaml_data = self.yaml_data
+
+        # for each depends with a regexp, find matching files on
+        # the filesystem
+        yaml_data['depends'] = _cast_as_list(yaml_data['depends'])
+        regexp_indices = []
+        regexp_matches = []
+        for i, depends in enumerate(yaml_data['depends']):
+            if _is_regexp(depends):
+                regexp_indices.append(i)
+                regexp_matches.append(resources.find_regexp_matches(
+                    self.root_directory, 
+                    depends,
+                ))
+
+        # iterate over all permutations of the regexp matches to
+        # make sure we account for situations that would have
+        # depends with more than one regular expression
+        for matches in itertools.product(*regexp_matches):
+            for i, match in zip(regexp_indices, matches):
+                this_yaml_data = copy.deepcopy(yaml_data)
+                this_yaml_data['depends'][i] = match.string
+                this_yaml_data.update(match.groupdict())
+                this_yaml_data.pop('alias')
+                yield this_yaml_data
+
     def depends_contains_regexp(self):
-        for depends in _cast_as_list(self._depends):
-            depends_regexp = re.compile(depends)
-            if depends_regexp.groupindex:
-                return True
-        return False
+        return any(map(_is_regexp, _cast_as_list(self._depends)))
 
     def add_task_dependency(self, depends_on):
         self.upstream_tasks.add(depends_on)
@@ -205,8 +240,11 @@ class Task(resources.base.BaseResource):
     def timed_run(self):
         """Run the specified task from the root of the workflow"""
 
-        # render the command template now
-        self.command = self.render_command_template()
+        # if this contains a regular expression, need to get out of
+        # this phase
+        if self.depends_contains_regexp():
+            self.graph.expand_regexp_task(self)
+            return
 
         # useful message about starting this task and what it is
         # called so users know how to re-call this task if they

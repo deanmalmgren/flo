@@ -1,3 +1,6 @@
+import os
+import re
+
 from . import base
 from .file_system import FileSystem
 from ..exceptions import NonUniqueTask
@@ -38,3 +41,29 @@ def add_to_task(task):
     get_or_create(task, task.depends_list, 'depends')
     if not task.is_pseudotask():
         get_or_create(task, task.creates_list, 'creates')
+
+
+def find_regexp_matches(root_directory, regexp_str):
+    """This function returns a list of all filenames matching regexp_str
+    in the form of a regular expression match.
+    """
+    regexp_matches = []
+    regexp = re.compile(regexp_str)
+    # NOTE: this os.walk is probably the stupidest possible way to do
+    # this. I'm sure there's a more efficient way to address this
+    # issue, but I'm not going to worry about that yet.
+    #
+    # NOTE: This only works for files right now. no support for
+    # directories (for better or worse) and its not terribly obvious
+    # whether/how this extends to other resource protocols (e.g.,
+    # mysql:database/table)
+    filesystem_crawler = os.walk(root_directory, followlinks=True)
+    for directory, dirnames, filenames in filesystem_crawler:
+        for filename in filenames:
+            abs_filename = os.path.join(directory, filename)
+            rel_filename = os.path.relpath(abs_filename, root_directory)
+            match = regexp.match(rel_filename)
+            if match:
+                regexp_matches.append(match)
+    return regexp_matches
+

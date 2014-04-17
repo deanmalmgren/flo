@@ -56,9 +56,26 @@ class TaskGraph(object):
         # add tasks and load all dependencies between tasks
         for task_kwargs in task_kwargs_list:
             task = Task(self, **task_kwargs)
-        self._dereference_depends_aliases()
-        self._link_dependencies()
+        for task in self.task_list:
+            self._dereference_depends_aliases(task)
+        for task in self.task_list:
+            self._link_dependencies(task)
         self._load_state()
+
+    def expand_regexp_task(self, task):
+        """Expand `task` to add Tasks to graph that match regular expressions
+        specified in task.depends.
+        """
+        for new_task_kwargs in task.iter_regexp_yaml_data():
+            new_task = Task(self, **new_task_kwargs)
+
+            # make sure new_task is properly linked to all of the
+            # task's upstream and downstream dependencies
+            self._dereference_depends_aliases(new_task)
+            self._link_dependencies(new_task)
+
+            # REGEX TODO make sure new_task's resources are properly
+            # setup
 
     def iter_graph(self, tasks=None, downstream=True):
         """Iterate over graph with breadth-first search of task dependencies,
@@ -152,29 +169,26 @@ class TaskGraph(object):
             if task.alias == name:
                 return task.creates
 
-    def _dereference_depends_aliases(self):
+    def _dereference_depends_aliases(self, task):
         """This converts every alias used in a depends statement into the
         corresponding `creates` element in that task declaration.
         """
-        for task in self.task_list:
-            if isinstance(task.depends, (list, tuple)):
-                for i, d in enumerate(task.depends):
-                    dd = self._dereference_alias_helper(d)
-                    if dd is not None:
-                        task.depends[i] = dd
-            else:
-                dd = self._dereference_alias_helper(task.depends)
+        if isinstance(task.depends, (list, tuple)):
+            for i, d in enumerate(task.depends):
+                dd = self._dereference_alias_helper(d)
                 if dd is not None:
-                    task.depends = dd
+                    task.depends[i] = dd
+        else:
+            dd = self._dereference_alias_helper(task.depends)
+            if dd is not None:
+                task.depends = dd
 
-    def _link_dependencies(self):
-        """Iterate over all tasks and make connections between tasks based on
-        their dependencies.
+    def _link_dependencies(self, task):
+        """Make connections between tasks based on their dependent resources.
         """
-        for task in self.task_list:
-            for resource in task.depends_resources:
-                if isinstance(resource.creates_task, Task):
-                    task.add_task_dependency(resource.creates_task)
+        for resource in task.depends_resources:
+            if isinstance(resource.creates_task, Task):
+                task.add_task_dependency(resource.creates_task)
 
         # # REGEX TODO: check to make sure that all creates and depends
         # # statements either (i) refer to other tasks or (ii) refer to

@@ -17,6 +17,7 @@ depends:
   - data/abstract.zip
   - data/artphoto.zip
 command: 
+  - rm -rf {{creates}}
   - mkdir -p {{creates}}
   - for archive in {{depends|join(' ')}}; do unzip -d {{creates}} $archive; done
 
