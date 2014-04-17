@@ -282,13 +282,13 @@ This limits `workflow` to only executing the task defined in
 `path/to/some/output/file.txt` and all of its recursive upstream
 dependencies.
 
-##### workflow run --start-at=task_id
+##### workflow run --start-at task_id
 
 Other times we do not want to run the entire workflow, but run
 everything after a specific component. We can do that like this:
 
 ```bash
-workflow run --start-at=path/to/some/file.txt
+workflow run --start-at path/to/some/file.txt
 ```
 
 This limits `workflow` to only executing the task defined in
@@ -299,6 +299,19 @@ tasks between two specified tasks like this:
 ```bash
 workflow run --start-at=path/to/some/file.txt path/to/some/output/file.txt
 ```
+
+##### workflow run --skip task_id
+
+In some situations --- especially with very long-running tasks ---
+it is convenient to be able to skip particular tasks like this:
+
+```bash
+workflow run --skip path/to/some/file.txt
+```
+
+This eliminates the task associated with `path/to/some/file.txt` from
+the workflow but preserves the dependency chain so that other tasks
+are still executed in the proper order.
 
 ##### workflow run --dry-run
 
