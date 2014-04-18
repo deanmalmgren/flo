@@ -1,5 +1,5 @@
 """This set of modules is intended to parse and process the
-CONFIG_FILENAME, workflow.yaml, into a TaskGraph object. This also
+CONFIG_FILENAME, flo.yaml, into a TaskGraph object. This also
 provides a singleton instance of the TaskGraph (often called
 'task_graph') that can be accessed from anywhere.
 
@@ -15,7 +15,7 @@ from . import tasks
 
 # TODO: probably this should be configurable (and even specified on
 # the command line somehow)
-CONFIG_FILENAME = "workflow.yaml"
+CONFIG_FILENAME = "flo.yaml"
 TASKS_KEY = 'tasks'
 
 # these variables are used as a global cache to only parse the yaml
@@ -70,7 +70,7 @@ def config_yaml2task_kwargs_list(config_yaml):
 
 
 def get_task_kwargs_list():
-    """Get a list of dictionaries that are read from the workflow.yaml
+    """Get a list of dictionaries that are read from the flo.yaml
     file and collapse the global variables into each task.
     """
     global _task_kwargs_list

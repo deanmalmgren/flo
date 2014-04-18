@@ -32,7 +32,7 @@ class Command(BaseCommand, TaskIdMixin):
         self.option_parser.add_argument(
             '--include-internals',
             action="store_true",
-            help="Remove all files in the .workflow/ directory.",
+            help="Remove all files in the .flo/ directory.",
         )
         self.add_task_id_option(
             'Specify a particular task to clean rather than all of them.'

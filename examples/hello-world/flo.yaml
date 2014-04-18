@@ -1,4 +1,4 @@
-# This is the most basic workflow.yaml specification. every task YAML
+# This is the most basic flo.yaml specification. every task YAML
 # object (separated by `---`) contains a `creates` target, which
 # specifies the file that should be created after the `command`s are
 # run. `command` can either be a sequence of steps or a standalone

@@ -45,7 +45,7 @@ class Task(resources.base.BaseResource):
 
         # render the creates and depends templates as necessary. this
         # is to address issue #33
-        # https://github.com/deanmalmgren/data-workflow/issues/33
+        # https://github.com/deanmalmgren/flo/issues/33
         self.creates = self.render_template(self._creates)
         self.depends = self.render_template(self._depends)
 

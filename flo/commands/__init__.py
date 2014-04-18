@@ -1,4 +1,4 @@
-"""Every workflow subcommand must have a Command class that inherits
+"""Every flo subcommand must have a Command class that inherits
 from base.BaseCommand.
 """
 import sys
@@ -22,7 +22,7 @@ def get_command_line_parser():
     in this sub-package.
     """
     command_line_parser = argparse.ArgumentParser(
-        description="Execute data workflows defined in workflow.yaml files",
+        description="Execute data workflows defined in flo.yaml files",
     )
     subcommand_creator = command_line_parser.add_subparsers(
         title='SUBCOMMANDS',

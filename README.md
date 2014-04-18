@@ -33,16 +33,16 @@ for these tools, but rather to be the glue that sticks them together.
 1. *Install this pacakge.*
 
    ```bash
-   pip install -e git+https://github.com/deanmalmgren/data-workflow#egg=workflow
+   pip install -e git+https://github.com/deanmalmgren/flo#egg=flo
    ```
 
-2. *Write a workflow.yaml.* Create a `workflow.yaml` file in the root
-   of your project. `workflow.yaml` can
-   [have many features](#workflowyaml-specification), but the basic
+2. *Write a flo.yaml.* Create a `flo.yaml` file in the root
+   of your project. `flo.yaml` can
+   [have many features](#floyaml-specification), but the basic
    idea is to make it easy to quickly define a sequence of dependent
    tasks in an easy-to-read way. There are several
    [examples](examples/), the simplest of which is the
-   [hello-world example](examples/hello-world/workflow.yaml). Briefly,
+   [hello-world example](examples/hello-world/flo.yaml). Briefly,
    every task is a YAML object that has a `creates` key that
    represents the resource that is created by this task and a
    `command` key that defines the command that are required to create
@@ -54,12 +54,12 @@ for these tools, but rather to be the glue that sticks them together.
    a subcomponent of the analysis.
 
 3. *Execute your workflow.* From the same directory as the
-   `workflow.yaml` file (or any child directory), execute `workflow run` and
-   this will run each task defined in your `workflow.yaml` until
+   `flo.yaml` file (or any child directory), execute `flo run` and
+   this will run each task defined in your `flo.yaml` until
    everything is complete. If any task definition in the
-   `workflow.yaml` or the contents of its dependencies change,
-   re-running `workflow run` will only redo the parts of the workflow that
-   are out of sync since the last time you ran it. The `workflow`
+   `flo.yaml` or the contents of its dependencies change,
+   re-running `flo run` will only redo the parts of the workflow that
+   are out of sync since the last time you ran it. The `flo`
    command has
    [several other convenience options](#command-line-interface) to
    facilitate quickly writing data workflows. Running the
@@ -77,11 +77,11 @@ for these tools, but rather to be the glue that sticks them together.
    simulation that takes a long time.
 
 
-### workflow.yaml specification
+### flo.yaml specification
 
 Individual analysis tasks are defined as
 [YAML objects](http://en.wikipedia.org/wiki/YAML#Associative_arrays)
-in `workflow.yaml` with something like this:
+in `flo.yaml` with something like this:
 
 ```yaml
 ---
@@ -99,7 +99,7 @@ the above order is chosen for explanatory purposes only.
 
 The `creates` key defines the resource that is created. By default, it
 is interpretted as a path to a file (relative paths are interpretted
-as relative to the `workflow.yaml` file). You can also specify a
+as relative to the `flo.yaml` file). You can also specify a
 protocol, such as `mysql:database/table` (see yet-to-be-implemented #15),
 for non-file based resources.
 
@@ -108,7 +108,7 @@ for non-file based resources.
 The `depends` key defines the resource(s) on which this task
 depends. It is common for `depends` to specify many things, including
 data analysis scripts or other tasks from within the
-`workflow.yaml`. Multiple dependencies can be defined in a
+`flo.yaml`. Multiple dependencies can be defined in a
 [YAML list](http://en.wikipedia.org/wiki/YAML#Lists) like this:
 
 ```yaml
@@ -137,9 +137,9 @@ tasks like this:
 ```yaml
 creates: figures         # name of pseudotask
 depends:
-  - path/to/figure/a.png # refers to another task in workflow.yaml
-  - path/to/figure/b.png # refers to another task in workflow.yaml
-  - path/to/figure/c.png # refers to another task in workflow.yaml
+  - path/to/figure/a.png # refers to another task in flo.yaml
+  - path/to/figure/b.png # refers to another task in flo.yaml
+  - path/to/figure/c.png # refers to another task in flo.yaml
 ```
 
 ##### templating variables
@@ -161,7 +161,7 @@ command: python {{depends}} {{sigma} > {{creates}}
 In the aforementioned example, `sigma` is only available when rendering
 the jinja template for that task. If you'd like to use `sigma` in
 several other tasks, you can alternatively put it in a global
-namespace in a workflow.yaml like this
+namespace in a flo.yaml like this
 ([similar example here]("examples/model-correlations")):
 
 ```yaml
@@ -183,7 +183,7 @@ tasks:
 Another common use case for global variables is when you have several
 tasks that all depend on the same file. You can also use jinja
 templating in the `creates` and `depends` attributes of your
-`workflow.yaml` like this:
+`flo.yaml` like this:
 
 ```yaml
 ---
@@ -209,58 +209,58 @@ tasks:
 ```
 
 There are several [examples](examples/) for more inspiration on how
-you could use the workflow.yaml specification. If you have suggestions
+you could use the flo.yaml specification. If you have suggestions
 for other ideas, please [add them](issues)!
 
 
 ### command line interface
 
-This package ships with the `workflow` command, which embodies the
+This package ships with the `flo` command, which embodies the
 entire command line interface for this package. This command can be
-run from the directory that contains `workflow.yaml` or any of its
+run from the directory that contains `flo.yaml` or any of its
 child directories. Output has been formatted to be as useful as
 possible, including the task names that are run, the commands that are
 run, and how long each task takes. For convenience, this information
-is also stored in `.workflow/workflow.log`. Here, we elaborate on a
-few key features of `workflow`; see `workflow --help` for details
+is also stored in `.flo/flo.log`. Here, we elaborate on a
+few key features of `flo`; see `flo --help` for details
 about all available functionality,
 
-##### workflow run
+##### flo run
 
-By default, the `workflow run` command will execute the entire
+By default, the `flo run` command will execute the entire
 workflow, or at least the portion of it that is "out of sync" since
-the last time it ran. Executing `workflow run` twice in a row without
+the last time it ran. Executing `flo run` twice in a row without
 editing any files in the interim will not rerun any steps. If you edit
-a particular file in the workflow and re-execute `workflow run`, this
+a particular file in the workflow and re-execute `flo run`, this
 will only re-execute the parts that have been affected by the
 change. This makes it very easy to iterate quickly on data analysis
 problems without having to worry about re-running an arsenal commands
---- you only have to remember one, `workflow run`.
+--- you only have to remember one, `flo run`.
 
 ```bash
-workflow run                # runs everything for the first time
-workflow run                # nothing changed; runs nothing
+flo run                # runs everything for the first time
+flo run                # nothing changed; runs nothing
 edit path/to/some/script.py
-workflow run                # only runs the parts that are affected by change
+flo run                # only runs the parts that are affected by change
 ```
 
-Importantly, if you edit a particular task in the `workflow.yaml`
+Importantly, if you edit a particular task in the `flo.yaml`
 itself, this will cause that particular task to be re-run as well:
 
 ```bash
-workflow run
-edit workflow.yaml          # change a particular task's command
-workflow run                # rerun's that command and any dependent task
+flo run
+edit flo.yaml          # change a particular task's command
+flo run                # rerun's that command and any dependent task
 ```
 
-The `workflow` command is able to do this by tracking the status of
+The `flo` command is able to do this by tracking the status of
 all `creates`, `depends`, and task definitions by hashing the contents
 of these resources. If the contents in any `depends` or the task
-itself has changed since the last time that task was run, `workflow`
+itself has changed since the last time that task was run, `flo`
 will run that task. For reference, the hashes of all of the `creates`,
-`depends`, and workflow task definitions are in `.workflow/state.csv`.
+`depends`, and workflow task definitions are in `.flo/state.csv`.
 
-##### workflow run task_id
+##### flo run task_id
 
 Oftentimes we do not want to run the entire workflow, but only a
 particular component of it. Like GNU make, you can specify a
@@ -268,45 +268,45 @@ particular task by its `creates` value on the
 command line like this:
 
 ```bash
-workflow run path/to/some/output/file.txt
+flo run path/to/some/output/file.txt
 ```
 
-This limits `workflow` to only executing the task defined in
+This limits `flo` to only executing the task defined in
 `path/to/some/output/file.txt` and all of its recursive upstream
 dependencies.
 
-##### workflow run --start-at task_id
+##### flo run --start-at task_id
 
 Other times we do not want to run the entire workflow, but run
 everything after a specific component. We can do that like this:
 
 ```bash
-workflow run --start-at path/to/some/file.txt
+flo run --start-at path/to/some/file.txt
 ```
 
-This limits `workflow` to only executing the task defined in
+This limits `flo` to only executing the task defined in
 `path/to/some/file.txt` and all of its recursive **downstream**
 dependencies. This can be combined with `run task_id` to only all
 tasks between two specified tasks like this:
 
 ```bash
-workflow run --start-at=path/to/some/file.txt path/to/some/output/file.txt
+flo run --start-at=path/to/some/file.txt path/to/some/output/file.txt
 ```
 
-##### workflow run --skip task_id
+##### flo run --skip task_id
 
 In some situations --- especially with very long-running tasks ---
 it is convenient to be able to skip particular tasks like this:
 
 ```bash
-workflow run --skip path/to/some/file.txt
+flo run --skip path/to/some/file.txt
 ```
 
 This eliminates the task associated with `path/to/some/file.txt` from
 the workflow but preserves the dependency chain so that other tasks
 are still executed in the proper order.
 
-##### workflow run --dry-run
+##### flo run --dry-run
 
 While [we don't recommend it](#op-ed), its not uncommon to get "in the
 zone" and make several edits to analysis scripts before re-running
@@ -317,74 +317,74 @@ which commands will be run and approximately how much time it should
 take (!!!).
 
 ```bash
-workflow run
+flo run
 edit path/to/some/script.py
 edit path/to/another/script.py
-workflow run --dry-run     # don't run anything, just report what would be done
+flo run --dry-run     # don't run anything, just report what would be done
 ```
 
-For reference, `workflow` stores the duration of each task in
-`.workflow/duration.csv`.
+For reference, `flo` stores the duration of each task in
+`.flo/duration.csv`.
 
-##### workflow run --force
+##### flo run --force
 
 Sometimes it is convenient to rerun an entire workflow, regardless of
 the current status of the files that were generated.
 
 ```bash
-workflow run
+flo run
 # don't do anything for several months
 echo "Rip Van Winkle awakens and wonders, where did I leave off again?"
 echo "Screw it, lets just redo the entire analysis"
-workflow run --force
+flo run --force
 ```
 
-##### workflow run --notify
+##### flo run --notify
 
 For long-running workflows, it is convenient to be alerted when the
 entire workflow completes. The `--notify` command line option makes it
-possible to have the last 100 lines of the `.workflow/workflow.log`
+possible to have the last 100 lines of the `.flo/flo.log`
 sent to an email address specified on the command line.
 
 ```bash
-workflow run --notify j.doe@example.com
+flo run --notify j.doe@example.com
 ```
 
-##### workflow clean
+##### flo clean
 
 Sometimes you want to start with a clean slate. Perhaps the data you
 originally started with is dated or you want to be confident a
 workflow properly runs from start to finish before inviting
-collaborators. Whatever the case, the `workflow clean` command can be
+collaborators. Whatever the case, the `flo clean` command can be
 useful for removing all `creates` targets that are defined in
-`workflow.yaml`. With the `--force` command line option, you can
+`flo.yaml`. With the `--force` command line option, you can
 remove all files without having to confirm that you want to remove
 them. If you just want to remove a particular target, you can use
-`workflow clean task_id` to only remove that `creates` target.
+`flo clean task_id` to only remove that `creates` target.
 
 ```bash
-workflow clean              # asks user if they want to remove `creates` results
-workflow clean --force      # removes all `creates` targets without confirmation
-workflow clean a/task       # only remove the a/task target
+flo clean              # asks user if they want to remove `creates` results
+flo clean --force      # removes all `creates` targets without confirmation
+flo clean a/task       # only remove the a/task target
 ```
 
-##### workflow archive
+##### flo archive
 
 Before removing or totally redoing an analysis, I've often found it
 useful to backup my results and compare the differences later. The
-`workflow archive` command makes it easy to quickly backup an entire
-workflow (including generated `creates` targets, source code specified
-in `depends`, and the underlying `workflow.yaml`) and compare it to
+`flo archive` command makes it easy to quickly backup an entire
+flo (including generated `creates` targets, source code specified
+in `depends`, and the underlying `flo.yaml`) and compare it to
 previous versions.
 
 ```bash
-workflow archive            # store archive in .workflow/archives/*.tar.bz2
+flo archive            # store archive in .flo/archives/*.tar.bz2
 for i in `seq 20`; do
 	edit path/to/some/script.py
-	workflow run
+	flo run
 done
 echo 'oh crap, this sequence of changes was a mistake'
-workflow archive --restore  # uncompresses archive
+flo archive --restore  # uncompresses archive
 ```
 
 ##### autocomplete
@@ -416,7 +416,7 @@ the design goals for this project are to:
   do this in a good way.
 
 Many of these concepts have been captured in the original the roadmap
-for [workflow.yaml](design/workflow.yaml) and the
+for [flo.yaml](design/flo.yaml) and the
 [command line interface](design/command_line_interface.sh) design
 specification. Most of these concepts have been implmented or are on
 the roadmap, but if you have any suggestions for other ideas, please
@@ -425,11 +425,11 @@ the roadmap, but if you have any suggestions for other ideas, please
 
 ### developing
 
-1. [Fork](https://github.com/deanmalmgren/data-workflow/fork) and
+1. [Fork](https://github.com/deanmalmgren/flo/fork) and
    clone the project.
 
    ```bash
-   git clone https://github.com/YOUR-USERNAME/data-workflow.git
+   git clone https://github.com/YOUR-USERNAME/flo.git
    ```
 
 2. Install [Vagrant](http://vagrantup.com/downloads) and
@@ -446,11 +446,11 @@ the roadmap, but if you have any suggestions for other ideas, please
    data workflow scripts are automatically reloaded.
    
 3. On the virtual machine, make sure everything is working by
-   executing workflows in `examples/*/workflow.yaml`
+   executing workflows in `examples/*/flo.yaml`
 
    ```bash
    cd examples/reuters-tfidf
-   workflow run
+   flo run
    ```
 
 4. To be more thorough, there is an automated suite of functional
@@ -472,7 +472,7 @@ the roadmap, but if you have any suggestions for other ideas, please
    ```
 
    Current build status:
-   [![Build Status](https://travis-ci.org/deanmalmgren/data-workflow.png)](https://travis-ci.org/deanmalmgren/data-workflow)
+   [![Build Status](https://travis-ci.org/deanmalmgren/flo.png)](https://travis-ci.org/deanmalmgren/flo)
 
 5. Contribute! There are several [open issues](issues) that provide
    good places to dig in. Check out the

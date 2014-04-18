@@ -2,7 +2,7 @@ import glob
 import os
 from setuptools import setup
 
-import workflow
+import flo
 
 # get all of the scripts
 scripts = glob.glob("bin/*")
@@ -11,7 +11,7 @@ scripts = glob.glob("bin/*")
 with open("README.md") as stream:
     long_description = stream.read()
 
-github_url='https://github.com/deanmalmgren/data-workflow'
+github_url='https://github.com/deanmalmgren/flo'
 
 # read in the dependencies from the virtualenv requirements file
 dependencies = []
@@ -23,8 +23,8 @@ with open(filename, 'r') as stream:
             dependencies.append(package)
 
 setup(
-    name=workflow.__name__,
-    version=workflow.VERSION,
+    name=flo.__name__,
+    version=flo.VERSION,
     description="enable rapid iteration and development of data workflows",
     long_description=long_description,
     url=github_url,
@@ -34,10 +34,10 @@ setup(
     license='MIT',
     scripts=scripts,
     packages=[
-        'workflow',
-        'workflow.commands',
-        'workflow.resources',
-        'workflow.tasks',
+        'flo',
+        'flo.commands',
+        'flo.resources',
+        'flo.tasks',
     ],
     install_requires=dependencies,
     zip_safe=False,

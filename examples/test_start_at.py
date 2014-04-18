@@ -1,6 +1,6 @@
 from fabric.api import local, lcd #, hide
 
-cmd = "workflow run -f -d"
+cmd = "flo run -f -d"
 start = "data/x_y.dat"
 end = "data/x_cdf.dat"
 

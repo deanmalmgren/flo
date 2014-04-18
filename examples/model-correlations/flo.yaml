@@ -1,5 +1,5 @@
 # this is an example of how to use global variables throughout the
-# workflow.yaml to make it easy to switch between columns of
+# flo.yaml to make it easy to switch between columns of
 # analysis. 
 ---
 # Global variables that can be used across several different

@@ -25,7 +25,7 @@ def configure(task_graph):
     if _logger is not None:
         return _logger
 
-    _logger = logger = logging.getLogger('workflow')
+    _logger = logger = logging.getLogger('flo')
     logger.setLevel(logging.DEBUG)
 
     # create file handler and a console handler that logs to stdout
