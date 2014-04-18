@@ -26,25 +26,25 @@ stylistic guidelines that were implemented:
 
 ### A few words on code organization
 
-Many of the modules in the `workflow` python package have pretty
-self-evident roles (*e.g.*, `workflow.colors` provides convenience
+Many of the modules in the `flo` python package have pretty
+self-evident roles (*e.g.*, `flo.colors` provides convenience
 functions for color output). Some things though, 
 
-**bin/workflow** This is the main script that is run on the command
-line. It calls routines from `workflow.commands`.
+**bin/flo** This is the main script that is run on the command
+line. It calls routines from `flo.commands`.
 
-**workflow.commands** The modules and functions in this sub-package
-provide high-level functionality of what workflow actually does. Each
+**flo.commands** The modules and functions in this sub-package
+provide high-level functionality of what flo actually does. Each
 module has a `Command` class that inherits from
-`workflow.commands.base.BaseCommand` which specifies how that command
+`flo.commands.base.BaseCommand` which specifies how that command
 should be run.
 
-**workflow.parser** This module is the sole location that reads `workflow.yaml`
+**flo.parser** This module is the sole location that reads `flo.yaml`
 configuration and instantiates `TaskGraph` instances.
 
-**workflow.tasks** This module contains most of the nuts and bolts of
+**flo.tasks** This module contains most of the nuts and bolts of
 `Task` definitions and `TaskGraph` dependencies
 
-**workflow.resources** Resources are things like files, directories,
-databases, etc that should be monitored by `workflow`. This subpackage
+**flo.resources** Resources are things like files, directories,
+databases, etc that should be monitored by `flo`. This subpackage
 enables the functionality to check if resources are out of sync.

@@ -21,10 +21,10 @@ class TaskGraph(object):
     """Simple graph implementation of a list of task nodes"""
 
     # relative location of various storage locations
-    internals_path = ".workflow"
+    internals_path = ".flo"
     state_path = os.path.join(internals_path, "state.csv")
     duration_path = os.path.join(internals_path, "duration.csv")
-    log_path = os.path.join(internals_path, "workflow.log")
+    log_path = os.path.join(internals_path, "flo.log")
     archive_dir = os.path.join(internals_path, "archive")
 
     def __init__(self, config_path, task_kwargs_list):

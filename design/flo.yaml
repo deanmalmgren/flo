@@ -48,9 +48,9 @@ command: python {{depends|join(' ')}} > {{creates}}
 # easily run on one file or all the files in a direcotry.
 # 
 # COMMAND LINE INTERFACE EXAMPLES:
-# [unix]$ workflow run data/per_file
-# [unix]$ workflow run data/per_file --filename-root=a_specific_filename
-# [unix]$ workflow run data/per_file --time-limit=1s
+# [unix]$ flo run data/per_file
+# [unix]$ flo run data/per_file --filename-root=a_specific_filename
+# [unix]$ flo run data/per_file --time-limit=1s
 ---
 tags: data/per_file
 creates: data/per_file/{{filename_root}}.dat
@@ -63,7 +63,7 @@ command: python {{depends[0]}} {{depends[1]}} > {{creates}}
 
 # include a suite of analyses from a different directory see
 # http://stackoverflow.com/a/9577670/564709
-!include workflow/images.yaml
+!include flo/images.yaml
 
 
 # show how to run multiple commands. Treat a list of commands as
@@ -92,7 +92,7 @@ command: curl http://somesite.com/download.tgz > {{creates}}
 # # and should raise a very friendly error that describes how it can be
 # # fixed. This commented out target should raise an error that explains
 # # that the file dtaa/download.gtz doesn't exist and there isn't a
-# # matching `creates` in the workflow.yaml. 
+# # matching `creates` in the flo.yaml. 
 # ---
 # creates: data/valid/path.txt
 # depends: dtaa/download.gtz

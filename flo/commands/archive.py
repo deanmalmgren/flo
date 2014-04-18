@@ -44,5 +44,5 @@ class Command(BaseCommand):
         self.option_parser.add_argument(
             '--exclude-internals',
             action="store_true",
-            help="Exclude internals in the .workflow/ directory from archive",
+            help="Exclude internals in the .flo/ directory from archive",
         )

@@ -31,13 +31,13 @@ class BaseCommand(object):
 
 
 class TaskKwargsListMixin(object):
-    """Any Command that uses workflow.yaml to influence available command
+    """Any Command that uses flo.yaml to influence available command
     line options should inherit from this class so that we only read and
-    parse the workflow.yaml file *once*.
+    parse the flo.yaml file *once*.
     """
 
     # this is a performance optimization to make it possible to use
-    # the workflow.yaml file to inform useful *and responsive* tab
+    # the flo.yaml file to inform useful *and responsive* tab
     # completion on the command line _task_kwargs_list is used as a
     # local cache that is loaded once and inherited by all subclasses.
     @property

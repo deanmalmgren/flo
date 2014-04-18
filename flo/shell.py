@@ -14,7 +14,7 @@ def log_output(stream):
     # TODO: this works for all outputs that do not backspace. Note
     # what happens when you run the workflow in examples/reuters-tfidf
     # when curl is running
-    logger = logging.getLogger('workflow')
+    logger = logging.getLogger('flo')
     for line in iter(stream.readline, ''):
         logger.info(line.rstrip('\n'))
     stream.close()

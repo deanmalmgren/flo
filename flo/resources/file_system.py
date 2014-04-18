@@ -38,7 +38,7 @@ class FileSystem(BaseResource):
             raise NotImplementedError((
                 "file a feature request to support this type of "
                 "resource "
-                "https://github.com/deanmalmgren/data-workflow/issues"
+                "https://github.com/deanmalmgren/flo/issues"
             ))
 
     def get_filename(self):

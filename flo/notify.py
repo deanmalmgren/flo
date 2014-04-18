@@ -31,7 +31,7 @@ def notify(*contact_list):
 
     # fill out the relevant header information
     msg = MIMEText(text)
-    msg['Subject'] = "workflow %s on '%s'" % (status, socket.gethostname(), )
+    msg['Subject'] = "flo %s on '%s'" % (status, socket.gethostname(), )
     msg['From'] = 'root@localhost'
     msg['To'] = ', '.join(contact_list)
 

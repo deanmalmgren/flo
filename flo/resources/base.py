@@ -6,7 +6,7 @@ import hashlib
 
 class BaseResource(object):
     """A resource is any `creates` or `depends` or `task` that is
-    mentioned in a workflow.yaml. A resource can be on the file
+    mentioned in a flo.yaml. A resource can be on the file
     system, in a database, etc.
 
     The basic functionality of an resource is to assess the state of the
@@ -88,7 +88,7 @@ class BaseResource(object):
         This method must be overwritten by any child classes.
 
         TODO: need to figure out a way to avoid running this method
-        multiple times on the same resource during a single workflow
+        multiple times on the same resource during a single flo
         run. this is more of a performance issue that can be revisited
         later as it becomes an issue. can maybe cache somehow?
         """

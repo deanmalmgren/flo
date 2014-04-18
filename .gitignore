@@ -37,7 +37,7 @@ nosetests.xml
 
 # example data directories
 examples/*/data
-.workflow
+.flo
 
 # floobits
 .floo

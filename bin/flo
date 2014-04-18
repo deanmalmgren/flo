@@ -6,7 +6,7 @@ import sys
 
 import argcomplete
 
-from workflow.commands import get_command_line_parser, run_subcommand
+from flo.commands import get_command_line_parser, run_subcommand
 
 command_line_parser = get_command_line_parser()
 argcomplete.autocomplete(command_line_parser)

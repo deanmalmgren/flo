@@ -18,7 +18,7 @@ class Command(BaseCommand, TaskIdMixin):
 
         # if we are skipping a task, remove it from the task graph to
         # take it out of execution flow and avoid updating its status
-        # in .workflow/state.csv
+        # in .flo/state.csv
         if skip:
             self.task_graph.remove_node_substituting_dependencies(skip)
 

@@ -30,11 +30,11 @@ validate_example () {
     example=$1
     test_checksum=$2
     cd $BASEDIR/${example}
-    workflow clean --force --include-internals
+    flo clean --force --include-internals
     exit_code=$(expr ${exit_code} + $?)
-    workflow run
+    flo run
     exit_code=$(expr ${exit_code} + $?)
-    workflow archive --exclude-internals
+    flo archive --exclude-internals
     exit_code=$(expr ${exit_code} + $?)
 
     # hack to compute checksum of resulting archive since tarballs of
@@ -42,7 +42,7 @@ validate_example () {
     # have the same md5 hash
     temp_dir=/tmp/${example}
     mkdir -p ${temp_dir}
-    tar -xf .workflow/archive/* -C ${temp_dir}
+    tar -xf .flo/archive/* -C ${temp_dir}
     local_checksum=$(find ${temp_dir}/ -type f | sort | xargs cat | md5)
     rm -rf ${temp_dir}
     if [ "${local_checksum}" != "${test_checksum}" ]; then
@@ -58,8 +58,8 @@ validate_example () {
 # supposed to. if you update an example, be sure to update the
 # checksum by just running this script and determining what the
 # correct checksum is
-validate_example hello-world fb8915998f1095695ec34bc579bb41e6
-validate_example model-correlations c07223b877e49ff8bb4559c2829cdd47
+validate_example hello-world 040bf35be21ac0a3d6aa9ff4ff25df24
+validate_example model-correlations 14ba1ffc4c37cd306bf415107d6edfd1
 
 # this runs specific tests for the --start-at option
 python test_start_at.py
@@ -69,15 +69,15 @@ exit_code=$(expr ${exit_code} + $?)
 # modifying a specific task that would otherwise branch to other tasks
 # and make sure that skipping it does not trigger the workflow to run
 cd $BASEDIR/model-correlations
-workflow run -f
-sed -i 's/\+1/+2/g' workflow.yaml
-workflow run --skip data/x_y.dat
-grep "No tasks are out of sync" .workflow/workflow.log > /dev/null
+flo run -f
+sed -i 's/\+1/+2/g' flo.yaml
+flo run --skip data/x_y.dat
+grep "No tasks are out of sync" .flo/flo.log > /dev/null
 exit_code=$(expr ${exit_code} + $?)
-workflow run
-grep "|-> cut " .workflow/workflow.log > /dev/null
+flo run
+grep "|-> cut " .flo/flo.log > /dev/null
 exit_code=$(expr ${exit_code} + $?)
-sed -i 's/\+2/+1/g' workflow.yaml
+sed -i 's/\+2/+1/g' flo.yaml
 cd $BASEDIR
 
 # exit with the sum of the status
