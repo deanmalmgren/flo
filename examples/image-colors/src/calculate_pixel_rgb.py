@@ -10,5 +10,11 @@ pix = image.load()
 width, height = image.size
 for x in range(width):
     for y in range(height):
-        r, g, b = pix[x, y]
-        print x, y, r, g, b
+
+        # black/white images just store a single value. cast as rgb
+        # here for convenience downstream
+        val = pix[x, y]
+        if isinstance(val, int):
+            print x, y, val, val, val
+        else:
+            print x, y, ' '.join(map(str, val))
