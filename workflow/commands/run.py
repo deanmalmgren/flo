@@ -10,15 +10,15 @@ from .base import BaseCommand, TaskIdMixin
 class Command(BaseCommand, TaskIdMixin):
     help_text = "Run the task workflow."
 
-    def inner_execute(self, task_id, force, dry_run, **kwargs):
-
-        # REGEXP TODO: limit task graph somehow when regexp kwargs are
-        # passed?
-
+    def inner_execute(self, task_id, force, dry_run, **regex_limitations):
         # restrict task graph as necessary for the purposes of running
         # the workflow
         if task_id is not None:
             self.task_graph = self.task_graph.subgraph_needed_for([task_id])
+
+        # update the regex limitations on the graph if they are
+        # specified on the command line
+        self.task_graph.regex_limitations.update(regex_limitations)
 
         # when the workflow is --force'd, this runs all
         # tasks. Otherwise, only runs tasks that are out of sync.
@@ -67,27 +67,27 @@ class Command(BaseCommand, TaskIdMixin):
             nargs=1,
             help='Specify an email address to notify on completion.',
         )
-        self.add_regexp_options()
+        self.add_regex_options()
         self.add_task_id_option('Specify a particular task to run.')
 
-    def add_regexp_options(self):
+    def add_regex_options(self):
         group = self.option_parser.add_argument_group(
             'Regular expression completion options'
         )
         for task_kwargs in self.task_kwargs_list:
             depends = task_kwargs.get('depends')
             if isinstance(depends, (str, unicode)):
-                self.add_regexp_options_helper(group, depends)
+                self.add_regex_options_helper(group, depends)
             elif isinstance(depends, (list, tuple)):
                 for d in depends:
-                    self.add_regexp_options_helper(group, d)
+                    self.add_regex_options_helper(group, d)
 
-    def add_regexp_options_helper(self, group, resource):
-        resource_regexp = re.compile(resource)
-        for regexp_option in resource_regexp.groupindex:
+    def add_regex_options_helper(self, group, resource):
+        resource_regex = re.compile(resource)
+        for regex_option in resource_regex.groupindex:
             group.add_argument(
-                '--' + regexp_option.replace('_', '-'),
+                '--' + regex_option.replace('_', '-'),
                 type=str,
                 nargs="?",
-                help='Specify particular regexp match for <%s>' % regexp_option,
+                help='Specify particular regex match for <%s>' % regex_option,
             )

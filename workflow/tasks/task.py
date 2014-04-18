@@ -24,7 +24,7 @@ def _cast_as_list(obj):
         raise TypeError("unexpected type passed to _cast_as_list")
 
 
-def _is_regexp(s):
+def _is_regex(s):
     r = re.compile(s)
     return bool(r.groupindex)
 
@@ -55,9 +55,9 @@ class Task(resources.base.BaseResource):
         # that global variables can be used in the `creates` and
         # `depends` declarations (#33).
         self.alias = self.render_template(self._alias)
-        if self.depends_contains_regexp() and self.alias is None:
+        if self.depends_contains_regex() and self.alias is None:
             raise InvalidTaskDefinition(
-                "tasks with regexp in `depends` must define an `alias`"
+                "tasks with regex in `depends` must define an `alias`"
             )
         self.creates = self.render_template(self._creates)
         self.depends = self.render_template(self._depends)
@@ -128,7 +128,7 @@ class Task(resources.base.BaseResource):
         """
         return self.graph.root_directory
 
-    def iter_regexp_yaml_data(self):
+    def iter_regex_yaml_data(self):
         """If this Task has a `depends` that contains a regular expression,
         iterate over all matches and return the corresponding yaml_data.
         """
@@ -138,31 +138,31 @@ class Task(resources.base.BaseResource):
         yaml_data['depends'] = _cast_as_list(yaml_data['depends'])
         yaml_data['depends'].append(self.creates) #yaml_data['creates'])
 
-        # for each depends with a regexp, find matching files on
+        # for each depends with a regex, find matching files on
         # the filesystem
-        regexp_indices = []
-        regexp_matches = []
+        regex_index_list = []
+        regex_match_list = []
         for i, depends in enumerate(yaml_data['depends']):
-            if _is_regexp(depends):
-                regexp_indices.append(i)
-                regexp_matches.append(resources.find_regexp_matches(
-                    self.root_directory, 
+            if _is_regex(depends):
+                regex_index_list.append(i)
+                regex_match_list.append(resources.find_regex_matches(
+                    self.graph,
                     depends,
                 ))
-
-        # iterate over all permutations of the regexp matches to
+                
+        # iterate over all permutations of the regex matches to
         # make sure we account for situations that would have
         # depends with more than one regular expression
-        for matches in itertools.product(*regexp_matches):
-            for i, match in zip(regexp_indices, matches):
+        for matches in itertools.product(*regex_match_list):
+            for i, match in zip(regex_index_list, matches):
                 this_yaml_data = copy.deepcopy(yaml_data)
                 this_yaml_data['depends'][i] = match.string
                 this_yaml_data.update(match.groupdict())
                 this_yaml_data.pop('alias')
                 yield this_yaml_data
 
-    def depends_contains_regexp(self):
-        return any(map(_is_regexp, _cast_as_list(self._depends)))
+    def depends_contains_regex(self):
+        return any(map(_is_regex, _cast_as_list(self._depends)))
 
     def add_task_dependency(self, depends_on):
         self.upstream_tasks.add(depends_on)
@@ -245,8 +245,8 @@ class Task(resources.base.BaseResource):
 
         # if this contains a regular expression, need to get out of
         # this phase
-        if self.depends_contains_regexp():
-            self.graph.clone_regexp_task(self)
+        if self.depends_contains_regex():
+            self.graph.clone_regex_task(self)
             return
 
         # useful message about starting this task and what it is

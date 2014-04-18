@@ -53,6 +53,10 @@ class TaskGraph(object):
         # in an intelligent way
         self.successful = False
 
+        # regex options from the command line are stored here to avoid
+        # passing things around
+        self.regex_limitations = {}
+
         # add tasks and load all dependencies between tasks
         for task_kwargs in task_kwargs_list:
             task = Task(self, **task_kwargs)
@@ -62,12 +66,12 @@ class TaskGraph(object):
             self._link_dependencies(task)
         self._load_state()
 
-    def clone_regexp_task(self, task):
+    def clone_regex_task(self, task):
         """Expand `task` to add Tasks to graph that match regular expressions
         specified in task.depends.
         """
 
-        for new_task_kwargs in task.iter_regexp_yaml_data():
+        for new_task_kwargs in task.iter_regex_yaml_data():
             new_task = Task(self, **new_task_kwargs)
 
             # make sure new_task is properly linked to all of the
@@ -291,6 +295,8 @@ class TaskGraph(object):
         for task in self.iter_graph(starting_tasks):
             if do_run_func(task):
                 if mock_run:
+                    # REGEX TODO: what should behavior be with
+                    # --dry-run specified?
                     task.mock_run()
                 else:
                     try:
