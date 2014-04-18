@@ -77,6 +77,13 @@ for these tools, but rather to be the glue that sticks them together.
    simulation that takes a long time.
 
 
+### examples
+
+There are several [examples](examples/) for inspiration on how you
+could use the workflow.yaml specification. If you have suggestions for
+other ideas, please [add them](issues)!
+
+
 ### workflow.yaml specification
 
 Individual analysis tasks are defined as
@@ -215,9 +222,27 @@ tasks:
 	command: python {{depends|join(' ')}} > {{creates}}
 ```
 
-There are several [examples](examples/) for more inspiration on how
-you could use the workflow.yaml specification. If you have suggestions
-for other ideas, please [add them](issues)!
+##### regular expression matching
+
+When working with a large number of files, there are generally two
+approaches. One approach is to write a script that analyzes all of the
+files and another is to write a script that analyzes each file
+individually. One of the core premises of data-workflow is to
+facilitate rapid iterations which, in our opinion, is best done by
+working on specific files first.
+
+The challenge is that it is difficult to know, *a priori*, which files
+are the best candidates for preliminary work. One way of addressing
+this issue is by making it possible to write workflow tasks that have
+flexibility for command line usage with regular expressions:
+
+```yaml
+INSERT EXAMPLE HERE
+```
+
+The way this works is that `workflow` dynamically adds sub-tasks for
+any input files that match the specified regular expression. XXXX THIS
+IS REALLY COMPLICATED TO EXPLAIN. WILL PEOPLE UNDERSTAND THIS? DOUBT IT.
 
 
 ### command line interface
