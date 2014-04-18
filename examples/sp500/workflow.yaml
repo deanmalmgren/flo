@@ -9,7 +9,6 @@ tasks:
     command:
       - mkdir -p $(dirname {{creates}})
       - wget http://en.wikipedia.org/wiki/List_of_S%26P_500_companies -O {{creates}}
-    alias: get_data
 
   # extract the data
   -

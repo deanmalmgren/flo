@@ -58,7 +58,6 @@ class TaskGraph(object):
         # add tasks and load all dependencies between tasks
         for task_kwargs in task_kwargs_list:
             task = Task(self, **task_kwargs)
-        self._dereference_depends_aliases()
         self._link_dependencies()
         self._load_state()
 
@@ -125,16 +124,9 @@ class TaskGraph(object):
     def add(self, task):
         """Connect the task to this TaskGraph instance. This stores the task
         in the TaskGraph.task_list and puts it in the
-        TaskGraph.task_dict, keyed by task.creates and task.alias (if
-        it exists).
+        TaskGraph.task_dict, keyed by task.creates.
         """
         self.task_list.append(task)
-        if task.alias is not None:
-            if task.alias in self.task_dict:
-                raise NonUniqueTask(
-                    "task `alias` '%s' is not unique" % task.alias
-                )
-            self.task_dict[task.alias] = task
         if task.creates in self.task_dict:
             raise NonUniqueTask(
                 "task `creates` '%s' is not unique" % task.creates
