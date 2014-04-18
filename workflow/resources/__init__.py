@@ -52,6 +52,7 @@ def find_regex_matches(graph, regex_str):
     # be more clever ways of recompiling the regex, but none have been
     # posted yet
     # http://stackoverflow.com/q/23154978/564709
+    limitations = graph.regex_limitations
 
     regex_match_list = []
     regex = re.compile(regex_str)
@@ -70,7 +71,6 @@ def find_regex_matches(graph, regex_str):
             rel_filename = os.path.relpath(abs_filename, graph.root_directory)
             match = regex.match(rel_filename)
             if match:
-                if (not graph.regex_limitations
-                    or match.groupdict() == graph.regex_limitations):
+                if (not limitations or match.groupdict() == limitations):
                     regex_match_list.append(match)
     return regex_match_list

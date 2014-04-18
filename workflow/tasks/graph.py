@@ -70,14 +70,10 @@ class TaskGraph(object):
         """Expand `task` to add Tasks to graph that match regular expressions
         specified in task.depends.
         """
-
+        # reproduce the same process of adding new Task's to the workflow
         for new_task_kwargs in task.iter_regex_yaml_data():
             new_task = Task(self, **new_task_kwargs)
-
-            # make sure new_task is properly linked to all of the
-            # task's upstream and downstream dependencies
             self._dereference_depends_aliases(new_task)
-            
             self._link_dependencies(new_task)
 
     def iter_graph(self, tasks=None, downstream=True):

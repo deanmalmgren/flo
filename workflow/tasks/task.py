@@ -136,7 +136,7 @@ class Task(resources.base.BaseResource):
         # dependency
         yaml_data = self.yaml_data
         yaml_data['depends'] = _cast_as_list(yaml_data['depends'])
-        yaml_data['depends'].append(self.creates) #yaml_data['creates'])
+        yaml_data['depends'].append(self.creates)
 
         # for each depends with a regex, find matching files on
         # the filesystem
@@ -149,7 +149,7 @@ class Task(resources.base.BaseResource):
                     self.graph,
                     depends,
                 ))
-                
+
         # iterate over all permutations of the regex matches to
         # make sure we account for situations that would have
         # depends with more than one regular expression
