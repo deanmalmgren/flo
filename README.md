@@ -290,15 +290,23 @@ dependencies. This can be combined with `run task_id` to only all
 tasks between two specified tasks like this:
 
 ```bash
-flo run --start-at=path/to/some/file.txt path/to/some/output/file.txt
+flo run --start-at path/to/some/file.txt path/to/some/output/file.txt
 ```
+
+##### flo run --only task_id
 
 If you ever want to only run one task, say a task that creates
 `path/to/some/file.txt`, you can specify that task as both the
-starting and ending point of the workflow run:
+starting and ending point of the workflow run with `--only`:
 
 ```bash
-flo run --start-at=path/to/some/file.txt path/to/some/file.txt
+flo run --only path/to/some/file.txt
+```
+
+This is analogous to specifying the starting and ending point like this:
+
+```bash
+flo run --start-at path/to/some/file.txt path/to/some/file.txt
 ```
 
 ##### flo run --skip task_id
