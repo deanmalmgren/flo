@@ -80,5 +80,19 @@ exit_code=$(expr ${exit_code} + $?)
 sed -i 's/\+2/+1/g' flo.yaml
 cd $BASEDIR
 
+# test the --only option
+cd $BASEDIR/hello-world
+flo run -f
+flo run --only data/hello_world.txt
+grep "No tasks are out of sync" .flo/flo.log > /dev/null
+exit_code=$(expr ${exit_code} + $?)
+flo run -f --only data/hello_world.txt
+n_matches=$(grep "|-> " .flo/flo.log | wc -l)
+if [[ ${n_matches} -ne 2 ]]; then
+    red "flo run -f --only data/hello_world.txt should only run two commands"
+    exit_code=$(expr ${exit_code} + 1)
+fi
+cd $BASEDIR
+
 # exit with the sum of the status
 exit ${exit_code}

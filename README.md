@@ -293,6 +293,14 @@ tasks between two specified tasks like this:
 flo run --start-at=path/to/some/file.txt path/to/some/output/file.txt
 ```
 
+If you ever want to only run one task, say a task that creates
+`path/to/some/file.txt`, you can specify that task as both the
+starting and ending point of the workflow run:
+
+```bash
+flo run --start-at=path/to/some/file.txt path/to/some/file.txt
+```
+
 ##### flo run --skip task_id
 
 In some situations --- especially with very long-running tasks ---

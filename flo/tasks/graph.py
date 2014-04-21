@@ -168,6 +168,8 @@ class TaskGraph(object):
                 downstream = False
             node = start or end
             tasks = self.iter_graph([node], downstream=downstream)
+        elif start == end:
+            tasks = [start]
         else:
             graph = self.get_networkx_graph()
             tasks = set()

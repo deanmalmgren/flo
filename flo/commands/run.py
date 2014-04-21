@@ -9,7 +9,21 @@ from .base import BaseCommand, TaskIdMixin
 class Command(BaseCommand, TaskIdMixin):
     help_text = "Run the task workflow."
 
-    def inner_execute(self, task_id, force, dry_run, start_at, skip):
+    def inner_execute(self, task_id, force, dry_run, start_at, skip, only):
+
+        # --only is a synonym for setting start_at and task_id to be
+        # the same thing. enforce logic here as it is not possible (?)
+        # to do so with argparse directly
+        # http://stackoverflow.com/q/14985474/564709
+        if only is not None:
+            if start_at is not None or task_id is not None:
+                self.option_parser.error((
+                    "--only can not be used with --start-at or specifying a "
+                    "TASK_ID"
+                ))
+            else:
+                start_at = task_id = only
+
         # restrict task graph as necessary for the purposes of running
         # the workflow
         if task_id is not None or start_at is not None:
@@ -34,10 +48,10 @@ class Command(BaseCommand, TaskIdMixin):
         self.task_graph.successful = True
 
     def execute(self, task_id=None, force=False, dry_run=False,
-                notify_emails=None, start_at=None, skip=None):
+                notify_emails=None, start_at=None, skip=None, only=None):
         super(Command, self).execute()
         try:
-            self.inner_execute(task_id, force, dry_run, start_at, skip)
+            self.inner_execute(task_id, force, dry_run, start_at, skip, only)
         except CommandLineException, e:
             raise
         finally:
@@ -86,4 +100,11 @@ class Command(BaseCommand, TaskIdMixin):
             metavar='TASK_ID',
             choices=self.available_task_ids,
             help='Skip the specified task and ignore whether it is in sync.',
+        )
+        self.option_parser.add_argument(
+            '--only',
+            type=str,
+            metavar='TASK_ID',
+            choices=self.available_task_ids,
+            help='Only run the specified task.',
         )
