@@ -8,7 +8,7 @@ import subprocess
 
 import yaml
 
-from workflow.colors import green, red
+from flo.colors import green, red
 
 root_dir = os.path.dirname(os.path.abspath(__file__))
 def run_test(command):
