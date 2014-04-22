@@ -20,18 +20,12 @@ command:
   - mkdir -p {{creates}}
   - for archive in {{depends|join(' ')}}; do unzip -d {{creates}} $archive; done
 
-# this is an example of how to use regular expressions to make it easy
-# to run an analysis on one file at a time rather than doing every
-# image file. the data/img dependency sets up the dependency on the
-# previous task. the regular expression makes it possible to run this
-# one file at a time.
+# iterate over all of the images and extract the rgb values at every
+# x,y position
 ---
-alias: data/rgb
-creates: "{{alias}}/{{subdirectory}}/{{rootname}}.dat"
+creates: data/rgb.dat
 depends:
-  - src/calculate_pixel_rgb.py
-  - data/img/(?P<subdirectory>\w+)/(?P<rootname>\w+).jpg
+  - src/extract_pixel_rgb.py
   - data/img
 command:
-  - mkdir {{alias}}
-  - python {{depends|join(' ')}} > {{creates}}
+  - for f in {{depends[1]}}/*/*.jpg; do python {{depends[0]}} $f; done > {{creates}}
