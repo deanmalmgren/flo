@@ -18,3 +18,4 @@ fabric
 
 # these are needed for documentation
 sphinx
+sphinx_rtd_theme
