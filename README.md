@@ -474,7 +474,7 @@ the road map, but if you have any suggestions for other ideas, please
    behavior of this package in any substantiative way.
 
    ```bash
-   ./examples/run_functional_tests.sh
+   ./tests/run_functional_tests.sh
    ```
 
    These functional tests are designed to be run on an Ubuntu 12.04
@@ -484,7 +484,7 @@ the road map, but if you have any suggestions for other ideas, please
    For your convenience, you can run all of these tests with:
 
    ```bash
-   ./run_travis_tests.py
+   ./tests/run.py
    ```
 
    Current build status:

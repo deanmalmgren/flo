@@ -10,7 +10,7 @@ import yaml
 
 from flo.colors import green, red
 
-root_dir = os.path.dirname(os.path.abspath(__file__))
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def run_test(command):
     wrapped_command = "cd %s && %s" % (root_dir, command)
     pipe = subprocess.Popen(

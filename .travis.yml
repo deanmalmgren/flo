@@ -13,5 +13,5 @@ install:
 
 # command to run tests, e.g. python setup.py test
 script:
- - ./examples/run_functional_tests.sh
+ - ./tests/run_functional_tests.sh
  - pep8 flo/ bin/flo

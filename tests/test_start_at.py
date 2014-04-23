@@ -1,4 +1,9 @@
+import sys
+import os
+
 from fabric.api import local, lcd #, hide
+
+example_root = sys.argv[1]
 
 cmd = "flo run -f -d"
 start = "data/x_y.dat"
@@ -13,7 +18,7 @@ def get_tasks(start,end):
     # with hide("running"):
     return local(command, capture=True).split("\n")[2:]
 
-with lcd("model-correlations/"):
+with lcd(os.path.join(example_root, "model-correlations")):
     tasks = get_tasks(start,end)
 
     msg = "subgraph had %s tasks"

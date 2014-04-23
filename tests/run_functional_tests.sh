@@ -6,9 +6,11 @@
 # failed
 exit_code=0
 
-# get the directory of this script
+# get the directory of this script and use it to correctly find the
+# examples directory
 # http://stackoverflow.com/a/9107028/564709
 BASEDIR=$(cd `dirname "${BASH_SOURCE[0]}"` && pwd)
+EXAMPLE_ROOT=$BASEDIR/../examples
 
 # annoying problem that md5 (OSX) and md5sum (Linux) are not the same
 # in coreutils
@@ -29,7 +31,7 @@ red () {
 validate_example () {
     example=$1
     test_checksum=$2
-    cd $BASEDIR/${example}
+    cd $EXAMPLE_ROOT/${example}
     flo clean --force --include-internals
     exit_code=$(expr ${exit_code} + $?)
     flo run
@@ -51,7 +53,6 @@ validate_example () {
         red "     test checksum=${test_checksum}"
         exit_code=$(expr ${exit_code} + 1)
     fi
-    cd $BASEDIR
 }
 
 # run a few examples to make sure the checksums match what they are
@@ -62,13 +63,14 @@ validate_example hello-world 040bf35be21ac0a3d6aa9ff4ff25df24
 validate_example model-correlations 14ba1ffc4c37cd306bf415107d6edfd1
 
 # this runs specific tests for the --start-at option
-python test_start_at.py
+cd $BASEDIR
+python test_start_at.py $EXAMPLE_ROOT
 exit_code=$(expr ${exit_code} + $?)
 
 # test the --skip option to make sure everything works properly by
 # modifying a specific task that would otherwise branch to other tasks
 # and make sure that skipping it does not trigger the workflow to run
-cd $BASEDIR/model-correlations
+cd $EXAMPLE_ROOT/model-correlations
 flo run -f
 sed -i 's/\+1/+2/g' flo.yaml
 flo run --skip data/x_y.dat
@@ -78,10 +80,10 @@ flo run
 grep "|-> cut " .flo/flo.log > /dev/null
 exit_code=$(expr ${exit_code} + $?)
 sed -i 's/\+2/+1/g' flo.yaml
-cd $BASEDIR
+cd $EXAMPLE_ROOT
 
 # test the --only option
-cd $BASEDIR/hello-world
+cd $EXAMPLE_ROOT/hello-world
 flo run -f
 flo run --only data/hello_world.txt
 grep "No tasks are out of sync" .flo/flo.log > /dev/null
@@ -92,7 +94,7 @@ if [[ ${n_matches} -ne 2 ]]; then
     red "flo run -f --only data/hello_world.txt should only run two commands"
     exit_code=$(expr ${exit_code} + 1)
 fi
-cd $BASEDIR
+cd $EXAMPLE_ROOT
 
 # exit with the sum of the status
 exit ${exit_code}
