@@ -1,3 +1,7 @@
+# This file contains all python package dependencies that are needed
+# to run all of the examples. If you add an example that requires
+# additional python packages to work properly, add them here.
+
 textblob
 Pillow
 

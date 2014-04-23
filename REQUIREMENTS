@@ -1,3 +1,6 @@
+# This file contains all python dependencies that are required by the
+# flo package in order for flo to properly work.
+
 PyYAML
 Jinja2
 argcomplete

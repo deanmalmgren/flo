@@ -1,3 +1,7 @@
+# This file contains all Ubuntu dependencies that are needed to run
+# all of the examples. If you add an example that requires some system
+# packages to be installed, add them here.
+
 # random shell commands that are used in various examples
 curl
 unzip
