@@ -10,9 +10,9 @@
 There are many ways one could conceivably write a data analysis
 workflow from scratch, from writing single programs that ingest,
 analyze and visualize data to simple scripts that each handle one part
-of the puzzle. Particularly when developing workflows from scrach, we
+of the puzzle. Particularly when developing workflows from scratch, we
 have the strong opinion that writing small scripts with intermediate
-outputs is a much more effecitve way to develop a prototype data
+outputs is a much more effective way to develop a prototype data
 workflow. In our experience, we find it to be very convenient to edit
 a script, run it, and repeat several times to make sure it is behaving
 the way we intend. For one thing, this pattern makes it far easier to
@@ -30,7 +30,7 @@ for these tools, but rather to be the glue that sticks them together.
 
 ### quick start
 
-1. *Install this pacakge.*
+1. *Install this package.*
 
    ```bash
    pip install -e git+https://github.com/deanmalmgren/flo#egg=flo
@@ -98,7 +98,7 @@ the above order is chosen for explanatory purposes only.
 ##### creates
 
 The `creates` key defines the resource that is created. By default, it
-is interpretted as a path to a file (relative paths are interpretted
+is interpreted as a path to a file (relative paths are interpreted
 as relative to the `flo.yaml` file). You can also specify a
 protocol, such as `mysql:database/table` (see yet-to-be-implemented #15),
 for non-file based resources.
@@ -410,8 +410,8 @@ Autocompletion of available options with workflow is enabled by
 [autocomplete](https://github.com/kislyuk/argcomplete) package. Follow
 instructions to
 [enable global autocomplete](https://github.com/kislyuk/argcomplete#activating-global-completion)
-and you should be all set. This is also configured in the
-[virtual machine provisioning](blob/master/provision/development.sh#L17).
+and you should be all set. As an example, this is also configured in
+the [virtual machine provisioning](provision/development.sh#L17).
 
 
 ### design goals
@@ -425,17 +425,17 @@ the design goals for this project are to:
 - *Provide an easy-to-use framework.* This applies for n00bs and pros
   alike. Use human-readable syntax.
 - *Prevent, as much as reasonably possible, costly mistakes.* Avoid
-  inadvertantly rerunning commands that overwrite results or executing
+  inadvertently rerunning commands that overwrite results or executing
   commands that take a long time.
 - *Encourage good development practices, but allow for flexibility.*
   There's a tradeoff here, but we have [an opinion](#op-ed) on how to
   do this in a good way.
 
-Many of these concepts have been captured in the original the roadmap
+Many of these concepts have been captured in the original road map
 for [flo.yaml](design/flo.yaml) and the
 [command line interface](design/command_line_interface.sh) design
-specification. Most of these concepts have been implmented or are on
-the roadmap, but if you have any suggestions for other ideas, please
+specification. Most of these concepts have been implemented or are on
+the road map, but if you have any suggestions for other ideas, please
 [add them](issues)!
 
 
@@ -471,7 +471,7 @@ the roadmap, but if you have any suggestions for other ideas, please
 
 4. To be more thorough, there is an automated suite of functional
    tests to make sure any patches you have made haven't disturbed the
-   behavior of this package in any substantitive way.
+   behavior of this package in any substantiative way.
 
    ```bash
    ./examples/run_functional_tests.sh
