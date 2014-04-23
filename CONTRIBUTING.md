@@ -4,6 +4,18 @@ for the fork-branch-pull request model for github and please keep the
 [design goals](README.md#design-goals) of this project in mind when
 proposing issues and pull requests.
 
+### Reporting bugs
+
+If you observe an unexpected behavior, tasks being re-run when they
+shouldn't be, suspicious output, etc, one of the simplest ways of
+reporting the bug is to [create a gist](https://gist.github.com/) with
+the relevant `flo.yaml` and any relevant source code that is necessary
+for reproducing the issue. Another possibility is to execute `flo
+archive` to create a tarball with the offending code and share a
+dropbox link or put it in a gist as well.
+
+### Contributing to the source code
+
 As a general rule of thumb, the goal of this package is to be as
 readable as possible to make it easy for novices and experts alike to
 contribute to the source code in meaningful ways. Pull requests that
