@@ -1,8 +1,12 @@
+.. _prior-art:
+
 prior art
 ~~~~~~~~~
 
+.. _GNU-make:
+
 GNU make
-~~~~~~~~
+''''''''
 
 `GNU make <http://www.gnu.org/software/make/>`__ is a very useful tool
 that was designed mostly for building complicated software packages. It
@@ -36,7 +40,7 @@ hours or days rather than minutes.
    important for data workflows.
 
 invoke
-~~~~~~
+''''''
 
 `Invoke <http://docs.pyinvoke.org/en/latest/>`__ is intended to be a
 make replacement for python with a nice Fabric-like command line
@@ -48,17 +52,17 @@ an ``invoke`` script. Downsides include:
    that does not make invoke scripts considerably longer than they need
    to be.
 
--  Although ``invoke`` does provide a ```pre`` keyword
-   argument <http://docs.pyinvoke.org/en/latest/concepts/execution.html#pre-tasks>`__,
+-  Although ``invoke`` does provide a `'pre' keyword argument
+   <http://docs.pyinvoke.org/en/latest/concepts/execution.html#pre-tasks>`__,
    it is not possible to run an invoke script without rerunning the
-   *entire* workflow [`git issue
-   here <https://github.com/pyinvoke/invoke/issues/100>`__\ ]. Although
-   its certainly possible to extend invoke to address this use case, its
+   *entire* workflow (`git issue here
+   <https://github.com/pyinvoke/invoke/issues/100>`__). Although its
+   certainly possible to extend invoke to address this use case, its
    not clear that it'll be enough to address all the use cases that we
    have in mind.
 
 Fabric
-~~~~~~
+''''''
 
 `Fabric <http://docs.fabfile.org/en/latest/>`__ is a tool that is
 intended for application deployment to many different servers
@@ -70,7 +74,7 @@ managing data workflows. Downsides include:
    analysis situations, you can actually divvy up analysis tasks
    depending on what data files are or not available.
 
--  ``fabfile``\ s tend to get big rather quickly, even for relatively
+-  ``fabfile``\s tend to get big rather quickly, even for relatively
    mundane jobs. The fact that its in python is nice, but probably not
    necessary for running a data analysis workflow.
 
@@ -79,7 +83,7 @@ managing data workflows. Downsides include:
    Fabric to address this issue.
 
 Drake
-~~~~~
+'''''
 
 `Drake <https://github.com/Factual/drake>`__ is intended to be the "make
 for data". ``Drakefile``\ s have `a very similar look and
@@ -100,7 +104,7 @@ disadvantages:
    read.
 
 AWS Data Pipeline
-~~~~~~~~~~~~~~~~~
+'''''''''''''''''
 
 `Amazon's Data Pipeline <http://aws.amazon.com/datapipeline/details/>`__
 is intended to organize data pipelines that occur entirely in Amazon's
@@ -109,12 +113,12 @@ Amazon's walls, but not terribly convenient for a wide range or projects
 where a cloud solution is unnecessarily overkill.
 
 LONI Pipeline
-~~~~~~~~~~~~~
+'''''''''''''
 
 Meh. http://pipeline.bmap.ucla.edu/
 
 Predictive Modeling Markup Language (PMML)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+''''''''''''''''''''''''''''''''''''''''''
 
 PMML is a language to define workflows in data analysis. There appear to
 be many tools that will execute PMML workflows, for example
@@ -125,15 +129,15 @@ toward developing robust, "enterprise" workflows as opposed to rapid
 development.
 
 KNIME
-~~~~~
+'''''
 
-(KNIME)[http://www.knime.org/] is a graphical interface for defining
-data *and* analysis steps in a data workflow. I'm sure its possible to
-write custom analysis steps in KNIME to make it more practical in real
-world situations, but the tight coupling between the pipeline definition
-and actually running an analysis and doing some visualization is highly
-unappealing for the use cases I have in mind. Nonetheless, its worth
-mentioning. The GUI is admittedly kinda nice and certainly easier to
-understand for n00bs.
+`KNIME <http://www.knime.org/>`__ is a graphical interface for
+defining data *and* analysis steps in a data workflow. I'm sure its
+possible to write custom analysis steps in KNIME to make it more
+practical in real world situations, but the tight coupling between the
+pipeline definition and actually running an analysis and doing some
+visualization is highly unappealing for the use cases I have in
+mind. Nonetheless, its worth mentioning. The GUI is admittedly kinda
+nice and certainly easier to understand for n00bs.
 
 
