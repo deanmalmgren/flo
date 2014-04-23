@@ -15,5 +15,5 @@ have been extracted from the specific context of the data (the
 in this example), `flo` enables development that creates nice building
 blocks for future projects. Of course, these "general purpose" scripts
 might expand, be refactored or change altogether, but by
-[making it possible for users to write small but compelling scripts](../../#op-ed),
+[making it possible for users to write small but compelling scripts](../../README.md#op-ed),
 it becomes that much easier to reuse this code in the future.
