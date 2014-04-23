@@ -37,6 +37,7 @@ these tools, but rather to be the glue that sticks them together.
    yaml_specification
    command_line_interface
    design_goals
+   prior_art
    developing
    :maxdepth: 2
 
