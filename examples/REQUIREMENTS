@@ -15,3 +15,6 @@ matplotlib
 # these is used for testing
 pep8
 fabric
+
+# these are needed for documentation
+sphinx

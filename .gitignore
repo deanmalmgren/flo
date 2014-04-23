@@ -44,3 +44,6 @@ examples/*/data
 
 # vagrant
 .vagrant
+
+# sphinx documentation build
+docs/_build
