@@ -3,7 +3,7 @@
 input_name: data/sp500.html
 
 tasks:
-# create some data to analyze.
+  # create some data to analyze.
   -
     creates: "{{input_name}}"
     command:

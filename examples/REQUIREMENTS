@@ -4,6 +4,7 @@
 
 textblob
 Pillow
+beautifulsoup4
 
 # although these are installed in the system dependencies, also need
 # to do this here so that they will be installed in the virtual
