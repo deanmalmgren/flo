@@ -9,12 +9,12 @@ from importlib import import_module
 
 from ..exceptions import CommandLineException
 from .base import BaseCommand
-from . import run, clean, archive
+from . import run, clean, archive, status
 
 # NOTE: as of commit 54297065861b95922f1d26b892a63da33052a138, we
 # imported these modules dynamically but this is rather slow for
 # autocompletion
-COMMAND_MODULES = [run, clean, archive]
+COMMAND_MODULES = [run, clean, archive, status]
 
 
 def get_command_line_parser():

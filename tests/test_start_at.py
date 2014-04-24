@@ -5,7 +5,7 @@ from fabric.api import local, lcd #, hide
 
 example_root = sys.argv[1]
 
-cmd = "flo run -f -d"
+cmd = "flo status -f"
 start = "data/x_y.dat"
 end = "data/x_cdf.dat"
 

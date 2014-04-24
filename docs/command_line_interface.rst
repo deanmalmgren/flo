@@ -23,8 +23,8 @@ the `virtual machine provisioning for this project
 we elaborate on a few key features of ``flo``; see ``flo --help`` for
 details about all available functionality.
 
-flo run
-'''''''
+running workflows
+'''''''''''''''''
 
 By default, the ``flo run`` command will execute the entire workflow, or
 at least the portion of it that is "out of sync" since the last time it
@@ -59,8 +59,8 @@ itself has changed since the last time that task was run, ``flo`` will
 run that task. For reference, the hashes of all of the ``creates``,
 ``depends``, and workflow task definitions are in ``.flo/state.csv``.
 
-flo run task\_id
-''''''''''''''''
+limiting flo run execution
+''''''''''''''''''''''''''
 
 Oftentimes we do not want to run the entire workflow, but only a
 particular component of it. Like GNU make, you can specify a particular
@@ -72,13 +72,8 @@ task by its ``creates`` value on the command line like this:
 
 This limits ``flo`` to only executing the task defined in
 ``path/to/some/output/file.txt`` and all of its recursive upstream
-dependencies.
-
-flo run --start-at task\_id
-'''''''''''''''''''''''''''
-
-Other times we do not want to run the entire workflow, but run
-everything after a specific component. We can do that like this:
+dependencies. Other times we do not want to run the entire workflow,
+but run everything after a specific task. We can do that like this:
 
 .. code-block:: bash
 
@@ -86,15 +81,12 @@ everything after a specific component. We can do that like this:
 
 This limits ``flo`` to only executing the task defined in
 ``path/to/some/file.txt`` and all of its recursive **downstream**
-dependencies. This can be combined with ``run task_id`` to only all
+dependencies. This can be combined with ``flo run task_id`` to only all
 tasks between two specified tasks like this:
 
 .. code-block:: bash
 
     flo run --start-at path/to/some/file.txt path/to/some/output/file.txt
-
-flo run --only task\_id
-'''''''''''''''''''''''
 
 If you ever want to only run one task, say a task that creates
 ``path/to/some/file.txt``, you can specify that task as both the
@@ -102,19 +94,13 @@ starting and ending point of the workflow run with ``--only``:
 
 .. code-block:: bash
 
+    # these two things are the same
     flo run --only path/to/some/file.txt
-
-This is analogous to specifying the starting and ending point like this:
-
-.. code-block:: bash
-
     flo run --start-at path/to/some/file.txt path/to/some/file.txt
 
-flo run --skip task\_id
-'''''''''''''''''''''''
-
-In some situations --- especially with very long-running tasks --- it is
-convenient to be able to skip particular tasks like this:
+In some situations --- especially with very long-running tasks that
+you know haven't been affected by changes --- it is convenient to be
+able to skip particular tasks like this:
 
 .. code-block:: bash
 
@@ -123,31 +109,6 @@ convenient to be able to skip particular tasks like this:
 This eliminates the task associated with ``path/to/some/file.txt`` from
 the workflow but preserves the dependency chain so that other tasks are
 still executed in the proper order.
-
-.. _dry-run:
-
-flo run --dry-run
-'''''''''''''''''
-
-While :ref:`we don't recommend it <op-ed>`, its not uncommon to get "in
-the zone" and make several edits to analysis scripts before re-running
-your workflow. Because we're human, its easy to incorrectly remember the
-files you edited and how they may affect re-running the workflow. To
-help, the ``--dry-run`` command line option lets you see which commands
-will be run and approximately how much time it should take (!!!).
-
-.. code-block:: bash
-
-    flo run
-    edit path/to/some/script.py
-    edit path/to/another/script.py
-    flo run --dry-run     # don't run anything, just report what would be done
-
-For reference, ``flo`` stores the duration of each task in
-``.flo/duration.csv``.
-
-flo run --force
-'''''''''''''''
 
 Sometimes it is convenient to rerun an entire workflow, regardless of
 the current status of the files that were generated.
@@ -160,9 +121,6 @@ the current status of the files that were generated.
     echo "Screw it, lets just redo the entire analysis"
     flo run --force
 
-flo run --notify
-''''''''''''''''
-
 For long-running workflows, it is convenient to be alerted when the
 entire workflow completes. The ``--notify`` command line option makes it
 possible to have the last 100 lines of the ``.flo/flo.log`` sent to an
@@ -172,8 +130,32 @@ email address specified on the command line.
 
     flo run --notify j.doe@example.com
 
-flo clean
-'''''''''
+.. _status:
+
+I'm nervous, what's going to happen?
+''''''''''''''''''''''''''''''''''''
+
+While :ref:`we don't recommend it <op-ed>`, its not uncommon to get
+"in the zone" and make several edits to analysis scripts before
+re-running your workflow. Because we're human, its easy to incorrectly
+remember the files you edited and how they may affect re-running the
+workflow. To help, the ``flo status`` command lets you see which
+commands will be run and approximately how much time it should take
+(!!!).
+
+.. code-block:: bash
+
+    flo run
+    edit path/to/some/script.py
+    edit path/to/another/script.py
+    echo "a long time passes"
+    flo status             # don't run anything, just report what would be done
+
+For reference, ``flo`` stores the duration of each task in
+``.flo/duration.csv``.
+
+Starting over
+'''''''''''''
 
 Sometimes you want to start with a clean slate. Perhaps the data you
 originally started with is dated or you want to be confident a workflow
@@ -191,8 +173,8 @@ particular target, you can use ``flo clean task_id`` to only remove that
     flo clean --force      # removes all `creates` targets without confirmation
     flo clean a/task       # only remove the a/task target
 
-flo archive
-'''''''''''
+Saving results
+''''''''''''''
 
 Before removing or totally redoing an analysis, I've often found it
 useful to backup my results and compare the differences later. The
