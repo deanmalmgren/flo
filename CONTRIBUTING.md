@@ -1,8 +1,7 @@
-See the
+Any and all contributions are welcome and appreciated. To make it easy
+to keep things organized, this project uses the
 [general guidelines](https://help.github.com/articles/using-pull-requests)
-for the fork-branch-pull request model for github and please keep the
-[design goals](README.md#design-goals) of this project in mind when
-proposing issues and pull requests.
+for the fork-branch-pull request model for github.
 
 ### Reporting bugs
 
