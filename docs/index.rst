@@ -1,54 +1,51 @@
-.. flo documentation master file, created by
-   sphinx-quickstart on Wed Apr 23 19:42:51 2014.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+flo
+===
 
-.. _op-ed:
+``flo`` is a data workflow utility that is specifically designed to
+enable rapid iteration and development of complex data pipelines. Its
+:ref:`command line interface <command-line-interface>` and :ref:`task
+configuration <flo.yaml-specification>` have many features that make
+``flo`` ideal for developing data workflows, among them:
 
-op-ed
-~~~~~
+*  ``flo`` hashes the state of each file that it monitors to make it
+   amenible to working with how most distributed version control
+   systems work.
+*  ``flo`` times each step of the analysis, :ref:`making it easy to
+   determine how long any particular run will take <dry-run>` before
+   ``flo`` does anything.
+*  ``flo`` comes with :ref:`command line autocompletion builtin
+   <command-line-interface>`, making it easy to evaluate your options
+   quickly in the terminal.
+*  ``flo``\'s :ref:`task configuration is written in YAML
+   <flo.yaml-specification>`, making it easy to read and write without
+   having to know an :ref:`archaic language <GNU-make>` (sorry
+   ``make``, its not you, its me).
+*  ``flo`` is written in python, which is a native language to most
+   data-savvy users to make it as easy as possible to maintain by the
+   community.
 
-    "It should be easy to swap in production data for development data."
-    - @bo-peng
+Here's a quick screencast of ``flo`` in action:
 
-    "It should be easy to work on one file at a time." - @stringertheory
+.. todo:: make screencast!
 
-    "It should be easy to avoid making costly mistakes." - @deanmalmgren
-
-There are many ways one could conceivably write a data analysis workflow
-from scratch, from writing single programs that ingest, analyze and
-visualize data to simple scripts that each handle one part of the
-puzzle. Particularly when developing workflows from scratch, we have the
-strong opinion that writing small scripts with intermediate outputs is a
-much more effective way to develop a prototype data workflow. In our
-experience, we find it to be very convenient to edit a script, run it,
-and repeat several times to make sure it is behaving the way we intend.
-For one thing, this pattern makes it far easier to spot check results
-using a litany of available command line tools. For another, this
-pattern makes it easy to identify weak links (*e.g.* incorrect results,
-poor performance, etc.) in the analysis and improve them piece by piece
-after the entire workflow has been written the first time.
-
-This package is deliberately designed to help users write small, but
-compact workflow prototypes using whatever tools they prefer --- R,
-pandas, scipy, hadoop. The goal here is not to provide a substitute for
-these tools, but rather to be the glue that sticks them together.
+If you're sold, :ref:`get started <quick-start>`. If not, read on:
 
 .. toctree::
+   op_ed
    quick_start
    yaml_specification
    command_line_interface
    design_goals
    prior_art
    developing
-   :maxdepth: 2
+   :maxdepth: 1
 
+.. COMMENTING THIS OUT FOR NOW
 
+   Indices and tables
+   ==================
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   * :ref:`genindex`
+   * :ref:`modindex`
+   * :ref:`search`
 

@@ -1,3 +1,5 @@
+.. _command-line-interface:
+
 command line interface
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -121,6 +123,8 @@ convenient to be able to skip particular tasks like this:
 This eliminates the task associated with ``path/to/some/file.txt`` from
 the workflow but preserves the dependency chain so that other tasks are
 still executed in the proper order.
+
+.. _dry-run:
 
 flo run --dry-run
 '''''''''''''''''
