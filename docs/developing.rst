@@ -16,10 +16,12 @@ developing
 
         vagrant up && vagrant provision
 
-On ``vagrant ssh``\ ing to the virtual machine, note that the
-``PYTHONPATH`` and ``PATH`` environment variables have been altered in
-this virtual machine so that any changes you make to your local data
-workflow scripts are automatically reloaded.
+   On ``vagrant ssh``\ ing to the virtual machine, note that the
+   ``PYTHONPATH`` and ``PATH`` `environment variables have been
+   altered in this virtual machine
+   <https://github.com/deanmalmgren/flo/blob/master/provision/development.sh>`__
+   so that any changes you make to your local data workflow scripts
+   are automatically reloaded.
 
 3. On the virtual machine, make sure everything is working by executing
    workflows in ``examples/*/flo.yaml``

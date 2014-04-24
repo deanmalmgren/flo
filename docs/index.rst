@@ -35,8 +35,6 @@ If you're sold, :ref:`get started <quick-start>`. If not, read on:
    quick_start
    yaml_specification
    command_line_interface
-   design_goals
-   prior_art
    developing
    :maxdepth: 1
 
