@@ -3,7 +3,7 @@ import time
 import StringIO
 import copy
 
-from ..exceptions import InvalidTaskDefinition
+from ..exceptions import InvalidTaskDefinition, CommandLineException
 from .. import colors
 from .. import shell
 from .. import resources
@@ -239,6 +239,14 @@ class Task(resources.base.BaseResource):
         for command in self.command_list:
             self.graph.logger.info(self.command_message(command))
             self.run(command)
+
+        # confirm that the creates resources exists on the filesystem
+        if not all(resource.exists() for resource in self.creates_resources):
+            raise CommandLineException(self.creates + (
+                " does not exist after running the previous commands. "
+                "Double check the syntax to confirm that these commands "
+                "will actually create it."
+            ))
 
         # stop the clock and alert the user to the clock time spent
         # running the task

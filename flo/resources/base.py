@@ -114,3 +114,7 @@ class BaseResource(object):
         raise NotImplementedError(
             "Must implement get_filename for child classes"
         )
+
+    def exists(self):
+        """Check to see if the resource exists."""
+        raise NotImplementedError
