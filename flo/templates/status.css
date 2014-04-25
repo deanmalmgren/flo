@@ -1,0 +1,15 @@
+.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+.not_synced {
+  fill: steelblue;
+}
+.synced {
+  fill: #ccc;
+}
+
+.link {
+  stroke: #999;
+  stroke-opacity: .6;
+}

@@ -1,11 +1,20 @@
+<!DOCTYPE html>
 <html>
   <head>
+    <style>
+      {% include "status.css" %}
+    </style>
   </head>
   <body>
+    <p style="color:#666; text-align:center;">
+      This is a placeholder. A more useful visualization
+      is <a href="http://github.com/deanmalmgren/flo/issues/68">coming
+	soon</a>. Contributions welcome!
+    </p>
     <div id="viz"></div>
     <script src="http://d3js.org/d3.v3.min.js"></script>
     <script>
-      document.data = {{task_graph.status_json}};
+      document.graph = {{task_graph.status_json()}};
       {% include "status.js" %}
     </script>
   </body>

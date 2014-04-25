@@ -6,6 +6,7 @@ import collections
 import datetime
 import glob
 from distutils.util import strtobool
+import json
 
 import networkx as nx
 
@@ -251,6 +252,24 @@ class TaskGraph(object):
         task_list = task_list or self.task_list
         for task in task_list:
             task.clean()
+
+    def status_json(self):
+        result = {"nodes": [], "links": []}
+        node_index = {}
+        for i, task in enumerate(self.iter_graph()):
+            node_index[task] = i
+            result["nodes"].append({
+                "task_id": task.id,
+                "duration": self.task_durations.get(task.id, None),
+                "in_sync": task.in_sync(),
+            })
+        for task in node_index:
+            for child in task.downstream_tasks:
+                result["links"].append({
+                    "source": node_index[task],
+                    "target": node_index[child],
+                })
+        return json.dumps(result)
 
     def duration_string(self, duration):
         if duration < 10 * 60:  # 10 minutes
