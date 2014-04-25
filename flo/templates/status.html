@@ -1,0 +1,12 @@
+<html>
+  <head>
+  </head>
+  <body>
+    <div id="viz"></div>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script>
+      document.data = {{task_graph.status_json}};
+      {% include "status.js" %}
+    </script>
+  </body>
+</html>

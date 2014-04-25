@@ -26,6 +26,7 @@ Vagrant.configure("2") do |config|
     vb.customize ["modifyvm", :id, "--memory", "2048"]
     override_config.vm.box = "precise32"
     override_config.vm.box_url = "http://files.vagrantup.com/precise32.box"
+    override_config.vm.network :forwarded_port, guest: 8000, host: 8000
   end
  
   # steps for provisioning so that these provisioning steps are

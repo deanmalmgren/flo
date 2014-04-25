@@ -3,12 +3,11 @@ import time
 import StringIO
 import copy
 
-import jinja2
-
 from ..exceptions import InvalidTaskDefinition
 from .. import colors
 from .. import shell
 from .. import resources
+from .. import templates
 
 
 def _cast_as_list(obj):
@@ -249,11 +248,6 @@ class Task(resources.base.BaseResource):
         # store the duration on the graph object
         self.graph.task_durations[self.id] = self.duration
 
-    def _render_template_helper(self, template_str):
-        env = jinja2.Environment()
-        template_obj = env.from_string(template_str)
-        return template_obj.render(self.attrs)
-
     def render_template(self, template):
         """Render a `template` using self.attrs as a template context.
         """
@@ -264,9 +258,10 @@ class Task(resources.base.BaseResource):
         # if template is a list, make sure to render each element of
         # the list
         if isinstance(template, (list, tuple)):
-            return [self._render_template_helper(t) for t in template]
+            return [templates.render_from_string(t, **self.attrs)
+                    for t in template]
         else:
-            return self._render_template_helper(template)
+            return templates.render_from_string(template, **self.attrs)
 
     def render_command_template(self):
         """Uses jinja template syntax to render the command from the other

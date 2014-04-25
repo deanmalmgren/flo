@@ -36,22 +36,23 @@ class Command(BaseCommand, TaskIdMixin):
         if skip:
             self.task_graph.remove_node_substituting_dependencies(skip)
 
-    def inner_execute(self, task_id, start_at, skip, only, force):
+    def inner_execute(self, task_id, start_at, skip, only, force,
+                      mock_run=False):
         self.manipulate_task_graph(task_id, start_at, skip, only)
 
         # when the workflow is --force'd, this runs all
         # tasks. Otherwise, only runs tasks that are out of sync.
         if force:
-            self.task_graph.run_all()
+            self.task_graph.run_all(mock_run=mock_run)
         else:
-            self.task_graph.run_all_out_of_sync()
+            self.task_graph.run_all_out_of_sync(mock_run=mock_run)
 
         # mark the self.task_graph as completing successfully to send the
         # correct email message
         self.task_graph.successful = True
 
-    def execute(self, task_id=None, force=False,
-                notify_emails=None, start_at=None, skip=None, only=None):
+    def execute(self, task_id=None, start_at=None, skip=None, only=None,
+                force=False, notify_emails=None):
         super(Command, self).execute()
         try:
             self.inner_execute(task_id, start_at, skip, only, force)
