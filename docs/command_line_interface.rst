@@ -152,7 +152,17 @@ commands will be run and approximately how much time it should take
     flo status             # don't run anything, just report what would be done
 
 For reference, ``flo`` stores the duration of each task in
-``.flo/duration.csv``.
+``.flo/duration.csv``. Another way you can comfort yourself is by
+looking at the status visualization.
+
+.. code-block:: bash
+
+    flo status --serve
+
+which displays something like this:
+
+.. figure:: http://i.imgur.com/uWNK9xO.png
+    :alt: status visual
 
 Starting over
 '''''''''''''
