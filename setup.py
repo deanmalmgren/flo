@@ -38,7 +38,9 @@ setup(
         'flo.commands',
         'flo.resources',
         'flo.tasks',
+        'flo.templates',
     ],
+    package_data={"flo.templates": ["*.css", "*.js", "*.html"]},
     install_requires=dependencies,
     zip_safe=False,
 )

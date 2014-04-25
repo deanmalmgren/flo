@@ -11,7 +11,7 @@ configuration <flo.yaml-specification>` have many features that make
    amenible to working with how most distributed version control
    systems work.
 *  ``flo`` times each step of the analysis, :ref:`making it easy to
-   determine how long any particular run will take <dry-run>` before
+   determine how long any particular run will take <status>` before
    ``flo`` does anything.
 *  ``flo`` comes with :ref:`command line autocompletion builtin
    <command-line-interface>`, making it easy to evaluate your options
@@ -24,9 +24,10 @@ configuration <flo.yaml-specification>` have many features that make
    data-savvy users to make it as easy as possible to maintain by the
    community.
 
-Here's a quick screencast of ``flo`` in action:
+..
+   Here's a quick screencast of ``flo`` in action:
 
-.. todo:: make screencast!
+   .. todo:: make screencast!
 
 If you're sold, :ref:`get started <quick-start>`. If not, read on:
 
