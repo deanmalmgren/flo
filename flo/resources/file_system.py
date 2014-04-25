@@ -43,3 +43,6 @@ class FileSystem(BaseResource):
 
     def get_filename(self):
         return self.name
+
+    def exists(self):
+        return os.path.exists(self.resource_path)
