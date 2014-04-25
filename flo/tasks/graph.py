@@ -299,13 +299,16 @@ class TaskGraph(object):
                     n_unknown += 1
         msg = ''
         if n_unknown > 0:
-            msg += "%d new tasks with unknown durations.\n" % (
+            msg += "There are %d new tasks with unknown durations.\n" % (
                 n_unknown,
             )
-        msg += "The remaining %d-%d tasks need to be executed,\n" % (
-            len(tasks),
-            n_tasks,
-        )
+        if len(tasks) == n_tasks:
+            msg += "The remaining %d tasks need to be executed,\n" % n_tasks
+        else:
+            msg += "The remaining %d to %d tasks need to be executed,\n" % (
+                len(tasks),
+                n_tasks,
+            )
         if max_duration == min_duration == 0.0:
             msg += "which will take an indeterminate amount of time."
         elif max_duration == min_duration:
