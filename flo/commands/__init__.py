@@ -10,6 +10,7 @@ from importlib import import_module
 from ..exceptions import CommandLineException
 from .base import BaseCommand
 from . import run, clean, archive, status
+from .. import colors
 
 # NOTE: as of commit 54297065861b95922f1d26b892a63da33052a138, we
 # imported these modules dynamically but this is rather slow for
@@ -46,5 +47,5 @@ def run_subcommand(args):
     try:
         command.execute(**args.__dict__)
     except CommandLineException, e:
-        print(e)
+        print(colors.red(e))
         sys.exit(getattr(e, 'exit_code', 1))

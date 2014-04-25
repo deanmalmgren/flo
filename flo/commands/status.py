@@ -1,9 +1,11 @@
 import BaseHTTPServer
 import SocketServer
+import socket
 
 from .run import Command as RunCommand
 from .base import BaseCommand
 from .. import templates
+from ..exceptions import CommandLineException
 
 
 class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
@@ -36,8 +38,11 @@ class Command(RunCommand):
 
     def serve_status_page(self, port):
         Handler.task_graph = self.task_graph
-        httpd = SocketServer.TCPServer(("", port), Handler)
-        print("Server is running at %s:%d" % httpd.server_address)
+        print("Starting server at http://localhost:%d" % port)
+        try:
+            httpd = SocketServer.TCPServer(("", port), Handler)
+        except socket.error, e:
+            raise CommandLineException(e.strerror)
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
