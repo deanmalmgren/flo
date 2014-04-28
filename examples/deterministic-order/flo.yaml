@@ -1,0 +1,78 @@
+# this example is used to validate that the task graph is always
+# traversed in a deterministic order. Task graphs are always iterated
+# over based on their dependencies, but ties are broken based on the
+# ordering in this file, the final order should be:
+#   a
+#   z
+#   e
+#   g
+#   b
+#   c
+#   d
+#   j
+#   k
+#   l
+#   f
+#   y
+
+---
+creates: a
+command: echo "x" > {{creates}}
+
+---
+creates: z
+command: echo "x" > {{creates}}
+
+---
+creates: b
+depends: a
+command: echo "x" > {{creates}}
+
+---
+creates: c
+depends: a
+command: echo "x" > {{creates}}
+
+---
+creates: d
+depends: a
+command: echo "x" > {{creates}}
+
+---
+creates: j
+depends: a
+command: echo "x" > {{creates}}
+
+---
+creates: k
+depends: a
+command: echo "x" > {{creates}}
+
+---
+creates: l
+depends: a
+command: echo "x" > {{creates}}
+
+---
+creates: e
+command: echo "x" > {{creates}}
+
+---
+creates: f
+depends: e
+command: echo "x" > {{creates}}
+
+---
+creates: g
+command: echo "x" > {{creates}}
+
+---
+creates: h
+depends: g
+command: echo "x" > {{creates}}
+
+---
+creates: y
+depends: z
+command: echo "x" > {{creates}}
+
