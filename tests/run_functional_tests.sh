@@ -55,56 +55,56 @@ validate_example () {
     fi
 }
 
-# # run a few examples to make sure the checksums match what they are
-# # supposed to. if you update an example, be sure to update the
-# # checksum by just running this script and determining what the
-# # correct checksum is
-# validate_example hello-world 040bf35be21ac0a3d6aa9ff4ff25df24
-# validate_example model-correlations 14ba1ffc4c37cd306bf415107d6edfd1
+# run a few examples to make sure the checksums match what they are
+# supposed to. if you update an example, be sure to update the
+# checksum by just running this script and determining what the
+# correct checksum is
+validate_example hello-world 040bf35be21ac0a3d6aa9ff4ff25df24
+validate_example model-correlations 14ba1ffc4c37cd306bf415107d6edfd1
 
-# # this runs specific tests for the --start-at option
-# cd $BASEDIR
-# python test_start_at.py $EXAMPLE_ROOT
-# exit_code=$(expr ${exit_code} + $?)
+# this runs specific tests for the --start-at option
+cd $BASEDIR
+python test_start_at.py $EXAMPLE_ROOT
+exit_code=$(expr ${exit_code} + $?)
 
-# # test the --skip option to make sure everything works properly by
-# # modifying a specific task that would otherwise branch to other tasks
-# # and make sure that skipping it does not trigger the workflow to run
-# cd $EXAMPLE_ROOT/model-correlations
-# flo run -f
-# sed -i 's/\+1/+2/g' flo.yaml
-# flo run --skip data/x_y.dat
-# grep "No tasks are out of sync" .flo/flo.log > /dev/null
-# exit_code=$(expr ${exit_code} + $?)
-# flo run
-# grep "|-> cut " .flo/flo.log > /dev/null
-# exit_code=$(expr ${exit_code} + $?)
-# sed -i 's/\+2/+1/g' flo.yaml
-# cd $EXAMPLE_ROOT
+# test the --skip option to make sure everything works properly by
+# modifying a specific task that would otherwise branch to other tasks
+# and make sure that skipping it does not trigger the workflow to run
+cd $EXAMPLE_ROOT/model-correlations
+flo run -f
+sed -i 's/\+1/+2/g' flo.yaml
+flo run --skip data/x_y.dat
+grep "No tasks are out of sync" .flo/flo.log > /dev/null
+exit_code=$(expr ${exit_code} + $?)
+flo run
+grep "|-> cut " .flo/flo.log > /dev/null
+exit_code=$(expr ${exit_code} + $?)
+sed -i 's/\+2/+1/g' flo.yaml
+cd $EXAMPLE_ROOT
 
-# # test the --only option
-# cd $EXAMPLE_ROOT/hello-world
-# flo run -f
-# flo run --only data/hello_world.txt
-# grep "No tasks are out of sync" .flo/flo.log > /dev/null
-# exit_code=$(expr ${exit_code} + $?)
-# flo run -f --only data/hello_world.txt
-# n_matches=$(grep "|-> " .flo/flo.log | wc -l)
-# if [[ ${n_matches} -ne 2 ]]; then
-#     red "flo run -f --only data/hello_world.txt should only run two commands"
-#     exit_code=$(expr ${exit_code} + 1)
-# fi
-# cd $EXAMPLE_ROOT
+# test the --only option
+cd $EXAMPLE_ROOT/hello-world
+flo run -f
+flo run --only data/hello_world.txt
+grep "No tasks are out of sync" .flo/flo.log > /dev/null
+exit_code=$(expr ${exit_code} + $?)
+flo run -f --only data/hello_world.txt
+n_matches=$(grep "|-> " .flo/flo.log | wc -l)
+if [[ ${n_matches} -ne 2 ]]; then
+    red "flo run -f --only data/hello_world.txt should only run two commands"
+    exit_code=$(expr ${exit_code} + 1)
+fi
+cd $EXAMPLE_ROOT
 
 # make sure that flo always runs in a deterministic order
 cd $EXAMPLE_ROOT/deterministic-order
 flo run --force
 exit_code=$(expr ${exit_code} + $?)
-sed -n '/|-> /{g;1!p;};h' .flo/flo.log > actual
-grep "#ORDER " flo.yaml | awk '{print $2}' > preferred
-diff actual preferred
-exit_code=$(expr ${exit_code} + $?)
-rm -f actual preferred
+sed -n '/|-> /{g;1!p;};h' .flo/flo.log | sort -C
+if [[ $? -ne 0 ]]; then
+    red "flo not running in expected deterministic order"
+    exit_code=$(expr ${exit_code} + 1)
+fi
 cd $EXAMPLE_ROOT
 
 # exit with the sum of the status

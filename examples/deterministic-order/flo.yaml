@@ -1,19 +1,7 @@
 # this example is used to validate that the task graph is always
 # traversed in a deterministic order. Task graphs are always iterated
 # over based on their dependencies, but ties are broken based on the
-# ordering in this file, the final order should be
-#ORDER data/a
-#ORDER data/z
-#ORDER data/e
-#ORDER data/g
-#ORDER data/b
-#ORDER data/c
-#ORDER data/d
-#ORDER data/j
-#ORDER data/k
-#ORDER data/l
-#ORDER data/f
-#ORDER data/y
+# ordering in this file, the final order should be alphabetical
 
 ---
 creates: data/a
@@ -22,21 +10,31 @@ command:
   - echo "x" > {{creates}}
 
 ---
-creates: data/z
-command: echo "x" > {{creates}}
-
----
 creates: data/b
+command: echo "x" > {{creates}}
+
+---
+creates: data/e
 depends: data/a
 command: echo "x" > {{creates}}
 
 ---
-creates: data/c
+creates: data/f
 depends: data/a
 command: echo "x" > {{creates}}
 
 ---
-creates: data/d
+creates: data/g
+depends: data/a
+command: echo "x" > {{creates}}
+
+---
+creates: data/h
+depends: data/a
+command: echo "x" > {{creates}}
+
+---
+creates: data/i
 depends: data/a
 command: echo "x" > {{creates}}
 
@@ -46,35 +44,32 @@ depends: data/a
 command: echo "x" > {{creates}}
 
 ---
+creates: data/n
+depends: 
+  - data/j
+  - data/m
+command: echo "x" > {{creates}}
+
+---
+creates: data/c
+command: echo "x" > {{creates}}
+
+---
 creates: data/k
-depends: data/a
+depends: data/c
+command: echo "x" > {{creates}}
+
+---
+creates: data/d
 command: echo "x" > {{creates}}
 
 ---
 creates: data/l
-depends: data/a
+depends: data/d
 command: echo "x" > {{creates}}
 
 ---
-creates: data/e
-command: echo "x" > {{creates}}
-
----
-creates: data/f
-depends: data/e
-command: echo "x" > {{creates}}
-
----
-creates: data/g
-command: echo "x" > {{creates}}
-
----
-creates: data/h
-depends: data/g
-command: echo "x" > {{creates}}
-
----
-creates: data/y
-depends: data/z
+creates: data/m
+depends: data/b
 command: echo "x" > {{creates}}
 
