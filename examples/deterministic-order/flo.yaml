@@ -55,7 +55,7 @@ creates: data/c
 command: echo "x" > {{creates}}
 
 ---
-creates: data/k
+creates: data/l
 depends: data/c
 command: echo "x" > {{creates}}
 
@@ -64,12 +64,12 @@ creates: data/d
 command: echo "x" > {{creates}}
 
 ---
-creates: data/l
+creates: data/m
 depends: data/d
 command: echo "x" > {{creates}}
 
 ---
-creates: data/m
+creates: data/k
 depends: data/b
 command: echo "x" > {{creates}}
 
