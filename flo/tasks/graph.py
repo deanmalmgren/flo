@@ -74,62 +74,54 @@ class TaskGraph(object):
                     msg += '    -> %s\n' % task_id
             raise CommandLineException(msg)
 
-    def iter_graph(self, tasks=None, downstream=True):
+    def iter_tasks(self, tasks=None):
         """Iterate over graph with breadth-first search of task dependencies,
         starting from `tasks` or the set of tasks that do not depend
         on anything.
         http://en.wikipedia.org/wiki/Breadth-first_search
         """
-
         # TODO: if we want to keep start_at functionality, then
         # consider integrating NetworkXGraph object throughout, and
         # get rid of this method. (make Graph extend NetworkXGraph)
-
-        if downstream:
-            tasks = tasks or self.get_source_tasks()
-            popmethod = 'popleft'
-            updownstream = 'downstream_tasks'
-        else:
-            tasks = tasks or self.get_sink_tasks()
-            popmethod = 'pop'
-            updownstream = 'upstream_tasks'
-        horizon = collections.deque(tasks)
+        tasks = tasks or self.get_source_tasks()
+        horizon = list(tasks)
         done, horizon_set = set(), set(tasks)
-        task_order = []
-        popmethod = getattr(horizon, popmethod)
         while horizon:
-            task = popmethod()
+            # before popping task off the horizon list, make sure all
+            # of its dependencies have been completed
+            for task in horizon:
+                if not task.upstream_tasks.difference(done):
+                    break
+            horizon.remove(task)
             horizon_set.discard(task)
             done.add(task)
-            task_order.append(task)
-            updownset = getattr(task, updownstream)
-            for task in updownset.difference(done):
+            yield task
+            for task in task.downstream_tasks.difference(done):
                 if task not in horizon_set:
                     horizon.append(task)
                     horizon_set.add(task)
-        return task_order
 
     def get_source_tasks(self):
         """Get the set of tasks that do not depend on anything else.
         """
-        source_tasks = set()
+        source_tasks = []
         for task in self.task_list:
             if not task.upstream_tasks:
-                source_tasks.add(task)
+                source_tasks.append(task)
         return source_tasks
 
     def get_sink_tasks(self):
         """Get the set of tasks that do not have any dependencies.
         """
-        sink_tasks = set()
+        sink_tasks = []
         for task in self.task_list:
             if not task.downstream_tasks:
-                sink_tasks.add(task)
+                sink_tasks.append(task)
         return sink_tasks
 
     def get_out_of_sync_tasks(self):
         out_of_sync_tasks = []
-        for task in self.iter_graph():
+        for task in self.iter_tasks():
             if not task.is_pseudotask() and not task.in_sync():
                 out_of_sync_tasks.append(task)
         return out_of_sync_tasks
@@ -172,24 +164,28 @@ class TaskGraph(object):
         """Find the subgraph of all dependencies to run these tasks. Returns a
         new graph.
         """
-        assert start_at or end_at, "start_at and end_at are both False"
+        assert start_at or end_at, "one of {start_at,end_at} must be a task id"
         start, end = map(self.task_dict.get, [start_at, end_at])
         if None in [start, end]:
+            graph = self.get_networkx_graph()
             if start:
-                downstream = True
+                task_subset = nx.descendants(graph, start)
+                task_subset.add(start)
             elif end:
-                downstream = False
-            node = start or end
-            tasks = self.iter_graph([node], downstream=downstream)
+                task_subset = nx.ancestors(graph, end)
+                task_subset.add(end)
         elif start == end:
-            tasks = [start]
+            task_subset = set([start])
         else:
             graph = self.get_networkx_graph()
-            tasks = set()
+            task_subset = set()
             for path in nx.all_simple_paths(graph, start, end):
-                tasks.update(path)
+                task_subset.update(path)
 
-        tasks_kwargs_list = [task.yaml_data for task in tasks]
+        # make sure the tasks are added to the subgraph in the same
+        # order as the original configuration file
+        tasks_kwargs_list = [task.yaml_data for task in self.task_list
+                             if task in task_subset]
         subgraph = TaskGraph(self.config_path, tasks_kwargs_list)
         return subgraph
 
@@ -275,7 +271,7 @@ class TaskGraph(object):
     def status_json(self):
         result = {"nodes": [], "links": []}
         node_index = {}
-        for i, task in enumerate(self.iter_graph()):
+        for i, task in enumerate(self.iter_tasks()):
             node_index[task] = i
             result["nodes"].append({
                 "task_id": task.id,
@@ -309,7 +305,7 @@ class TaskGraph(object):
         for task in tasks:
             min_duration += self.task_durations.get(task.id, 0.0)
         max_duration, n_unknown, n_tasks = 0.0, 0, 0
-        for task in self.iter_graph(tasks):
+        for task in self.iter_tasks(tasks):
             if not task.is_pseudotask():
                 n_tasks += 1
                 try:
@@ -348,7 +344,7 @@ class TaskGraph(object):
         behavior of running a workflow depending on the circumstances.
         """
         self.logger.info(self.duration_message(starting_tasks))
-        for task in self.iter_graph(starting_tasks):
+        for task in self.iter_tasks(starting_tasks):
             if do_run_func(task):
                 if mock_run:
                     task.mock_run()
@@ -367,7 +363,7 @@ class TaskGraph(object):
         """Execute all tasks in the workflow, regardless of whether they are
         in sync or not.
         """
-        starting_tasks = list(task for task in self.iter_graph())
+        starting_tasks = list(task for task in self.iter_tasks())
 
         def do_run_func(task):
             return not task.is_pseudotask()

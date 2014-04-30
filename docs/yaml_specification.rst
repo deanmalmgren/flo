@@ -149,3 +149,15 @@ There are several `examples
 inspiration on how you could use the flo.yaml specification. If you
 have suggestions for other ideas, please `add them
 <http://github.com/deanmalmgren/flo/issues>`__!
+
+deterministic execution order
+'''''''''''''''''''''''''''''
+
+When `flo` is :ref:`executed <flo-run>`, it makes sure to obey the
+dependencies specified in the YAML configuration. In the event of
+ties---for example, several tasks that all depend on the same parent
+task---`flo` is executed in the same order as the tasks appear in the
+YAML configuration. As an example, the `deterministic order example
+<http://github.com/deanmalmgren/flo/blob/master/examples/deterministic-order>`__
+contains a relatively complicated workflow configuration where the
+tasks are execited in alphabetical order.
