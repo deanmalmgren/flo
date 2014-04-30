@@ -72,10 +72,15 @@ class TaskGraph(object):
         # consider integrating NetworkXGraph object throughout, and
         # get rid of this method. (make Graph extend NetworkXGraph)
         tasks = tasks or self.get_source_tasks()
-        horizon = collections.deque(tasks)
+        horizon = list(tasks)
         done, horizon_set = set(), set(tasks)
         while horizon:
-            task = horizon.popleft()
+            # before popping task off the horizon list, make sure all
+            # of its dependencies have been completed
+            for task in horizon:
+                if not task.upstream_tasks.difference(done):
+                    break
+            horizon.remove(task)
             horizon_set.discard(task)
             done.add(task)
             yield task
