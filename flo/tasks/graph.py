@@ -68,7 +68,6 @@ class TaskGraph(object):
         on anything.
         http://en.wikipedia.org/wiki/Breadth-first_search
         """
-
         # TODO: if we want to keep start_at functionality, then
         # consider integrating NetworkXGraph object throughout, and
         # get rid of this method. (make Graph extend NetworkXGraph)

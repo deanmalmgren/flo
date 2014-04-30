@@ -29,6 +29,9 @@ class UniqueOrderedList(list):
         self.master_list = master_list
 
     def sort(self):
+        # no sense in sorting an empty list
+        if not self:
+            return
         obj_index = dict((obj, i) for i, obj in enumerate(self.master_list))
         decorated = [(obj_index[obj], obj) for obj in self]
         decorated.sort()
@@ -41,7 +44,7 @@ class UniqueOrderedList(list):
 
     def update(self, obj_iterator):
         for obj in obj_iterator:
-            self.append(obj)
+            self.add(obj)
 
     def clear(self):
         while self:
@@ -50,7 +53,10 @@ class UniqueOrderedList(list):
     def difference(self, that_list):
         this_set = set(self)
         that_set = set(that_list)
-        return this_set.difference(that_set)
+        ordered_difference = UniqueOrderedList(self.master_list)
+        ordered_difference.update(this_set.difference(that_set))
+        ordered_difference.sort()
+        return ordered_difference
 
 
 class Task(resources.base.BaseResource):
