@@ -7,69 +7,101 @@
 creates: data/a
 command:
   - mkdir -p $(dirname {{creates}})
-  - echo "x" > {{creates}}
+  - echo {{creates}} > {{creates}}
+
+---
+creates: data/o
+depends:
+  - data/a
+  - data/n
+command:
+  - cat {{depends|join(' ')}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
 
 ---
 creates: data/b
-command: echo "x" > {{creates}}
+command:
+  - echo {{creates}} > {{creates}}
 
 ---
 creates: data/e
 depends: data/a
-command: echo "x" > {{creates}}
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
 
 ---
 creates: data/f
 depends: data/a
-command: echo "x" > {{creates}}
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
 
 ---
 creates: data/g
 depends: data/a
-command: echo "x" > {{creates}}
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
 
 ---
 creates: data/h
 depends: data/a
-command: echo "x" > {{creates}}
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
 
 ---
 creates: data/i
 depends: data/a
-command: echo "x" > {{creates}}
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
 
 ---
 creates: data/j
 depends: data/a
-command: echo "x" > {{creates}}
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
 
 ---
 creates: data/n
 depends: 
   - data/j
   - data/m
-command: echo "x" > {{creates}}
+command:
+  - cat {{depends|join(' ')}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
 
 ---
 creates: data/c
-command: echo "x" > {{creates}}
+command:
+  - echo {{creates}} > {{creates}}
 
 ---
 creates: data/l
 depends: data/c
-command: echo "x" > {{creates}}
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
 
 ---
 creates: data/d
-command: echo "x" > {{creates}}
+command:
+  - echo {{creates}} > {{creates}}
 
 ---
 creates: data/m
 depends: data/d
-command: echo "x" > {{creates}}
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
 
 ---
 creates: data/k
 depends: data/b
-command: echo "x" > {{creates}}
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
 

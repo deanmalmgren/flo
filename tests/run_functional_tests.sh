@@ -98,6 +98,8 @@ cd $EXAMPLE_ROOT
 
 # make sure that flo always runs in a deterministic order
 cd $EXAMPLE_ROOT/deterministic-order
+flo clean --force
+exit_code=$(expr ${exit_code} + $?)
 flo run --force
 exit_code=$(expr ${exit_code} + $?)
 sed -n '/|-> /{g;1!p;};h' .flo/flo.log | sort -C
