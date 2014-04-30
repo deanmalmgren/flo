@@ -10,7 +10,8 @@ import json
 
 import networkx as nx
 
-from ..exceptions import InvalidTaskDefinition, NonUniqueTask, ShellError
+from ..exceptions import InvalidTaskDefinition, NonUniqueTask, ShellError, \
+    CommandLineException
 from .. import colors
 from .. import shell
 from .. import resources
@@ -61,6 +62,17 @@ class TaskGraph(object):
             task = Task(self, **task_kwargs)
         self._link_dependencies()
         self._load_state()
+
+        # confirm that this is a DAG without any dependency loops
+        nx_graph = self.get_networkx_graph(task_id_only=True)
+        if not nx.is_directed_acyclic_graph(nx_graph):
+            msg = "This task graph has the following dependency cycles:\n\n"
+            cycles = nx.simple_cycles(nx_graph)
+            for cycle in cycles:
+                msg += '  %s\n' % cycle[0]
+                for task_id in cycle[1:]:
+                    msg += '    -> %s\n' % task_id
+            raise CommandLineException(msg)
 
     def iter_graph(self, tasks=None, downstream=True):
         """Iterate over graph with breadth-first search of task dependencies,
@@ -181,12 +193,18 @@ class TaskGraph(object):
         subgraph = TaskGraph(self.config_path, tasks_kwargs_list)
         return subgraph
 
-    def get_networkx_graph(self):
+    def get_networkx_graph(self, task_id_only=False):
         graph = nx.DiGraph()
-        graph.add_nodes_from(self.iter_graph())
-        for node in graph:
-            for child in node.downstream_tasks:
-                graph.add_edge(node, child)
+        if task_id_only:
+            graph.add_nodes_from([task.id for task in self.task_list])
+            for node in self.task_list:
+                for child in node.downstream_tasks:
+                    graph.add_edge(node.id, child.id)
+        else:
+            graph.add_nodes_from(self.task_list)
+            for node in graph:
+                for child in node.downstream_tasks:
+                    graph.add_edge(node, child)
         return graph
 
     def _dereference_alias_helper(self, name):
@@ -222,7 +240,8 @@ class TaskGraph(object):
 
     def get_user_clean_confirmation(self, task_list=None,
                                     include_internals=False):
-        """This method gets user confirmation about cleaning up the workflow"""
+        """This method gets user confirmation about cleaning up the workflow
+        """
         self.logger.info(colors.red(
             "Please confirm that you want to delete the following files:"
         ))
