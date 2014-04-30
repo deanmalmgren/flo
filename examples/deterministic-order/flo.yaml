@@ -1,0 +1,107 @@
+# this example is used to validate that the task graph is always
+# traversed in a deterministic order. Task graphs are always iterated
+# over based on their dependencies, but ties are broken based on the
+# ordering in this file, the final order should be alphabetical
+
+---
+creates: data/a
+command:
+  - mkdir -p $(dirname {{creates}})
+  - echo {{creates}} > {{creates}}
+
+---
+creates: data/o
+depends:
+  - data/a
+  - data/n
+command:
+  - cat {{depends|join(' ')}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
+
+---
+creates: data/b
+command:
+  - echo {{creates}} > {{creates}}
+
+---
+creates: data/e
+depends: data/a
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
+
+---
+creates: data/f
+depends: data/a
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
+
+---
+creates: data/g
+depends: data/a
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
+
+---
+creates: data/h
+depends: data/a
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
+
+---
+creates: data/i
+depends: data/a
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
+
+---
+creates: data/j
+depends: data/a
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
+
+---
+creates: data/n
+depends: 
+  - data/j
+  - data/m
+command:
+  - cat {{depends|join(' ')}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
+
+---
+creates: data/c
+command:
+  - echo {{creates}} > {{creates}}
+
+---
+creates: data/l
+depends: data/c
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
+
+---
+creates: data/d
+command:
+  - echo {{creates}} > {{creates}}
+
+---
+creates: data/m
+depends: data/d
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
+
+---
+creates: data/k
+depends: data/b
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
+

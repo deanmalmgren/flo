@@ -23,6 +23,8 @@ the `virtual machine provisioning for this project
 we elaborate on a few key features of ``flo``; see ``flo --help`` for
 details about all available functionality.
 
+.. _flo-run:
+
 running workflows
 '''''''''''''''''
 

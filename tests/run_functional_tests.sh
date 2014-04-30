@@ -96,5 +96,18 @@ if [[ ${n_matches} -ne 2 ]]; then
 fi
 cd $EXAMPLE_ROOT
 
+# make sure that flo always runs in a deterministic order
+cd $EXAMPLE_ROOT/deterministic-order
+flo clean --force
+exit_code=$(expr ${exit_code} + $?)
+flo run --force
+exit_code=$(expr ${exit_code} + $?)
+sed -n '/|-> /{g;1!p;};h' .flo/flo.log | sort -C
+if [[ $? -ne 0 ]]; then
+    red "flo not running in expected deterministic order"
+    exit_code=$(expr ${exit_code} + 1)
+fi
+cd $EXAMPLE_ROOT
+
 # exit with the sum of the status
 exit ${exit_code}
