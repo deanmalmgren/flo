@@ -25,11 +25,24 @@ _task_kwargs_list = None
 _task_graph = None
 
 
-def find_config_path():
+def find_config_path(config=None):
     """Recursively decend into parent directories looking for the config
     file. Raise an error if none found.
     """
 
+    # if the config is specified on the command line, test to see if
+    # the config file exists
+    if config is not None:
+        config_path = os.path.abspath(os.path.join(os.getcwd(), config))
+        if not os.path.exists(config_path):
+            raise exceptions.ConfigurationNotFound(
+                config,
+                os.getcwd()
+            )
+        return config_path
+
+    # otherwise, recursively check parent directories of the current
+    # directory for anything named CONFIG_FILENAME
     config_path = ''
     directory = os.getcwd()
     while directory:
@@ -69,7 +82,7 @@ def config_yaml2task_kwargs_list(config_yaml):
     return task_kwargs_list
 
 
-def get_task_kwargs_list(config_path=None):
+def get_task_kwargs_list(config=None):
     """Get a list of dictionaries that are read from the flo.yaml
     file and collapse the global variables into each task.
     """
@@ -77,7 +90,7 @@ def get_task_kwargs_list(config_path=None):
     if _task_kwargs_list is None:
 
         # get workflow configuration file
-        config_path = config_path or find_config_path()
+        config_path = find_config_path(config=config)
 
         # load the data
         with open(config_path) as stream:
@@ -94,7 +107,7 @@ def load_task_graph(config=None):
     if _task_graph is not None:
         return _task_graph
 
-    config_path = config or find_config_path()
+    config_path = find_config_path(config=config)
 
     # convert each task_kwargs into a Task object and add it to the
     # TaskGraph
