@@ -20,14 +20,15 @@ class BaseCommand(object):
         """The command name defaults to the name of the module."""
         return self.__module__.rsplit('.', 1)[1]
 
-    def add_command_line_options(options):
-        pass
+    def add_command_line_options(self):
+        self.option_parser.add_argument(
+            '-c', '--config',
+            type=str,
+            help='Specify a particular YAML configuration file.',
+        )
 
-    def _init_task_graph(self):
-        self.task_graph = load_task_graph()
-
-    def execute(self, *args, **kwargs):
-        self._init_task_graph()
+    def execute(self, config=None):
+        self.task_graph = load_task_graph(config)
 
 
 class TaskKwargsListMixin(object):

@@ -10,8 +10,8 @@ from ..exceptions import ConfigurationNotFound
 class Command(BaseCommand):
     help_text = "Create and restore backup archives of workflows."
 
-    def execute(self, restore=False, exclude_internals=False):
-        super(Command, self).execute()
+    def execute(self, restore=False, exclude_internals=False, **kwargs):
+        super(Command, self).execute(**kwargs)
         if restore:
             self.task_graph.restore_archive(restore)
         else:
@@ -30,6 +30,7 @@ class Command(BaseCommand):
         return [os.path.relpath(a, abs_project_root) for a in abs_archives]
 
     def add_command_line_options(self):
+        super(Command, self).add_command_line_options()
         self.option_parser.add_argument(
             '--restore',
             metavar='ARCHIVE_PATH',

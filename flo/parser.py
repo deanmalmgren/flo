@@ -69,14 +69,15 @@ def config_yaml2task_kwargs_list(config_yaml):
     return task_kwargs_list
 
 
-def get_task_kwargs_list():
+def get_task_kwargs_list(config_path=None):
     """Get a list of dictionaries that are read from the flo.yaml
     file and collapse the global variables into each task.
     """
     global _task_kwargs_list
     if _task_kwargs_list is None:
+
         # get workflow configuration file
-        config_path = find_config_path()
+        config_path = config_path or find_config_path()
 
         # load the data
         with open(config_path) as stream:
@@ -85,7 +86,7 @@ def get_task_kwargs_list():
     return _task_kwargs_list
 
 
-def load_task_graph():
+def load_task_graph(config=None):
     """Load the task graph from the configuration file located at
     config_path
     """
@@ -93,7 +94,12 @@ def load_task_graph():
     if _task_graph is not None:
         return _task_graph
 
+    config_path = config or find_config_path()
+
     # convert each task_kwargs into a Task object and add it to the
     # TaskGraph
-    _task_graph = tasks.TaskGraph(find_config_path(), get_task_kwargs_list())
+    _task_graph = tasks.TaskGraph(
+        config_path,
+        get_task_kwargs_list(config_path),
+    )
     return _task_graph

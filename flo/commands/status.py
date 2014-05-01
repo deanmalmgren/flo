@@ -49,8 +49,8 @@ class Command(RunCommand):
             pass
 
     def execute(self, task_id=None, start_at=None, skip=None, only=None,
-                force=False, serve=None, port=None):
-        BaseCommand.execute(self)
+                force=False, serve=None, port=None, **kwargs):
+        BaseCommand.execute(self, **kwargs)
         if serve:
             self.serve_status_page(port)
         else:
@@ -58,6 +58,7 @@ class Command(RunCommand):
                                mock_run=True)
 
     def add_command_line_options(self):
+        BaseCommand.add_command_line_options(self)
         self.add_common_run_options()
         self.option_parser.add_argument(
             '--serve',

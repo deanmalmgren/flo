@@ -52,8 +52,8 @@ class Command(BaseCommand, TaskIdMixin):
         self.task_graph.successful = True
 
     def execute(self, task_id=None, start_at=None, skip=None, only=None,
-                force=False, notify_emails=None):
-        super(Command, self).execute()
+                force=False, notify_emails=None, **kwargs):
+        super(Command, self).execute(**kwargs)
         try:
             self.inner_execute(task_id, start_at, skip, only, force)
         except CommandLineException, e:
@@ -96,6 +96,7 @@ class Command(BaseCommand, TaskIdMixin):
         )
 
     def add_command_line_options(self):
+        super(Command, self).add_command_line_options()
         self.add_common_run_options()
         self.option_parser.add_argument(
             '--notify',
