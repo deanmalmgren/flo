@@ -61,6 +61,26 @@ itself has changed since the last time that task was run, ``flo`` will
 run that task. For reference, the hashes of all of the ``creates``,
 ``depends``, and workflow task definitions are in ``.flo/state.csv``.
 
+.. _flo-config:
+
+same project, different workflows
+'''''''''''''''''''''''''''''''''
+
+Naturally, there will be times when you'll want to have separate sets
+of steps to accomplish different things. One simple way to separate
+your workflow configuration is by putting them in two separate files,
+say ``figures.yaml`` and ``analysis.yaml``. You can then specify
+running these separate workflows on the command line with the
+``--config`` option like this:
+
+.. code-block:: bash
+
+    flo run --config figures.yaml
+    flo run --config analysis.yaml
+
+All other behaviors of the YAML configuration and use of the ``flo``
+command remain exactly the same.
+
 limiting flo run execution
 ''''''''''''''''''''''''''
 

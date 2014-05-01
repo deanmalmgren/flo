@@ -3,9 +3,10 @@
 flo.yaml specification
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Individual analysis tasks are defined as `YAML
-objects <http://en.wikipedia.org/wiki/YAML#Associative_arrays>`__ in
-``flo.yaml`` with something like this:
+Individual analysis tasks are defined as `YAML objects
+<http://en.wikipedia.org/wiki/YAML#Associative_arrays>`__ in a file
+named ``flo.yaml`` (or :ref:`whatever you prefer <flo-config>`) with
+something like this:
 
 .. code-block:: yaml
 
