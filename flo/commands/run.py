@@ -79,21 +79,21 @@ class Command(BaseCommand):
                 'Specify a task to start from (run everything downstream, '
                 'ignore everything upstream).'
             ),
-        )
+        ).completer = self.task_ids_completer
         self.option_parser.add_argument(
             '--skip',
             type=str,
             metavar='TASK_ID',
             choices=self.available_task_ids,
             help='Skip the specified task and ignore whether it is in sync.',
-        )
+        ).completer = self.task_ids_completer
         self.option_parser.add_argument(
             '--only',
             type=str,
             metavar='TASK_ID',
             choices=self.available_task_ids,
             help='Only run the specified task.',
-        )
+        ).completer = self.task_ids_completer
 
     def add_command_line_options(self):
         super(Command, self).add_command_line_options()
