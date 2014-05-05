@@ -1,29 +1,6 @@
-import collections
 import functools
 
-
-class FrozenDict(collections.Mapping):
-    """FrozenDict makes the equivalent of an immutable dictionary for the
-    purpose of memoization.
-
-    adapted from http://stackoverflow.com/a/2705638/564709
-    """
-
-    def __init__(self, *args, **kwargs):
-        self._d = dict(*args, **kwargs)
-
-    def __iter__(self):
-        return iter(self._d)
-
-    def __len__(self):
-        return len(self._d)
-
-    def __getitem__(self, key):
-        return self._d[key]
-
-    def __hash__(self):
-        return hash(tuple(sorted(self._d.iteritems())))
-
+from .types import FrozenDict
 
 class memoize(object):
     """Decorator. Caches a function's return value each time it is called.
