@@ -3,10 +3,10 @@ import sys
 
 from ..exceptions import ShellError, CommandLineException
 from ..notify import notify
-from .base import BaseCommand, TaskIdMixin
+from .base import BaseCommand
 
 
-class Command(BaseCommand, TaskIdMixin):
+class Command(BaseCommand):
     help_text = "Run the task workflow."
 
     def manipulate_task_graph(self, task_id, start_at, skip, only):

@@ -7,6 +7,10 @@ class BaseCommand(object):
 
     def __init__(self, subcommand_creator):
 
+        # keep a local copy of the config file which is useful during
+        # autocompletion
+        self.config = None
+
         # set up the subcommand options
         self.subcommand_creator = subcommand_creator
         self.option_parser = self.subcommand_creator.add_parser(
@@ -28,14 +32,8 @@ class BaseCommand(object):
         )
 
     def execute(self, config=None):
+        self.config = config
         self.task_graph = load_task_graph(config)
-
-
-class TaskKwargsListMixin(object):
-    """Any Command that uses flo.yaml to influence available command
-    line options should inherit from this class so that we only read and
-    parse the flo.yaml file *once*.
-    """
 
     # this is a performance optimization to make it possible to use
     # the flo.yaml file to inform useful *and responsive* tab
@@ -44,12 +42,9 @@ class TaskKwargsListMixin(object):
     @property
     def task_kwargs_list(self):
         try:
-            return get_task_kwargs_list()
+            return get_task_kwargs_list(config=self.config)
         except ConfigurationNotFound:
             return []
-
-
-class TaskIdMixin(TaskKwargsListMixin):
 
     @property
     def available_task_ids(self):
@@ -60,10 +55,21 @@ class TaskIdMixin(TaskKwargsListMixin):
         task_ids.sort()
         return task_ids
 
+    def task_ids_completer(self, prefix, parsed_args, **kwargs):
+        # this custom completer makes autocompletion work properly
+        # when an alternative configuration file has been specified
+        # https://argcomplete.readthedocs.org/en/latest/#specifying-completers
+        self.config = parsed_args.config
+        return [task_id for task_id in self.available_task_ids
+                if task_id.startswith(prefix)]
+
     def add_task_id_option(self, help_text):
         """This method streamlines the addition of adding a task_id option to
         the command line parser.
         """
+        # this uses a customized completer to correctly detect the
+        # configuration file during completion, which isn't possible
+        # by parsing sys.argv (which is what argparse natively does). 
         help_text += " Tab complete to view options."
         self.option_parser.add_argument(
             'task_id',
@@ -72,7 +78,7 @@ class TaskIdMixin(TaskKwargsListMixin):
             choices=self.available_task_ids,
             nargs='?',
             help=help_text,
-        )
+        ).completer = self.task_ids_completer
         # TODO: using `nargs='*'` does not work with `choices`
         # specified for some reason. For now, electing to use
         # `choices` and nargs='?'` so that command line autocomplete

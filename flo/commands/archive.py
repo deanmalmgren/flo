@@ -21,7 +21,7 @@ class Command(BaseCommand):
         # this method extracts the available archives by understanding
         # where TaskGraph stores the information
         try:
-            config_path = find_config_path()
+            config_path = find_config_path(config=self.config)
         except ConfigurationNotFound:
             return []
         abs_project_root = os.path.dirname(config_path)
@@ -29,8 +29,23 @@ class Command(BaseCommand):
         abs_archives = glob.glob(os.path.join(abs_archive_dir, "*"))
         return [os.path.relpath(a, abs_project_root) for a in abs_archives]
 
+    def available_archives_completer(self, prefix, parsed_args, **kwargs):
+        self.config = parsed_args.config
+        return [archive for archive in self.get_available_archives()
+                if archive.startswith(prefix)]
+
     def add_command_line_options(self):
         super(Command, self).add_command_line_options()
+        self.option_parser.add_argument(
+            '--exclude-internals',
+            action="store_true",
+            help="Exclude internals in the .flo/ directory from archive",
+        )
+
+        # this uses a custom completer to properly enable
+        # autocompletion when a particular configuration file is
+        # specified
+        # https://argcomplete.readthedocs.org/en/latest/#specifying-completers
         self.option_parser.add_argument(
             '--restore',
             metavar='ARCHIVE_PATH',
@@ -41,9 +56,4 @@ class Command(BaseCommand):
                 "Restore the state of the workflow. "
                 "Tab complete to view available archives."
             ),
-        )
-        self.option_parser.add_argument(
-            '--exclude-internals',
-            action="store_true",
-            help="Exclude internals in the .flo/ directory from archive",
-        )
+        ).completer = self.available_archives_completer

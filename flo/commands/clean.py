@@ -1,7 +1,7 @@
-from .base import BaseCommand, TaskIdMixin
+from .base import BaseCommand
 
 
-class Command(BaseCommand, TaskIdMixin):
+class Command(BaseCommand):
     help_text = (
         "Remove all `creates` targets defined in workflow. If a `task_id` is "
         "specified, only remove that target."
