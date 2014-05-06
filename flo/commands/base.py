@@ -33,7 +33,7 @@ class BaseCommand(object):
 
     def execute(self, config=None):
         self.config = config
-        self.task_graph = load_task_graph(config)
+        self.task_graph = load_task_graph(config=config)
 
     # this is a performance optimization to make it possible to use
     # the flo.yaml file to inform useful *and responsive* tab
@@ -63,22 +63,25 @@ class BaseCommand(object):
         return [task_id for task_id in self.available_task_ids
                 if task_id.startswith(prefix)]
 
+    def add_task_id_argument(self, *args, **kwargs):
+        """convenience method to use the task_ids_completer everywhere"""
+        option = self.option_parser.add_argument(*args, **kwargs)
+        option.completer = self.task_ids_completer
+        return option
+
     def add_task_id_option(self, help_text):
         """This method streamlines the addition of adding a task_id option to
         the command line parser.
         """
-        # this uses a customized completer to correctly detect the
-        # configuration file during completion, which isn't possible
-        # by parsing sys.argv (which is what argparse natively does). 
         help_text += " Tab complete to view options."
-        self.option_parser.add_argument(
+        self.add_task_id_argument(
             'task_id',
             metavar='TASK_ID',
             type=str,
             choices=self.available_task_ids,
             nargs='?',
             help=help_text,
-        ).completer = self.task_ids_completer
+        )
         # TODO: using `nargs='*'` does not work with `choices`
         # specified for some reason. For now, electing to use
         # `choices` and nargs='?'` so that command line autocomplete

@@ -12,12 +12,14 @@ class Command(BaseCommand):
 
     def execute(self, restore=False, exclude_internals=False, **kwargs):
         super(Command, self).execute(**kwargs)
+
         if restore:
             self.task_graph.restore_archive(restore)
         else:
             self.task_graph.write_archive(exclude_internals=exclude_internals)
 
-    def get_available_archives(self):
+    @property
+    def available_archives(self):
         # this method extracts the available archives by understanding
         # where TaskGraph stores the information
         try:
@@ -31,7 +33,7 @@ class Command(BaseCommand):
 
     def available_archives_completer(self, prefix, parsed_args, **kwargs):
         self.config = parsed_args.config
-        return [archive for archive in self.get_available_archives()
+        return [archive for archive in self.available_archives
                 if archive.startswith(prefix)]
 
     def add_command_line_options(self):
@@ -46,14 +48,16 @@ class Command(BaseCommand):
         # autocompletion when a particular configuration file is
         # specified
         # https://argcomplete.readthedocs.org/en/latest/#specifying-completers
-        self.option_parser.add_argument(
+        option = self.option_parser.add_argument(
             '--restore',
             metavar='ARCHIVE_PATH',
-            choices=self.get_available_archives(),
+            choices=self.available_archives,
             default=False,
+            type=str,
             nargs='?',
             help=(
                 "Restore the state of the workflow. "
                 "Tab complete to view available archives."
             ),
-        ).completer = self.available_archives_completer
+        )
+        option.completer = self.available_archives_completer
