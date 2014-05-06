@@ -71,23 +71,35 @@ class TaskGraph(object):
         # TODO: if we want to keep start_at functionality, then
         # consider integrating NetworkXGraph object throughout, and
         # get rid of this method. (make Graph extend NetworkXGraph)
-        tasks = tasks or self.get_source_tasks()
-        horizon = list(tasks)
-        done, horizon_set = set(), set(tasks)
-        while horizon:
-            # before popping task off the horizon list, make sure all
-            # of its dependencies have been completed
-            for task in horizon:
-                if not task.upstream_tasks.difference(done):
-                    break
-            horizon.remove(task)
-            horizon_set.discard(task)
-            done.add(task)
+        source_tasks = tasks or self.get_source_tasks()
+
+        # after reviewing a few sketches of some simple graphs to
+        # infer what ordering is intuitive, @stringertheory noticed
+        # that the intuitive ordering amounts to doing breadth first
+        # search but breaking ties between sibling tasks based on the
+        # order in the configuration file. One important difference
+        # between this method and standard breadth first search is
+        # that we want to track the *maximum* distance from any source
+        # to every other task to make sure the ordering is correct
+        null = -1
+        distances = dict((task, null) for task in self.task_list)
+        nx_graph = self.get_networkx_graph()
+        for source_task in source_tasks:
+            source_distances = nx.single_source_shortest_path_length(
+                nx_graph, source_task
+            )
+            for target_task, d in source_distances.iteritems():
+                if distances[target_task] < d:
+                    distances[target_task] = d
+        decorated_list = []
+        for task, distance in distances.iteritems():
+            if distance > null:
+                decorated_list.append((
+                    distance, self.task_list.index(task), task,
+                ))
+        decorated_list.sort()
+        for distance, index, task in decorated_list:
             yield task
-            for task in task.downstream_tasks.difference(done):
-                if task not in horizon_set:
-                    horizon.append(task)
-                    horizon_set.add(task)
 
     def get_source_tasks(self):
         """Get the set of tasks that do not depend on anything else.
@@ -179,7 +191,7 @@ class TaskGraph(object):
 
     def get_networkx_graph(self):
         graph = nx.DiGraph()
-        graph.add_nodes_from(self.iter_tasks())
+        graph.add_nodes_from(self.task_list)
         for node in graph:
             for child in node.downstream_tasks:
                 graph.add_edge(node, child)

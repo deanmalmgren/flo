@@ -69,7 +69,7 @@ command:
 creates: data/n
 depends: 
   - data/j
-  - data/m
+  - data/l
 command:
   - cat {{depends|join(' ')}} > {{creates}}
   - echo {{creates}} >> {{creates}}
@@ -80,7 +80,7 @@ command:
   - echo {{creates}} > {{creates}}
 
 ---
-creates: data/l
+creates: data/k
 depends: data/c
 command:
   - cat {{depends}} > {{creates}}
@@ -92,14 +92,14 @@ command:
   - echo {{creates}} > {{creates}}
 
 ---
-creates: data/m
+creates: data/l
 depends: data/d
 command:
   - cat {{depends}} > {{creates}}
   - echo {{creates}} >> {{creates}}
 
 ---
-creates: data/k
+creates: data/m
 depends: data/b
 command:
   - cat {{depends}} > {{creates}}
