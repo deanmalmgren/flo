@@ -48,6 +48,11 @@ list <http://en.wikipedia.org/wiki/YAML#Lists>`__ like this:
       - "path/to/some/script.py"
       - "another/task/creates/target.txt"
 
+These dependencies are what ``flo`` uses to determine if a task is out
+of sync and needs to be re-executed. Importantly, ``flo`` obeys the
+dependencies when it constructs the task graph but always runs in a
+:ref:`deterministic order <deterministic-order>`.
+
 .. _yaml-command:
 
 command
@@ -149,6 +154,8 @@ There are several `examples
 inspiration on how you could use the flo.yaml specification. If you
 have suggestions for other ideas, please `add them
 <http://github.com/deanmalmgren/flo/issues>`__!
+
+.. _deterministic-order:
 
 deterministic execution order
 '''''''''''''''''''''''''''''
