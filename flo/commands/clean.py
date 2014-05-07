@@ -1,14 +1,15 @@
-from .base import BaseCommand, TaskIdMixin
+from .base import BaseCommand
 
 
-class Command(BaseCommand, TaskIdMixin):
+class Command(BaseCommand):
     help_text = (
         "Remove all `creates` targets defined in workflow. If a `task_id` is "
         "specified, only remove that target."
     )
 
-    def execute(self, task_id=None, force=False, include_internals=False):
-        super(Command, self).execute()
+    def execute(self, task_id=None, force=False, include_internals=False,
+                **kwargs):
+        super(Command, self).execute(**kwargs)
         kwargs = {
             'include_internals': include_internals,
         }
@@ -24,6 +25,7 @@ class Command(BaseCommand, TaskIdMixin):
             self.task_graph.clean(**kwargs)
 
     def add_command_line_options(self):
+        super(Command, self).add_command_line_options()
         self.option_parser.add_argument(
             '-f', '--force',
             action="store_true",

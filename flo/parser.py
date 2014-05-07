@@ -11,25 +11,33 @@ import copy
 import yaml
 
 from . import exceptions
-from . import tasks
+from .tasks import TaskGraph
+from .decorators import memoize
 
-# TODO: probably this should be configurable (and even specified on
-# the command line somehow)
+# these are the default values that are expected if nothing else is
+# specified on the command line
 CONFIG_FILENAME = "flo.yaml"
 TASKS_KEY = 'tasks'
 
-# these variables are used as a global cache to only parse the yaml
-# into python objects and create a TaskGraph instance *once* in the
-# entire workflow
-_task_kwargs_list = None
-_task_graph = None
 
-
-def find_config_path():
+def find_config_path(config=None):
     """Recursively decend into parent directories looking for the config
     file. Raise an error if none found.
     """
 
+    # if the config is specified on the command line, test to see if
+    # the config file exists
+    if config is not None:
+        config_path = os.path.abspath(os.path.join(os.getcwd(), config))
+        if not os.path.exists(config_path):
+            raise exceptions.ConfigurationNotFound(
+                config,
+                os.getcwd()
+            )
+        return config_path
+
+    # otherwise, recursively check parent directories of the current
+    # directory for anything named CONFIG_FILENAME
     config_path = ''
     directory = os.getcwd()
     while directory:
@@ -69,31 +77,29 @@ def config_yaml2task_kwargs_list(config_yaml):
     return task_kwargs_list
 
 
-def get_task_kwargs_list():
+@memoize
+def get_task_kwargs_list(config=None):
     """Get a list of dictionaries that are read from the flo.yaml
     file and collapse the global variables into each task.
     """
-    global _task_kwargs_list
-    if _task_kwargs_list is None:
-        # get workflow configuration file
-        config_path = find_config_path()
 
-        # load the data
-        with open(config_path) as stream:
-            config_yaml = yaml.load_all(stream.read())
-        _task_kwargs_list = config_yaml2task_kwargs_list(config_yaml)
-    return _task_kwargs_list
+    # get workflow configuration file
+    config_path = find_config_path(config=config)
+
+    # load the data
+    with open(config_path) as stream:
+        config_yaml = yaml.load_all(stream.read())
+    return config_yaml2task_kwargs_list(config_yaml)
 
 
-def load_task_graph():
+@memoize
+def load_task_graph(config=None):
     """Load the task graph from the configuration file located at
     config_path
     """
-    global _task_graph
-    if _task_graph is not None:
-        return _task_graph
+
+    config_path = find_config_path(config=config)
 
     # convert each task_kwargs into a Task object and add it to the
     # TaskGraph
-    _task_graph = tasks.TaskGraph(find_config_path(), get_task_kwargs_list())
-    return _task_graph
+    return TaskGraph(config_path, get_task_kwargs_list(config_path))

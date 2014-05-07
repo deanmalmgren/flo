@@ -3,10 +3,10 @@ import sys
 
 from ..exceptions import ShellError, CommandLineException
 from ..notify import notify
-from .base import BaseCommand, TaskIdMixin
+from .base import BaseCommand
 
 
-class Command(BaseCommand, TaskIdMixin):
+class Command(BaseCommand):
     help_text = "Run the task workflow."
 
     def manipulate_task_graph(self, task_id, start_at, skip, only):
@@ -52,8 +52,8 @@ class Command(BaseCommand, TaskIdMixin):
         self.task_graph.successful = True
 
     def execute(self, task_id=None, start_at=None, skip=None, only=None,
-                force=False, notify_emails=None):
-        super(Command, self).execute()
+                force=False, notify_emails=None, **kwargs):
+        super(Command, self).execute(**kwargs)
         try:
             self.inner_execute(task_id, start_at, skip, only, force)
         except CommandLineException, e:
@@ -70,7 +70,7 @@ class Command(BaseCommand, TaskIdMixin):
             help="Rerun entire workflow, regardless of task state.",
         )
         self.add_task_id_option('Specify a particular task to run.')
-        self.option_parser.add_argument(
+        self.add_task_id_argument(
             '--start-at',
             type=str,
             metavar='TASK_ID',
@@ -80,14 +80,14 @@ class Command(BaseCommand, TaskIdMixin):
                 'ignore everything upstream).'
             ),
         )
-        self.option_parser.add_argument(
+        self.add_task_id_argument(
             '--skip',
             type=str,
             metavar='TASK_ID',
             choices=self.available_task_ids,
             help='Skip the specified task and ignore whether it is in sync.',
         )
-        self.option_parser.add_argument(
+        self.add_task_id_argument(
             '--only',
             type=str,
             metavar='TASK_ID',
@@ -96,6 +96,7 @@ class Command(BaseCommand, TaskIdMixin):
         )
 
     def add_command_line_options(self):
+        super(Command, self).add_command_line_options()
         self.add_common_run_options()
         self.option_parser.add_argument(
             '--notify',

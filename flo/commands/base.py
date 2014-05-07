@@ -7,6 +7,10 @@ class BaseCommand(object):
 
     def __init__(self, subcommand_creator):
 
+        # keep a local copy of the config file which is useful during
+        # autocompletion
+        self.config = None
+
         # set up the subcommand options
         self.subcommand_creator = subcommand_creator
         self.option_parser = self.subcommand_creator.add_parser(
@@ -20,21 +24,16 @@ class BaseCommand(object):
         """The command name defaults to the name of the module."""
         return self.__module__.rsplit('.', 1)[1]
 
-    def add_command_line_options(options):
-        pass
+    def add_command_line_options(self):
+        self.option_parser.add_argument(
+            '-c', '--config',
+            type=str,
+            help='Specify a particular YAML configuration file.',
+        )
 
-    def _init_task_graph(self):
-        self.task_graph = load_task_graph()
-
-    def execute(self, *args, **kwargs):
-        self._init_task_graph()
-
-
-class TaskKwargsListMixin(object):
-    """Any Command that uses flo.yaml to influence available command
-    line options should inherit from this class so that we only read and
-    parse the flo.yaml file *once*.
-    """
+    def execute(self, config=None):
+        self.config = config
+        self.task_graph = load_task_graph(config=config)
 
     # this is a performance optimization to make it possible to use
     # the flo.yaml file to inform useful *and responsive* tab
@@ -43,12 +42,9 @@ class TaskKwargsListMixin(object):
     @property
     def task_kwargs_list(self):
         try:
-            return get_task_kwargs_list()
+            return get_task_kwargs_list(config=self.config)
         except ConfigurationNotFound:
             return []
-
-
-class TaskIdMixin(TaskKwargsListMixin):
 
     @property
     def available_task_ids(self):
@@ -59,12 +55,26 @@ class TaskIdMixin(TaskKwargsListMixin):
         task_ids.sort()
         return task_ids
 
+    def task_ids_completer(self, prefix, parsed_args, **kwargs):
+        # this custom completer makes autocompletion work properly
+        # when an alternative configuration file has been specified
+        # https://argcomplete.readthedocs.org/en/latest/#specifying-completers
+        self.config = parsed_args.config
+        return [task_id for task_id in self.available_task_ids
+                if task_id.startswith(prefix)]
+
+    def add_task_id_argument(self, *args, **kwargs):
+        """convenience method to use the task_ids_completer everywhere"""
+        option = self.option_parser.add_argument(*args, **kwargs)
+        option.completer = self.task_ids_completer
+        return option
+
     def add_task_id_option(self, help_text):
         """This method streamlines the addition of adding a task_id option to
         the command line parser.
         """
         help_text += " Tab complete to view options."
-        self.option_parser.add_argument(
+        self.add_task_id_argument(
             'task_id',
             metavar='TASK_ID',
             type=str,

@@ -109,5 +109,28 @@ if [[ $? -ne 0 ]]; then
 fi
 cd $EXAMPLE_ROOT
 
+# make sure flo runs equally well with non-standard config
+# files. first run this example using the standard issue flo.yaml and
+# then run it with a slightly modified version to make sure everything
+# works just fine with more than one config file in the directory
+cd $EXAMPLE_ROOT/hello-world
+sed -e 's/\(.*\).dat$/\1.dat.alt/' -e 's/\(.*\).txt$/\1.txt.alt/' flo.yaml > alt.yaml
+flo run -f
+exit_code=$(expr ${exit_code} + $?)
+flo run -c alt.yaml
+exit_code=$(expr ${exit_code} + $?)
+for f in data/*.alt; do
+    diff $(dirname $f)/$(basename $f .alt) $f
+    if [[ $? -ne 0 ]]; then
+	red "using alternative configuration file failed"
+	exit_code=$(expr ${exit_code} + 1)
+    fi
+done
+flo clean -fc alt.yaml
+exit_code=$(expr ${exit_code} + $?)
+exit_code=$(expr ${exit_code} + $(find . -name "*.alt" | wc -l))
+rm alt.yaml
+cd $EXAMPLE_ROOT
+
 # exit with the sum of the status
 exit ${exit_code}
