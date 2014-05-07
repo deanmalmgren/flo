@@ -1,0 +1,37 @@
+# The result of this example should be run in alphabetical order
+#
+# This example demonstrates how graph dependencies are *always*
+# respected, but that sibling tasks data/siblings/{b,c,d} are run in
+# the order in which they appear in the YAML file.
+#
+# Experiment with this example by changing the order of tasks to see
+# how it impacts the order in which they are run by running
+#
+#     flo run --config sibling.yaml
+
+---
+creates: data/siblings/a
+command:
+  - mkdir -p $(dirname {{creates}})
+  - echo {{creates}} > {{creates}}
+
+---
+creates: data/siblings/b
+depends: data/siblings/a
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
+
+---
+creates: data/siblings/c
+depends: data/siblings/a
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
+
+---
+creates: data/siblings/d
+depends: data/siblings/a
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}

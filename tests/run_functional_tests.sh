@@ -4,7 +4,6 @@
 # is working properly. on error in any subcommands, it should not quit
 # and finally exit with a non-zero exit code if any of the commands
 # failed
-exit_code=0
 
 # get the directory of this script and use it to correctly find the
 # examples directory
@@ -26,18 +25,28 @@ red () {
     echo $'\033[31m'"$1"$'\033[0m'
 }
 
+# function to update exit code and throw error if update value is
+# non-zero
+EXIT_CODE=0
+update_status () {
+    if [[ $1 -ne 0 ]]; then
+	red "$2"
+    fi
+    EXIT_CODE=$(expr ${EXIT_CODE} + $1)
+}
+
 # function for running test on a specific example to validate that the
 # checksum of results is consistent
 validate_example () {
     example=$1
     test_checksum=$2
-    cd $EXAMPLE_ROOT/${example}
+    cd ${EXAMPLE_ROOT}/${example}
     flo clean --force --include-internals
-    exit_code=$(expr ${exit_code} + $?)
+    update_status $? "thorough cleaning didn't work in validate_example"
     flo run
-    exit_code=$(expr ${exit_code} + $?)
+    update_status $? "run didn't work in validate_example"
     flo archive --exclude-internals
-    exit_code=$(expr ${exit_code} + $?)
+    update_status $? "archiving didn't in validate_example"
 
     # hack to compute checksum of resulting archive since tarballs of
     # files with the same content are apparently not guaranteed to
@@ -51,7 +60,7 @@ validate_example () {
         red "ERROR--CHECKSUM OF ${example} DOES NOT MATCH"
         red "    local checksum=${local_checksum}"
         red "     test checksum=${test_checksum}"
-        exit_code=$(expr ${exit_code} + 1)
+	update_status 1 ""
     fi
 }
 
@@ -64,50 +73,47 @@ validate_example model-correlations 14ba1ffc4c37cd306bf415107d6edfd1
 
 # this runs specific tests for the --start-at option
 cd $BASEDIR
-python test_start_at.py $EXAMPLE_ROOT
-exit_code=$(expr ${exit_code} + $?)
+python test_start_at.py ${EXAMPLE_ROOT}
+update_status $? "--start-at tests failed"
 
 # test the --skip option to make sure everything works properly by
 # modifying a specific task that would otherwise branch to other tasks
 # and make sure that skipping it does not trigger the workflow to run
-cd $EXAMPLE_ROOT/model-correlations
+cd ${EXAMPLE_ROOT}/model-correlations
 flo run -f
 sed -i 's/\+1/+2/g' flo.yaml
 flo run --skip data/x_y.dat
 grep "No tasks are out of sync" .flo/flo.log > /dev/null
-exit_code=$(expr ${exit_code} + $?)
+update_status $? "Nothing should have been run when --skip'ping changed task"
 flo run
 grep "|-> cut " .flo/flo.log > /dev/null
-exit_code=$(expr ${exit_code} + $?)
+update_status $? "data/x_y.dat command was not re-run even though it changed"
 sed -i 's/\+2/+1/g' flo.yaml
-cd $EXAMPLE_ROOT
+cd ${EXAMPLE_ROOT}
 
 # test the --only option
-cd $EXAMPLE_ROOT/hello-world
+cd ${EXAMPLE_ROOT}/hello-world
 flo run -f
 flo run --only data/hello_world.txt
 grep "No tasks are out of sync" .flo/flo.log > /dev/null
-exit_code=$(expr ${exit_code} + $?)
+update_status $? "data/hello_world.txt shouldn't have been run"
 flo run -f --only data/hello_world.txt
 n_matches=$(grep "|-> " .flo/flo.log | wc -l)
 if [[ ${n_matches} -ne 2 ]]; then
-    red "flo run -f --only data/hello_world.txt should only run two commands"
-    exit_code=$(expr ${exit_code} + 1)
+    msg="flo run -f --only data/hello_world.txt should only run two commands"
+    update_status 1 "$msg"
 fi
-cd $EXAMPLE_ROOT
+cd ${EXAMPLE_ROOT}
 
 # make sure that flo always runs in a deterministic order
-cd $EXAMPLE_ROOT/deterministic-order
+cd ${EXAMPLE_ROOT}/deterministic-order
 flo clean --force
-exit_code=$(expr ${exit_code} + $?)
+update_status $? "force cleaning failed on deterministic-order example"
 flo run --force
-exit_code=$(expr ${exit_code} + $?)
+update_status $? "deterministic-order example failed somewhere along the way"
 sed -n '/|-> /{g;1!p;};h' .flo/flo.log | sort -C
-if [[ $? -ne 0 ]]; then
-    red "flo not running in expected deterministic order"
-    exit_code=$(expr ${exit_code} + 1)
-fi
-cd $EXAMPLE_ROOT
+update_status $? "flo not running in expected deterministic order"
+cd ${EXAMPLE_ROOT}
 
 # make sure flo runs equally well with non-standard config
 # files. first run this example using the standard issue flo.yaml and
@@ -116,21 +122,19 @@ cd $EXAMPLE_ROOT
 cd $EXAMPLE_ROOT/hello-world
 sed -e 's/\(.*\).dat$/\1.dat.alt/' -e 's/\(.*\).txt$/\1.txt.alt/' flo.yaml > alt.yaml
 flo run -f
-exit_code=$(expr ${exit_code} + $?)
+update_status $? "running flo with standard flo.yaml failed"
 flo run -c alt.yaml
-exit_code=$(expr ${exit_code} + $?)
+update_status $? "running flo with standard alt.yaml failed"
 for f in data/*.alt; do
-    diff $(dirname $f)/$(basename $f .alt) $f
-    if [[ $? -ne 0 ]]; then
-	red "using alternative configuration file failed"
-	exit_code=$(expr ${exit_code} + 1)
-    fi
+    g=$(dirname $f)/$(basename $f .alt)
+    diff $g $f
+    update_status $? "results from alt.yaml (${f}) and flo.yaml (${g}) differ"
 done
 flo clean -fc alt.yaml
-exit_code=$(expr ${exit_code} + $?)
-exit_code=$(expr ${exit_code} + $(find . -name "*.alt" | wc -l))
+update_status $? "cleaning from alt.yaml failed"
+update_status $(find . -name "*.alt" | wc -l) "files named *.alt still exist"
 rm alt.yaml
 cd $EXAMPLE_ROOT
 
 # exit with the sum of the status
-exit ${exit_code}
+exit ${EXIT_CODE}

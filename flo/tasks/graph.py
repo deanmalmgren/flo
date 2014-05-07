@@ -75,31 +75,58 @@ class TaskGraph(object):
             raise CommandLineException(msg)
 
     def iter_tasks(self, tasks=None):
-        """Iterate over graph with breadth-first search of task dependencies,
-        starting from `tasks` or the set of tasks that do not depend
-        on anything.
-        http://en.wikipedia.org/wiki/Breadth-first_search
+        """Iterate over graph starting from `tasks` with a customized
+        breadth-first search to ensure that task dependencies are
+        preserved and that tasks are returned in a deterministic
+        order. One important difference between this method and
+        standard breadth first search is that we want to track the
+        *maximum* distance from any source to every other task to make
+        sure the ordering is correct.
+
+        If no starting `tasks` are specified, this algorithm starts
+        with the set of tasks that do not depend on anything.
         """
-        # TODO: if we want to keep start_at functionality, then
-        # consider integrating NetworkXGraph object throughout, and
-        # get rid of this method. (make Graph extend NetworkXGraph)
-        tasks = tasks or self.get_source_tasks()
-        horizon = list(tasks)
-        done, horizon_set = set(), set(tasks)
+        source_tasks = tasks or self.get_source_tasks()
+        distances = {}
+        horizon = list(source_tasks)
+        done, horizon_set = set(), set(source_tasks)
+        source_tasks = set(source_tasks)
         while horizon:
             # before popping task off the horizon list, make sure all
             # of its dependencies have been completed
+            found = False
             for task in horizon:
-                if not task.upstream_tasks.difference(done):
+                if (
+                    task in source_tasks or
+                    not task.upstream_tasks.difference(done)
+                ):
+                    found = True
                     break
+            if not found:
+                raise Exception("NOT FOUND %s" % ([t.id for t in horizon], ))
+            if task in source_tasks:
+                distance = 0
+            else:
+                distance = max(map(distances.get, task.upstream_tasks)) + 1
+            distances[task] = distance
             horizon.remove(task)
             horizon_set.discard(task)
             done.add(task)
+            for downstream_task in task.downstream_tasks.difference(done):
+                if downstream_task not in horizon_set:
+                    horizon.append(downstream_task)
+                    horizon_set.add(downstream_task)
+
+        # now create a decorated list of based on the distance and
+        # ordering in the YAML file
+        decorated_list = []
+        for task, distance in distances.iteritems():
+            decorated_list.append((
+                distance, self.task_list.index(task), task,
+            ))
+        decorated_list.sort()
+        for distance, index, task in decorated_list:
             yield task
-            for task in task.downstream_tasks.difference(done):
-                if task not in horizon_set:
-                    horizon.append(task)
-                    horizon_set.add(task)
 
     def get_source_tasks(self):
         """Get the set of tasks that do not depend on anything else.
@@ -297,6 +324,8 @@ class TaskGraph(object):
             return "%.2f" % (duration / 60 / 60 / 24) + " d"
 
     def duration_message(self, tasks, color=colors.blue):
+        if tasks is None:
+            tasks = list(self.iter_tasks())
         if len(tasks) == 0:
             return "No tasks are out of sync in this workflow (%s)" % (
                 os.path.relpath(self.config_path, os.getcwd())
@@ -363,22 +392,16 @@ class TaskGraph(object):
         """Execute all tasks in the workflow, regardless of whether they are
         in sync or not.
         """
-        starting_tasks = list(task for task in self.iter_tasks())
-
         def do_run_func(task):
             return not task.is_pseudotask()
-
-        self._run_helper(starting_tasks, do_run_func, mock_run)
+        self._run_helper(None, do_run_func, mock_run)
 
     def run_all_out_of_sync(self, mock_run=False):
         """Execute all tasks in the workflow that are out of sync at runtime.
         """
-        starting_tasks = self.get_out_of_sync_tasks()
-
         def do_run_func(task):
             return not task.is_pseudotask() and not task.in_sync()
-
-        self._run_helper(starting_tasks, do_run_func, mock_run)
+        self._run_helper(self.get_out_of_sync_tasks(), do_run_func, mock_run)
 
     @property
     def abs_state_path(self):

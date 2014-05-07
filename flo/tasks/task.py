@@ -74,8 +74,8 @@ class Task(resources.base.BaseResource):
         # create some data structures for storing the set of tasks on
         # which this task depends (upstream_tasks) on what depends on
         # it (downstream_tasks).
-        self.downstream_tasks = UniqueOrderedList(self.graph.task_list)
-        self.upstream_tasks = UniqueOrderedList(self.graph.task_list)
+        self.downstream_tasks = set()
+        self.upstream_tasks = set()
 
         # call the BaseResource.__init__ to get this to behave like an
         # resource here, too
