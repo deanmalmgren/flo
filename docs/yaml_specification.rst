@@ -153,11 +153,67 @@ have suggestions for other ideas, please `add them
 deterministic execution order
 '''''''''''''''''''''''''''''
 
-When `flo` is :ref:`executed <flo-run>`, it makes sure to obey the
-dependencies specified in the YAML configuration. In the event of
-ties---for example, several tasks that all depend on the same parent
-task---`flo` is executed in the same order as the tasks appear in the
-YAML configuration. As an example, the `deterministic order example
+``flo`` is *guaranteed to run in the exact same order every single
+time* and its important that users understand how it works. When
+``flo`` is :ref:`executed <flo-run>`, it makes sure to
+obey the dependencies specified in the YAML configuration. In the
+event of ties ``flo`` is executed in the same order as the tasks
+appear in the YAML configuration. Technically, this is very similar to
+a `breadth first search
+<http://en.wikipedia.org/wiki/Breadth-first_search>`__ originating
+from the set of tasks that have no dependencies except that we order
+things based on the *maximum* distance that each task is from any
+given source node and we break ties based on the order in the YAML
+configuration file.
+
+The `deterministic order example
 <http://github.com/deanmalmgren/flo/blob/master/examples/deterministic-order>`__
-contains a relatively complicated workflow configuration where the
-tasks are execited in alphabetical order.
+contains a few different YAML configuration files to demonstrate how
+this works in practice, the highlights of which are summarized here.
+
+.. image:: ../examples/deterministic-order/sketches/sibling.png
+   :alt: task graph for sibling tasks that all depend on the same parent
+   :width: 200px
+   :align: left
+
+For sibling tasks, sibling tasks are executed in the order in which
+they appear in the YAML configuration file, but always after the their
+dependencies have been satisfied. In `this example
+<http://github.com/deanmalmgren/flo/blob/master/examples/deterministic-order/sibling.yaml>`__, 
+the task graph looks like this and the tasks are guaranteed to run in
+alphabetical order.
+
+.. raw:: html
+
+   <div class="clearfix"></div>
+
+.. image:: ../examples/deterministic-order/sketches/parallel.png
+   :alt: task graph for parallel task threads
+   :width: 200px
+   :align: left
+
+For parallel threads, task threads are executed based on their
+distance from the source tasks and secondarily based on their ordering
+in the YAML configuration file. In `this example
+<http://github.com/deanmalmgren/flo/blob/master/examples/deterministic-order/parallel.yaml>`__,
+the task graph looks something like this and the tasks are guaranteed
+to run in alphabetical order.
+
+.. raw:: html
+
+   <div class="clearfix"></div>
+
+.. image:: ../examples/deterministic-order/sketches/merge.png
+   :alt: task graph for merging task threads
+   :width: 200px
+   :align: left
+
+For merging task graphs, tasks are executed based on their maximal
+distance from any source task. In `this example
+<http://github.com/deanmalmgren/flo/blob/master/examples/deterministic-order/merge.yaml>`__,
+the task graph looks something like this and the tasks are guaranteed to
+run in alphabetical order.
+
+.. raw:: html
+
+   <div class="clearfix"></div>

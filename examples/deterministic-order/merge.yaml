@@ -1,0 +1,41 @@
+# The result of this example should be run in alphabetical order
+#
+# This example demonstrates how multiple dependencies are
+# handled. Task data/converging/d depends on task data/converging/a
+# and data/converging/c. Since data/converging/c is further from the
+# source (data/converging/a), data/converging/d must occur after
+# data/converging/c.
+#
+# Experiment with this example by changing the order of tasks to see
+# how it impacts the order in which they are run by running
+#
+#     flo run --config merge.yaml
+
+---
+creates: data/converging/a
+command:
+  - mkdir -p $(dirname {{creates}})
+  - echo {{creates}} > {{creates}}
+
+---
+creates: data/converging/d
+depends:
+  - data/converging/a
+  - data/converging/c
+command:
+  - cat {{depends|join(' ')}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
+
+---
+creates: data/converging/c
+depends: data/converging/b
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
+
+---
+creates: data/converging/b
+command:
+  - mkdir -p $(dirname {{creates}})
+  - echo {{creates}} > {{creates}}
+

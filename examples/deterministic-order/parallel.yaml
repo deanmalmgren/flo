@@ -1,0 +1,38 @@
+# The result of this example should be run in alphabetical order
+#
+# This example demonstrates how graph dependencies are *always*
+# respected, but that parallel threads data/parallel/{a,c} and
+# data/parallel/{b,d} are run based on their distance from the source
+# tasks data/parallel/{a,b}, which in turn are run in the order that
+# they appear in this YAML configuration.
+#
+# Experiment with this example by changing the order of tasks to see
+# how it impacts the order in which they are run by running
+#
+#     flo run --config parallel.yaml
+
+---
+creates: data/parallel/a
+command:
+  - mkdir -p $(dirname {{creates}})
+  - echo {{creates}} > {{creates}}
+
+---
+creates: data/parallel/c
+depends: data/parallel/a
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
+
+---
+creates: data/parallel/b
+command:
+  - mkdir -p $(dirname {{creates}})
+  - echo {{creates}} > {{creates}}
+
+---
+creates: data/parallel/d
+depends: data/parallel/b
+command:
+  - cat {{depends}} > {{creates}}
+  - echo {{creates}} >> {{creates}}
