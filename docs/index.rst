@@ -37,6 +37,7 @@ If you're sold, :ref:`get started <quick-start>`. If not, read on:
    yaml_specification
    command_line_interface
    developing
+   changelog
    :maxdepth: 1
 
 .. COMMENTING THIS OUT FOR NOW
