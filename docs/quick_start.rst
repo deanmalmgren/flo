@@ -23,9 +23,7 @@ quick start
    create the resource defined in ``creates``. You can optionally
    define a ``depends`` key that lists resources, either filenames on
    disk or other task ``creates`` targets, to quickly set up
-   dependency chains. You can optionally omit the ``command`` key to
-   create pseudotasks that are collections of other tasks for quickly
-   running a subcomponent of the analysis.
+   dependency chains.
 
 3. *Execute your workflow.* From the same directory as the
    ``flo.yaml`` file (or any subdirectory), execute ``flo run`` and

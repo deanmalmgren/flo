@@ -149,7 +149,7 @@ class TaskGraph(object):
     def get_out_of_sync_tasks(self):
         out_of_sync_tasks = []
         for task in self.iter_tasks():
-            if not task.is_pseudotask() and not task.in_sync():
+            if not task.in_sync():
                 out_of_sync_tasks.append(task)
         return out_of_sync_tasks
 
@@ -273,8 +273,7 @@ class TaskGraph(object):
         if include_internals:
             self.logger.info(green(self.internals_path))
         for task in task_list:
-            if not task.is_pseudotask():
-                self.logger.info(task.creates_message())
+            self.logger.info(task.creates_message())
         yesno = raw_input(colors.red("Delete aforementioned files? [Y/n] "))
         if yesno == '':
             yesno = 'y'
@@ -335,12 +334,11 @@ class TaskGraph(object):
             min_duration += self.task_durations.get(task.id, 0.0)
         max_duration, n_unknown, n_tasks = 0.0, 0, 0
         for task in self.iter_tasks(tasks):
-            if not task.is_pseudotask():
-                n_tasks += 1
-                try:
-                    max_duration += self.task_durations[task.id]
-                except KeyError:
-                    n_unknown += 1
+            n_tasks += 1
+            try:
+                max_duration += self.task_durations[task.id]
+            except KeyError:
+                n_unknown += 1
         msg = ''
         if n_unknown > 0:
             msg += "There are %d new tasks with unknown durations.\n" % (
@@ -393,14 +391,14 @@ class TaskGraph(object):
         in sync or not.
         """
         def do_run_func(task):
-            return not task.is_pseudotask()
+            return True
         self._run_helper(None, do_run_func, mock_run)
 
     def run_all_out_of_sync(self, mock_run=False):
         """Execute all tasks in the workflow that are out of sync at runtime.
         """
         def do_run_func(task):
-            return not task.is_pseudotask() and not task.in_sync()
+            return not task.in_sync()
         self._run_helper(self.get_out_of_sync_tasks(), do_run_func, mock_run)
 
     @property

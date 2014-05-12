@@ -51,13 +51,3 @@ tasks:
       - data/x_y.dat
       - src/loaders.py
     command: python {{depends[:2]|join(' ')}} {{y_col}} > {{creates}}
-  
-  # this is an example of a pseudotask that is a convenient alias for
-  # several subcommands. pseudotasks are tasks that have no `command`
-  # associated with them.
-  -
-    creates: analysis
-    depends:
-      - data/x_cdf.dat
-      - data/y_cdf.dat
-      - data/x_y_correlation.dat

@@ -36,5 +36,4 @@ def add_to_task(task):
     # instantiate the resources associated with this task here
     # to make sure we can resolve aliases if they exist.
     get_or_create(task, task.depends_list, 'depends')
-    if not task.is_pseudotask():
-        get_or_create(task, task.creates_list, 'creates')
+    get_or_create(task, task.creates_list, 'creates')

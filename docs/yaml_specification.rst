@@ -59,28 +59,17 @@ dependencies when it constructs the task graph but always runs in a
 command
 '''''''
 
-The ``command`` key defines the command(s) that should be executed to
-produce the resource specified by the ``creates`` key. Like the
-``depends`` key, multiple steps can be defined in a `YAML
-list <http://en.wikipedia.org/wiki/YAML#Lists>`__ like this:
+The ``command`` key is mandatory and it defines the command(s) that
+should be executed to produce the resource specified by the
+``creates`` key. Like the ``depends`` key, multiple steps can be
+defined in a `YAML list <http://en.wikipedia.org/wiki/YAML#Lists>`__
+like this:
 
 .. code-block:: yaml
 
     command:
       - "mkdir -p $(dirname {{creates}})"
       - "python {{depends}} > {{creates}}"
-
-If the ``command`` key is omitted, this task is treated like a
-pseudotask to make it easy to group together a collection of other tasks
-like this:
-
-.. code-block:: yaml
-
-    creates: "figures"         # name of pseudotask
-    depends:
-      - "path/to/figure/a.png" # refers to another task in flo.yaml
-      - "path/to/figure/b.png" # refers to another task in flo.yaml
-      - "path/to/figure/c.png" # refers to another task in flo.yaml
 
 .. _yaml-templating-variables:
 

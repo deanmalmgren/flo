@@ -38,6 +38,10 @@ class Task(resources.base.BaseResource):
             raise InvalidTaskDefinition(
                 "every task must define a `creates`"
             )
+        if self._command is None:
+            raise InvalidTaskDefinition(
+                "every task must define a `command`"
+            )
 
         # remember other attributes of this Task for rendering
         # purposes below
@@ -122,9 +126,8 @@ class Task(resources.base.BaseResource):
         return self.graph.root_directory
 
     def iter_resources(self):
-        if not self.is_pseudotask():
-            for resource in self.creates_resources:
-                yield resource
+        for resource in self.creates_resources:
+            yield resource
         for resource in self.depends_resources:
             yield resource
 
@@ -186,11 +189,6 @@ class Task(resources.base.BaseResource):
             msg += k + str(self.attrs[k])
         return self.get_stream_state(StringIO.StringIO(msg))
 
-    def is_pseudotask(self):
-        """Check to see if this task is a pseudotask.
-        """
-        return self._command is None
-
     def in_sync(self):
         """Test whether this task is in sync with the stored state and
         needs to be executed
@@ -219,9 +217,8 @@ class Task(resources.base.BaseResource):
 
     def clean(self):
         """Remove the specified target"""
-        if not self.is_pseudotask():
-            self.run(self.clean_command())
-            self.graph.logger.info("removed %s" % self.creates_message())
+        self.run(self.clean_command())
+        self.graph.logger.info("removed %s" % self.creates_message())
 
     def mock_run(self):
         """Mock run this task by displaying output as if it were run"""
@@ -276,8 +273,6 @@ class Task(resources.base.BaseResource):
         """Uses jinja template syntax to render the command from the other
         data specified in the YAML file
         """
-        if self.is_pseudotask():
-            return None
         return self.render_template(self._command)
 
     def duration_message(self, color=colors.blue):

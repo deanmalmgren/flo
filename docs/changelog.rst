@@ -7,6 +7,8 @@ Backwards incompatible features are highlighted in **bold**.
 latest
 ------
 
+* **removed pseudotask creation** (every task must have a ``command`` key)
+
 * specifying alternative yaml configuration (#62)
 
 * incorporated deterministic ordering in a predictable and explainable

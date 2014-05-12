@@ -69,7 +69,7 @@ validate_example () {
 # checksum by just running this script and determining what the
 # correct checksum is
 validate_example hello-world 040bf35be21ac0a3d6aa9ff4ff25df24
-validate_example model-correlations 14ba1ffc4c37cd306bf415107d6edfd1
+validate_example model-correlations c2e4ae57ff2d970a076b364bab87a87f
 
 # this runs specific tests for the --start-at option
 cd $BASEDIR
