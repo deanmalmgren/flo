@@ -1,3 +1,5 @@
+import yaml
+
 class CommandLineException(Exception):
     """convenience exception to make it easy to not print traceback when
     run from the command line
@@ -18,7 +20,13 @@ class ConfigurationNotFound(CommandLineException):
 
 
 class InvalidTaskDefinition(CommandLineException):
-    pass
+    def __init__(self, message, yaml_dict):
+        self.message = message
+        self.yaml_dict = yaml_dict
+
+    def __str__(self):
+        msg = self.message + "; offending task:"
+        return "%s\n\n%s" % (msg, yaml.dump(self.yaml_dict))
 
 
 class ResourceNotFound(CommandLineException):
