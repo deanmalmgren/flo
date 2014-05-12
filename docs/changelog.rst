@@ -1,11 +1,17 @@
 changelog
 =========
 
-Backwards incompatible features are highlighted in **bold**.
+This project uses `semantic versioning <http://semver.org/>`__ to
+track version numbers, where backwards incompatible changes
+(highlighted in **bold**) bump the major version of the package.
 
 
 latest
 ------
+
+
+1.0.0
+-----
 
 * **removed pseudotask creation** (every task must have a ``command`` key)
 
