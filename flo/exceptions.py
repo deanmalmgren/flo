@@ -1,5 +1,6 @@
 import yaml
 
+
 class CommandLineException(Exception):
     """convenience exception to make it easy to not print traceback when
     run from the command line
