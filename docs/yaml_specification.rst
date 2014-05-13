@@ -15,22 +15,46 @@ something like this:
     depends: "path/to/some/script.py"
     command: "python {{depends}} > {{creates}}"
 
-Every task YAML object must have a :ref:`yaml-creates` key and can
-optionally contain :ref:`yaml-depends` and :ref:`yaml-command`
-keys. The order of these keys does not matter; the above order is
-chosen for explanatory purposes only.
+Every YAML object that defines a task must have :ref:`yaml-creates`
+and :ref:`yaml-command` keys and can optionally contain a
+:ref:`yaml-depends` key. The order of these keys does not matter; the
+above order is chosen for explanatory purposes only.
 
 .. _yaml-creates:
 
 creates
 '''''''
 
-The ``creates`` key defines the resource that is created. By default,
-it is interpreted as a path to a file (relative paths are interpreted
-as relative to the ``flo.yaml`` file). You can also specify a
-protocol, such as ``mysql:database/table`` (`yet-to-be-implemented
-<http://github.com/deanmalmgren/flo/issues/15>`__), for non-file based
-resources.
+The ``creates`` key uniquely identifies the resource that is
+created. By default, it is interpreted as a path to a file (relative
+paths are interpreted as relative to the ``flo.yaml`` file) or a
+directory. Importantly, every task is intended to create a single file
+or directory. If you have a task that creates multiple files, you can
+either (i) split that into separate tasks or (ii) have all of those
+files embedded in a directory and use the directory name as the
+``creates`` value like this:
+
+.. code-block:: yaml
+
+   ---
+   creates: "path/to/output/directory"
+   depends: "path/to/some/script.py"
+   command:
+     - "mkdir -p {{creates}}"
+     - "python {{depends}} {{creates}}"
+
+In this case, the directory ``path/to/output/directory`` is passed as
+the first argument to ``path/to/some/script.py``, which can then add
+as many files as necessary to that directory. When this task is
+complete, ``flo`` checks the hash of all files in
+``path/to/output/directory`` and all of its child directories to
+determine if it is in sync or not.
+
+..
+   You can also specify a
+   protocol, such as ``mysql:database/table`` (`yet-to-be-implemented
+   <http://github.com/deanmalmgren/flo/issues/15>`__), for non-file based
+   resources.
 
 .. _yaml-depends:
 

@@ -36,11 +36,18 @@ class Task(resources.base.BaseResource):
         # configuration file are valid
         if self._creates is None:
             raise InvalidTaskDefinition(
-                "every task must define a `creates`"
+                "every task must define a `creates`",
+                self.yaml_data,
+            )
+        if not isinstance(self._creates, (str, unicode)):
+            raise InvalidTaskDefinition(
+                "each task must define a single `creates` as a string",
+                self.yaml_data,
             )
         if self._command is None:
             raise InvalidTaskDefinition(
-                "every task must define a `command`"
+                "every task must define a `command`",
+                self.yaml_data,
             )
 
         # remember other attributes of this Task for rendering

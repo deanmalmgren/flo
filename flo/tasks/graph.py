@@ -10,8 +10,7 @@ import json
 
 import networkx as nx
 
-from ..exceptions import InvalidTaskDefinition, NonUniqueTask, ShellError, \
-    CommandLineException
+from ..exceptions import NonUniqueTask, ShellError, CommandLineException
 from .. import colors
 from .. import shell
 from .. import resources
