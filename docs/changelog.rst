@@ -9,6 +9,7 @@ track version numbers, where backwards incompatible changes
 latest
 ------
 
+* more informative error messages (#58)
 
 1.0.0
 -----
