@@ -10,7 +10,7 @@ def render_from_string(template_string, **context_dict):
     try:
         template_obj = env.from_string(template_string)
     except jinja2.exceptions.TemplateSyntaxError, error:
-        raise JinjaError(error)
+        raise JinjaError(template_string, error)
     return template_obj.render(**context_dict)
 
 

@@ -1,4 +1,5 @@
 import yaml
+import jinja2
 
 
 class CommandLineException(Exception):
@@ -43,12 +44,13 @@ class NonUniqueTask(CommandLineException):
 
 
 class JinjaError(CommandLineException):
-    def __init__(self, error):
+    def __init__(self, template_string, error):
+        self.template_string = template_string
         self.error = error
 
     def __str__(self):
         tab = "    "
-        source = self.error.source.replace('\n', '\n%s' % tab)
+        source = self.template_string.replace('\n', '\n%s' % tab)
         msg = "Error rendering Jinja template: %s\n\n" % self.error.message
         msg += "Original template source:\n\n%s%s" % (tab, source)
         return msg
