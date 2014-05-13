@@ -42,6 +42,18 @@ class NonUniqueTask(CommandLineException):
     pass
 
 
+class JinjaError(CommandLineException):
+    def __init__(self, error):
+        self.error = error
+
+    def __str__(self):
+        tab = "    "
+        source = self.error.source.replace('\n', '\n%s' % tab)
+        msg = "Error rendering Jinja template: %s\n\n" % self.error.message
+        msg += "Original template source:\n\n%s%s" % (tab, source)
+        return msg
+
+
 class ShellError(CommandLineException):
     def __init__(self, exit_code):
         self.exit_code = exit_code

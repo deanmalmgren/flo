@@ -2,10 +2,15 @@ import os
 
 import jinja2
 
+from ..exceptions import JinjaError
+
 
 def render_from_string(template_string, **context_dict):
     env = jinja2.Environment()
-    template_obj = env.from_string(template_string)
+    try:
+        template_obj = env.from_string(template_string)
+    except jinja2.exceptions.TemplateSyntaxError, error:
+        raise JinjaError(error)
     return template_obj.render(**context_dict)
 
 
