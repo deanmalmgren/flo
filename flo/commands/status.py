@@ -41,8 +41,8 @@ class Command(RunCommand):
         print("Starting server at http://localhost:%d" % port)
         try:
             httpd = SocketServer.TCPServer(("", port), Handler)
-        except socket.error, e:
-            raise CommandLineException(e.strerror)
+        except socket.error, error:
+            raise CommandLineException(error.strerror)
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
