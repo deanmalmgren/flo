@@ -15,4 +15,5 @@ else
 fi
 
 # install all of the dependencies required in the examples
+sudo apt-get update
 sed 's/\(.*\)\#.*/\1/' < $base/examples/DEBIAN | xargs sudo apt-get install -y --fix-missing
