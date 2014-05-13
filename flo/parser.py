@@ -89,7 +89,10 @@ def get_task_kwargs_list(config=None):
     # load the data
     with open(config_path) as stream:
         config_yaml = yaml.load_all(stream.read())
-    return config_yaml2task_kwargs_list(config_yaml)
+    try:
+        return config_yaml2task_kwargs_list(config_yaml)
+    except yaml.constructor.ConstructorError, error:
+        raise exceptions.YamlError(config_path, error)
 
 
 @memoize
