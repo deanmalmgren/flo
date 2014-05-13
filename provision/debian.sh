@@ -15,5 +15,6 @@ else
 fi
 
 # install all of the dependencies required in the examples
-sudo apt-get update
+# http://docs.travis-ci.com/user/installing-dependencies/#Installing-Ubuntu-packages
+sudo apt-get update -qq
 sed 's/\(.*\)\#.*/\1/' < $base/examples/DEBIAN | xargs sudo apt-get install -y --fix-missing
