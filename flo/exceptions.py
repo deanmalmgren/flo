@@ -48,3 +48,22 @@ class ShellError(CommandLineException):
 
     def __str__(self):
         return "Command failed with exit code %s" % self.exit_code
+
+
+class YamlError(CommandLineException):
+    def __init__(self, config_filename, yaml_error):
+        self.config_filename = config_filename
+        self.yaml_error = yaml_error
+
+    def __str__(self):
+        msg = "There was an error loading your YAML configuration file "
+        msg += "located at\n%s:\n\n" % self.config_filename
+        msg += str(self.yaml_error)
+
+        # provide useful hints here for common problems
+        if "{{" in str(self.yaml_error):
+            msg += "\n\n"
+            msg += "Try quoting your jinja templates if they start with '{{'\n"
+            msg += "because YAML interprets an unquoted '{' as the start of\n"
+            msg += "a new YAML object."
+        return msg

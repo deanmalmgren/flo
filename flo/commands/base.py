@@ -1,5 +1,5 @@
 from ..parser import load_task_graph, get_task_kwargs_list
-from ..exceptions import ConfigurationNotFound
+from ..exceptions import ConfigurationNotFound, YamlError
 
 
 class BaseCommand(object):
@@ -43,7 +43,7 @@ class BaseCommand(object):
     def task_kwargs_list(self):
         try:
             return get_task_kwargs_list(config=self.config)
-        except ConfigurationNotFound:
+        except (ConfigurationNotFound, YamlError):
             return []
 
     @property

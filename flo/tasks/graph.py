@@ -377,11 +377,11 @@ class TaskGraph(object):
                 else:
                     try:
                         task.timed_run()
-                    except (KeyboardInterrupt, ShellError), e:
+                    except (KeyboardInterrupt, ShellError), error:
                         self.save_state(
                             override_resource_states={task.name: ''},
                         )
-                        sys.exit(getattr(e, 'exit_code', 1))
+                        sys.exit(getattr(error, 'exit_code', 1))
         if not mock_run:
             self.save_state()
 

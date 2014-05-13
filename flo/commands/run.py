@@ -56,7 +56,7 @@ class Command(BaseCommand):
         super(Command, self).execute(**kwargs)
         try:
             self.inner_execute(task_id, start_at, skip, only, force)
-        except CommandLineException, e:
+        except CommandLineException:
             raise
         finally:
             if notify_emails:

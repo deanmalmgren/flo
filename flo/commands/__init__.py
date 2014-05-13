@@ -46,6 +46,6 @@ def run_subcommand(args):
     command = args.__dict__.pop("command")
     try:
         command.execute(**args.__dict__)
-    except CommandLineException, e:
-        print(colors.red(e))
-        sys.exit(getattr(e, 'exit_code', 1))
+    except CommandLineException, error:
+        print(colors.red(error))
+        sys.exit(getattr(error, 'exit_code', 1))
