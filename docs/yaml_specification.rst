@@ -76,7 +76,9 @@ list <http://en.wikipedia.org/wiki/YAML#Lists>`__ like this:
 These dependencies are what ``flo`` uses to determine if a task is out
 of sync and needs to be re-executed. Importantly, ``flo`` obeys the
 dependencies when it constructs the task graph but always runs in a
-:ref:`deterministic order <deterministic-order>`.
+:ref:`deterministic order <deterministic-order>`. If a specified
+``depends`` does not exist immediately prior to ``flo`` running the
+task, ``flo`` throws an informative error.
 
 .. _yaml-command:
 

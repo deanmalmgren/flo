@@ -9,6 +9,8 @@ track version numbers, where backwards incompatible changes
 latest
 ------
 
+* enforce that ``depends`` must exist prior to running any commands (#59)
+
 * more informative error messages (#58)
 
 1.0.0

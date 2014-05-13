@@ -240,6 +240,14 @@ class Task(resources.base.BaseResource):
         self.graph.logger.info(self.creates_message())
         start_time = time.time()
 
+        # confirm that all depends resources exist on the filesystem
+        if not all(resource.exists() for resource in self.depends_resources):
+            raise CommandLineException(self.depends + (
+                " does not exist just before running this task. "
+                "Double check the `depends` to confirm that these "
+                "dependencies are correct for this task."
+            ))
+
         # run each command for this task
         for command in self.command_list:
             self.graph.logger.info(self.command_message(command))
