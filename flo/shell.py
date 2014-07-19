@@ -2,21 +2,23 @@
 """
 import subprocess
 import sys
-import logging
 import threading
 
 from . import exceptions
+from . import logger as flo_logger
 
 
-def log_output(stream):
-    # this function logs the output from the subprocess'ed command.
-    #
-    # TODO: this works for all outputs that do not backspace. Note
-    # what happens when you run the workflow in examples/reuters-tfidf
-    # when curl is running
-    logger = logging.getLogger('flo')
-    for line in iter(stream.readline, ''):
-        logger.info(line.rstrip('\n'))
+def log_output(stream, block_size=1):
+    """This function logs the output from the subprocess'ed command by
+    reading the output stream in small blocks of size `block_size`
+    bytes to properly handle backspacing outputs (issue #53)
+    """
+    logger = flo_logger.get()
+    while True:
+        data = stream.read(block_size)
+        if not data:
+            break
+        logger.write(data)
     stream.close()
 
 

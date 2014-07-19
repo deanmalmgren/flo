@@ -3,10 +3,30 @@ file, which can be convenient for inspecting long-running jobs and for
 sending notifications with useful content
 """
 
-import logging
 import sys
 
 from .colors import colorless
+
+
+# NOTE: using the logging module caused all kinds of problems with
+# backspacing output and whatnot. This is a much simpler solution and
+# achieves exactly what we want, albeit not using the standard
+# library. If you have other ideas for how to do this, check out the
+# code before issue #53 was resolved.
+class Logger(file):
+    """Log output to stdout in color and to a log file in plain text.
+    """
+    def __init__(self, task_graph):
+        super(Logger, self).__init__(task_graph.abs_log_path, 'w')
+
+    def write(self, content):
+        sys.stdout.write(content)
+        sys.stdout.flush()
+        super(Logger, self).write(colorless(content))
+
+    def info(self, content):
+        self.write(content + '\n')
+
 
 # _logger is a singleton instance of the logger that is a local cache
 # of the one and only logger instance for all TaskGraphs. This is
@@ -14,35 +34,14 @@ from .colors import colorless
 _logger = None
 
 
-class ColorlessFileHandler(logging.FileHandler):
-    def emit(self, record):
-        record.msg = colorless(record.msg)
-        return super(ColorlessFileHandler, self).emit(record)
+def get():
+    global _logger
+    return _logger
 
 
 def configure(task_graph):
     global _logger
     if _logger is not None:
         return _logger
-
-    _logger = logger = logging.getLogger('flo')
-    logger.setLevel(logging.DEBUG)
-
-    # create file handler and a console handler that logs to stdout
-    console_handler = logging.StreamHandler(sys.stdout)
-    file_handler = ColorlessFileHandler(task_graph.abs_log_path, mode='w')
-
-    # set the logging levels on these handlers
-    console_handler.setLevel(logging.DEBUG)
-    file_handler.setLevel(logging.DEBUG)
-
-    # create formatter and add it to the handlers
-    formatter = logging.Formatter('%(message)s')
-    console_handler.setFormatter(formatter)
-    file_handler.setFormatter(formatter)
-
-    # add the handlers to logger
-    logger.addHandler(console_handler)
-    logger.addHandler(file_handler)
-
-    return logger
+    _logger = Logger(task_graph)
+    return _logger

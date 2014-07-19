@@ -13,6 +13,10 @@ latest
 
 * more informative error messages (#56, #57, #58)
 
+* several bug fixes, including:
+
+  * properly handling backspacing output of subprocessed commands (#53)
+
 1.0.0
 -----
 
