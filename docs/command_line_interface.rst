@@ -13,7 +13,7 @@ stored in ``.flo/flo.log``.
 
 To make the command line interface as usable as possible,
 autocompletion of available options with workflow is enabled by
-@kislyuk's amazing `autocomplete
+@kislyuk's amazing `argcomplete
 <https://github.com/kislyuk/argcomplete>`__ package.  Follow
 instructions to `enable global autocomplete
 <https://github.com/kislyuk/argcomplete#activating-global-completion>`__
