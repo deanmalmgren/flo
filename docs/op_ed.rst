@@ -183,6 +183,15 @@ for executing on Amazon Web Services. It appears to be geared more
 toward developing robust, "enterprise" workflows as opposed to rapid
 development.
 
+Tez
+'''
+
+`Tez <http://tez.apache.org/>`__ appears to be the Hadoop equivalent of
+creating data workflows using `YARN
+<http://hadoop.apache.org/docs/current/hadoop-yarn/hadoop-yarn-site/YARN.html>`__.
+If you're nuts about java and everything you do is in hadoop, this is
+probably great for you.
+
 KNIME
 '''''
 
