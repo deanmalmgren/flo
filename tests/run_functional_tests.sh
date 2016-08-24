@@ -21,7 +21,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # formatting functions
-red () { 
+red () {
     echo $'\033[31m'"$1"$'\033[0m'
 }
 
@@ -80,20 +80,22 @@ update_status $? "--start-at tests failed"
 # modifying a specific task that would otherwise branch to other tasks
 # and make sure that skipping it does not trigger the workflow to run
 cd ${EXAMPLE_ROOT}/model-correlations
-flo run -f
-sed -i 's/\+1/+2/g' flo.yaml
+flo run --force
+sed 's/\+1/+2/g' flo.yaml > new_flo.yaml
+mv flo.yaml old_flo.yaml
+mv new_flo.yaml flo.yaml
 flo run --skip data/x_y.dat
 grep "No tasks are out of sync" .flo/flo.log > /dev/null
 update_status $? "Nothing should have been run when --skip'ping changed task"
 flo run
 grep "|-> cut " .flo/flo.log > /dev/null
 update_status $? "data/x_y.dat command was not re-run even though it changed"
-sed -i 's/\+2/+1/g' flo.yaml
+mv old_flo.yaml flo.yaml
 cd ${EXAMPLE_ROOT}
 
 # test the --only option
 cd ${EXAMPLE_ROOT}/hello-world
-flo run -f
+flo run --force
 flo run --only data/hello_world.txt
 grep "No tasks are out of sync" .flo/flo.log > /dev/null
 update_status $? "data/hello_world.txt shouldn't have been run"
@@ -111,7 +113,7 @@ flo clean --force
 update_status $? "force cleaning failed on deterministic-order example"
 flo run --force
 update_status $? "deterministic-order example failed somewhere along the way"
-sed -n '/|-> /{g;1!p;};h' .flo/flo.log | sort -C
+sed -n '/|-> /{g;1!p;};h' .flo/flo.log | sort -c
 update_status $? "flo not running in expected deterministic order"
 cd ${EXAMPLE_ROOT}
 

@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 
 # read in html data
 with open(sys.argv[1]) as stream:
-    soup = BeautifulSoup(stream.read())
+    soup = BeautifulSoup(stream.read(), 'lxml')
 
 # extract the table into a csv
 writer = csv.writer(sys.stdout)

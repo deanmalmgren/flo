@@ -2,7 +2,6 @@
 """
 
 import sys
-import csv
 import math
 
 # use headless matplotlib
@@ -33,4 +32,4 @@ r = 0.0
 for i, j in zip(x, y):
     r += (i - xave)/xsig * (j - yave)/ysig
 r /= len(x) - 1
-print r
+print(r)

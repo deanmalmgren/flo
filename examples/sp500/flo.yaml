@@ -8,12 +8,12 @@ tasks:
     creates: "{{input_name}}"
     command:
       - mkdir -p $(dirname {{creates}})
-      - wget http://en.wikipedia.org/wiki/List_of_S%26P_500_companies -O {{creates}}
+      - wget http://en.wikipedia.org/wiki/List_of_S%26P_500_companies --no-check-certificate -O {{creates}}
 
   # extract the data
   -
     creates: data/sp500.csv
-    depends: 
+    depends:
       - code/parse_sp500.py
       - "{{input_name}}"
     command: python {{depends|join(' ')}} > {{creates}}

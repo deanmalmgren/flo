@@ -1,5 +1,6 @@
 import yaml
 import jinja2
+import six
 
 
 class CommandLineException(Exception):
@@ -75,7 +76,7 @@ class JinjaRenderError(JinjaTemplateError):
 
     def __str__(self):
         context_str = "{\n"
-        for k, v in self.context_dict.iteritems():
+        for k, v in six.iteritems(self.context_dict):
             context_str += "%s%s: %s,\n" % (self.tab, k, v)
         context_str += "}"
         msg = "\n\nContext:\n\n%s" % self.indent(context_str)

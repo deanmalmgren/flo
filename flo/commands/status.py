@@ -1,5 +1,5 @@
-import BaseHTTPServer
-import SocketServer
+from six.moves import BaseHTTPServer
+from six.moves import socketserver
 import socket
 
 from .run import Command as RunCommand
@@ -40,8 +40,8 @@ class Command(RunCommand):
         Handler.task_graph = self.task_graph
         print("Starting server at http://localhost:%d" % port)
         try:
-            httpd = SocketServer.TCPServer(("", port), Handler)
-        except socket.error, error:
+            httpd = socketserver.TCPServer(("", port), Handler)
+        except socket.error as error:
             raise CommandLineException(error.strerror)
         try:
             httpd.serve_forever()

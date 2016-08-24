@@ -43,9 +43,9 @@ def run_subcommand(args):
     """This function runs the command that is selected by this particular
     subcommand parser.
     """
-    command = args.__dict__.pop("command")
     try:
+        command = args.__dict__.pop("command")
         command.execute(**args.__dict__)
-    except CommandLineException, error:
+    except (CommandLineException, KeyError) as error:
         print(colors.red(error))
         sys.exit(getattr(error, 'exit_code', 1))

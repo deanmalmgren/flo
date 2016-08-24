@@ -25,4 +25,4 @@ data = loaders.data_from_tsv(tsv_filename, [col])[0]
 data.sort()
 for i, x in enumerate(data):
     cdf = float(i)/len(data)
-    print x, "%0.4f" % cdf
+    print(x, "%0.4f" % cdf)

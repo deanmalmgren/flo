@@ -1,4 +1,5 @@
 import collections
+import six
 
 
 class FrozenDict(collections.Mapping):
@@ -21,7 +22,7 @@ class FrozenDict(collections.Mapping):
         return self._d[key]
 
     def __hash__(self):
-        return hash(tuple(sorted(self._d.iteritems())))
+        return hash(tuple(sorted(six.iteritems(self._d))))
 
 
 class UniqueOrderedList(list):

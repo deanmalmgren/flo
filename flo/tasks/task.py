@@ -1,6 +1,7 @@
 import os
 import time
-import StringIO
+import six
+from six import StringIO
 import copy
 
 from ..exceptions import InvalidTaskDefinition, CommandLineException
@@ -10,13 +11,18 @@ from .. import resources
 from .. import templates
 from ..types import UniqueOrderedList
 
+if six.PY2:
+    str_types = (str, unicode)
+else:
+    str_types = str
+
 
 def _cast_as_list(obj):
     if isinstance(obj, (list, tuple)):
         return obj
     elif obj is None:
         return []
-    elif isinstance(obj, (str, unicode)):
+    elif isinstance(obj, str_types):
         return [obj]
     else:
         raise TypeError("unexpected type passed to _cast_as_list")
@@ -39,7 +45,7 @@ class Task(resources.base.BaseResource):
                 "every task must define a `creates`",
                 self.yaml_data,
             )
-        if not isinstance(self._creates, (str, unicode)):
+        if not isinstance(self._creates, str_types):
             raise InvalidTaskDefinition(
                 "each task must define a single `creates` as a string",
                 self.yaml_data,
@@ -123,7 +129,7 @@ class Task(resources.base.BaseResource):
     def config_resource_id(self):
         """Canonical way to identify the resource id associated with this Task
         """
-        return 'config:'+self.id
+        return 'config:' + self.id
 
     @property
     def root_directory(self):
@@ -174,7 +180,6 @@ class Task(resources.base.BaseResource):
         self.downstream_tasks.clear()
 
     def get_all_filenames(self):
-
         """Identify the set of all filenames that pertain to this task
         """
         # TODO: when we allow for non-filesystem targets, this will
@@ -190,11 +195,10 @@ class Task(resources.base.BaseResource):
         # the machinery in self.get_stream_state to calculate the
         # state
         msg = self.creates + str(self.depends) + str(self._command)
-        keys = self.attrs.keys()
-        keys.sort()
+        keys = sorted(self.attrs.keys())
         for k in keys:
             msg += k + str(self.attrs[k])
-        return self.get_stream_state(StringIO.StringIO(msg))
+        return self.get_stream_state(StringIO(msg))
 
     def in_sync(self):
         """Test whether this task is in sync with the stored state and
@@ -242,8 +246,14 @@ class Task(resources.base.BaseResource):
 
         # confirm that all depends resources exist on the filesystem
         if not all(resource.exists() for resource in self.depends_resources):
-            raise CommandLineException(self.depends + (
-                " does not exist just before running this task. "
+            unmet = self.depends
+            if isinstance(unmet, list):
+                unmet = '{} and {} do'.format(', '.join(unmet[:-1]),
+                                              unmet[-1])
+            else:
+                unmet = unmet + ' does'
+            raise CommandLineException(unmet + (
+                " not exist just before running this task. "
                 "Double check the `depends` to confirm that these "
                 "dependencies are correct for this task."
             ))

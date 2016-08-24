@@ -72,7 +72,12 @@ class BaseResource(object):
             data = stream.read(block_size)
             if not data:
                 break
-            state.update(data)
+            try:
+                state.update(data)
+            except TypeError:
+                # Assuming this is caused by getting Unicode
+                # Unicode must be encoded before hashing
+                state.update(data.encode('utf8'))
         return state.hexdigest()
 
     def get_previous_state(self):

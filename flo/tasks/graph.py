@@ -7,6 +7,8 @@ import datetime
 import glob
 from distutils.util import strtobool
 import json
+import six
+from six.moves import input
 
 import networkx as nx
 
@@ -106,7 +108,8 @@ class TaskGraph(object):
             if task in source_tasks:
                 distance = 0
             else:
-                distance = max(map(distances.get, task.upstream_tasks)) + 1
+                distance = max([distances.get(x)
+                                for x in task.upstream_tasks]) + 1
             distances[task] = distance
             horizon.remove(task)
             horizon_set.discard(task)
@@ -119,7 +122,7 @@ class TaskGraph(object):
         # now create a decorated list of based on the distance and
         # ordering in the YAML file
         decorated_list = []
-        for task, distance in distances.iteritems():
+        for task, distance in six.iteritems(distances):
             decorated_list.append((
                 distance, self.task_list.index(task), task,
             ))
@@ -191,7 +194,7 @@ class TaskGraph(object):
         new graph.
         """
         assert start_at or end_at, "one of {start_at,end_at} must be a task id"
-        start, end = map(self.task_dict.get, [start_at, end_at])
+        start, end = [self.task_dict.get(start_at), self.task_dict.get(end_at)]
         if None in [start, end]:
             graph = self.get_networkx_graph()
             if start:
@@ -273,7 +276,7 @@ class TaskGraph(object):
             self.logger.info(green(self.internals_path))
         for task in task_list:
             self.logger.info(task.creates_message())
-        yesno = raw_input(colors.red("Delete aforementioned files? [Y/n] "))
+        yesno = input(colors.red("Delete aforementioned files? [Y/n] "))
         if yesno == '':
             yesno = 'y'
         return strtobool(yesno)
@@ -377,7 +380,7 @@ class TaskGraph(object):
                 else:
                     try:
                         task.timed_run()
-                    except (KeyboardInterrupt, ShellError), error:
+                    except (KeyboardInterrupt, ShellError) as error:
                         self.save_state(
                             override_resource_states={task.name: ''},
                         )
@@ -432,7 +435,7 @@ class TaskGraph(object):
     def write_to_storage(self, dictionary, storage_location):
         with open(storage_location, 'w') as stream:
             writer = csv.writer(stream)
-            for item in dictionary.iteritems():
+            for item in six.iteritems(dictionary):
                 writer.writerow(item)
 
     def get_state_from_storage(self, resource):
@@ -453,7 +456,7 @@ class TaskGraph(object):
         )
 
         # typecast the task_durations
-        for task_id, duration in self.task_durations.iteritems():
+        for task_id, duration in six.iteritems(self.task_durations):
             self.task_durations[task_id] = float(duration)
 
     def save_state(self, override_resource_states=None):
@@ -469,7 +472,7 @@ class TaskGraph(object):
         # CSV. this is important for situations where a subgraph is
         # selected to run
         after_resource_states = self.read_from_storage(self.abs_state_path)
-        for name, resource in self.resource_dict.iteritems():
+        for name, resource in six.iteritems(self.resource_dict):
             after_resource_states[name] = resource.get_current_state()
 
         # if override states are provided, update the resources

@@ -91,7 +91,7 @@ def get_task_kwargs_list(config=None):
         config_yaml = yaml.load_all(stream.read())
     try:
         return config_yaml2task_kwargs_list(config_yaml)
-    except yaml.constructor.ConstructorError, error:
+    except yaml.constructor.ConstructorError as error:
         raise exceptions.YamlError(config_path, error)
 
 

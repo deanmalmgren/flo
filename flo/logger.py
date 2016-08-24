@@ -13,20 +13,27 @@ from .colors import colorless
 # achieves exactly what we want, albeit not using the standard
 # library. If you have other ideas for how to do this, check out the
 # code before issue #53 was resolved.
-class Logger(file):
+# class Logger(file):
+class Logger():
     """Log output to stdout in color and to a log file in plain text.
     """
+    log_file = None
+
     def __init__(self, task_graph):
-        super(Logger, self).__init__(task_graph.abs_log_path, 'w')
+        self.log_file = open(task_graph.abs_log_path, 'w')
 
     def write(self, content):
+        if isinstance(content, bytes):
+            content = content.decode()
         sys.stdout.write(content)
         sys.stdout.flush()
-        super(Logger, self).write(colorless(content))
+        self.log_file.write(colorless(content))
 
     def info(self, content):
         self.write(content + '\n')
 
+    def close(self):
+        self.log_file.close()
 
 # _logger is a singleton instance of the logger that is a local cache
 # of the one and only logger instance for all TaskGraphs. This is
